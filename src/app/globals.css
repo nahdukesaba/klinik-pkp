@@ -1,0 +1,459 @@
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap");
+@import "leaflet/dist/leaflet.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Primary: #0E5B73 -> HSL(191, 79%, 25%) */
+    --primary: 191 79% 25%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 191 79% 20%;
+
+    /* Secondary: #D5C58A inspired -> HSL(47, 46%, 85%) */
+    --secondary: 47 46% 85%;
+    --secondary-foreground: 191 79% 20%;
+
+    /* Accent: #084C61 -> HSL(195, 85%, 21%) */
+    --accent: 195 85% 21%;
+    --accent-foreground: 0 0% 100%;
+
+    /* Accent 2: #D5C58A -> HSL(47, 46%, 69%) */
+    --accent-2: 47 46% 69%;
+    --accent-2-foreground: 191 79% 15%;
+
+    /* Background & Foreground - Using #D5C58A inspired tones */
+    --background: 47 40% 92%;
+    --foreground: 191 79% 10%;
+
+    /* Card - Slightly lighter than background for contrast */
+    --card: 47 45% 97%;
+    --card-foreground: 191 79% 10%;
+
+    /* Popover */
+    --popover: 47 45% 97%;
+    --popover-foreground: 191 79% 10%;
+
+    /* Muted - Using #D5C58A tones */
+    --muted: 47 40% 88%;
+    --muted-foreground: 191 30% 40%;
+
+    /* Destructive */
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Success */
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+
+    /* Warning */
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    /* Border & Input - Using #D5C58A inspired tones */
+    --border: 47 40% 78%;
+    --input: 47 40% 78%;
+    --ring: 191 79% 25%;
+
+    --radius: 0.75rem;
+
+    /* Sidebar */
+    --sidebar-background: 191 79% 12%;
+    --sidebar-foreground: 45 30% 95%;
+    --sidebar-primary: 47 46% 69%;
+    --sidebar-primary-foreground: 191 79% 10%;
+    --sidebar-accent: 191 70% 18%;
+    --sidebar-accent-foreground: 45 30% 90%;
+    --sidebar-border: 191 60% 20%;
+    --sidebar-ring: 47 46% 69%;
+
+    /* Map */
+    --map-marker: 191 79% 25%;
+    --map-marker-active: 195 85% 21%;
+    --map-popup: 0 0% 100%;
+
+    /* Gradients - Using #F2EEDF and #D5C58A */
+    --gradient-primary: linear-gradient(
+      135deg,
+      hsl(191, 79%, 25%),
+      hsl(195, 85%, 21%)
+    );
+    --gradient-accent: linear-gradient(
+      135deg,
+      hsl(47, 46%, 69%),
+      hsl(45, 42%, 91%)
+    );
+    --gradient-header: linear-gradient(
+      180deg,
+      hsl(191, 79%, 12%),
+      hsl(195, 85%, 18%)
+    );
+    --gradient-card: linear-gradient(
+      145deg,
+      hsl(45, 50%, 99%),
+      hsl(45, 42%, 95%)
+    );
+    --gradient-background: linear-gradient(
+      135deg,
+      hsl(45, 42%, 91%),
+      hsl(47, 46%, 85%)
+    );
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 hsl(191 79% 15% / 0.05);
+    --shadow-md: 0 4px 6px -1px hsl(191 79% 15% / 0.1),
+      0 2px 4px -2px hsl(191 79% 15% / 0.1);
+    --shadow-lg: 0 10px 15px -3px hsl(191 79% 15% / 0.1),
+      0 4px 6px -4px hsl(191 79% 15% / 0.1);
+    --shadow-xl: 0 20px 25px -5px hsl(191 79% 15% / 0.1),
+      0 8px 10px -6px hsl(191 79% 15% / 0.1);
+    --shadow-glow: 0 0 20px hsl(191 79% 25% / 0.3);
+  }
+
+  .dark {
+    /* Primary stays the same for brand consistency */
+    --primary: 191 70% 45%;
+    --primary-foreground: 191 79% 10%;
+    --primary-hover: 191 70% 50%;
+
+    /* Secondary */
+    --secondary: 191 50% 15%;
+    --secondary-foreground: 45 30% 90%;
+
+    /* Accent */
+    --accent: 195 70% 35%;
+    --accent-foreground: 0 0% 100%;
+
+    /* Accent 2 */
+    --accent-2: 47 40% 55%;
+    --accent-2-foreground: 0 0% 100%;
+
+    /* Background & Foreground */
+    --background: 191 50% 8%;
+    --foreground: 45 30% 95%;
+
+    /* Card */
+    --card: 191 50% 12%;
+    --card-foreground: 45 30% 95%;
+
+    /* Popover */
+    --popover: 191 50% 12%;
+    --popover-foreground: 45 30% 95%;
+
+    /* Muted */
+    --muted: 191 40% 18%;
+    --muted-foreground: 45 20% 60%;
+
+    /* Destructive */
+    --destructive: 0 62% 45%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Border & Input */
+    --border: 191 40% 20%;
+    --input: 191 40% 20%;
+    --ring: 191 70% 45%;
+
+    /* Sidebar */
+    --sidebar-background: 191 60% 6%;
+    --sidebar-foreground: 45 30% 95%;
+    --sidebar-primary: 47 46% 69%;
+    --sidebar-primary-foreground: 191 79% 10%;
+    --sidebar-accent: 191 50% 12%;
+    --sidebar-accent-foreground: 45 30% 90%;
+    --sidebar-border: 191 50% 15%;
+    --sidebar-ring: 47 46% 69%;
+
+    /* Shadows for dark mode */
+    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.3);
+    --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.4),
+      0 2px 4px -2px hsl(0 0% 0% / 0.3);
+    --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.4),
+      0 4px 6px -4px hsl(0 0% 0% / 0.3);
+    --shadow-xl: 0 20px 25px -5px hsl(0 0% 0% / 0.4),
+      0 8px 10px -6px hsl(0 0% 0% / 0.3);
+    --shadow-glow: 0 0 30px hsl(191 70% 45% / 0.3);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-semibold tracking-tight;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-card/80 backdrop-blur-md border border-border/50 shadow-lg;
+  }
+
+  .glass-card-dark {
+    @apply dark:bg-card/60 dark:backdrop-blur-xl dark:border-border/30;
+  }
+
+  .map-container {
+    @apply w-full h-full relative;
+  }
+
+  .search-input {
+    @apply w-full px-4 py-3 bg-secondary border border-border rounded-lg 
+           placeholder:text-muted-foreground focus:outline-none focus:ring-2 
+           focus:ring-primary/50 focus:border-primary transition-all duration-200;
+  }
+
+  .filter-chip {
+    @apply px-3 py-1.5 text-sm rounded-full border border-border bg-background 
+           hover:bg-accent hover:text-accent-foreground cursor-pointer 
+           transition-all duration-200;
+  }
+
+  .filter-chip-active {
+    @apply bg-primary text-primary-foreground border-primary hover:bg-primary/90;
+  }
+
+  .clinic-card {
+    @apply p-4 rounded-xl bg-card border border-border shadow-md 
+           hover:shadow-lg hover:border-primary/30 transition-all duration-300 cursor-pointer;
+  }
+
+  .clinic-card-active {
+    @apply border-primary shadow-lg ring-2 ring-primary/20;
+  }
+
+  .stat-badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium 
+           rounded-full bg-accent text-accent-foreground;
+  }
+
+  .category-badge {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium 
+           rounded-md bg-primary/10 text-primary;
+  }
+
+  .luxury-gradient {
+    background: linear-gradient(
+      135deg,
+      hsl(var(--primary)) 0%,
+      hsl(var(--accent)) 100%
+    );
+  }
+
+  .gold-gradient {
+    background: linear-gradient(
+      135deg,
+      hsl(var(--accent-2)) 0%,
+      hsl(47, 60%, 75%) 100%
+    );
+  }
+}
+
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.6s ease-out forwards;
+  }
+
+  .animate-slide-in-right {
+    animation: slideInRight 0.5s ease-out forwards;
+  }
+
+  .animate-slide-in-left {
+    animation: slideInLeft 0.5s ease-out forwards;
+  }
+
+  .animate-pulse-soft {
+    animation: pulseSoft 3s ease-in-out infinite;
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.4s ease-out forwards;
+  }
+
+  .animate-on-scroll {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  }
+
+  .animate-on-scroll.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slideInRight {
+    from {
+      opacity: 0;
+      transform: translateX(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes slideInLeft {
+    from {
+      opacity: 0;
+      transform: translateX(-30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes pulseSoft {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.6;
+    }
+  }
+
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-20px);
+    }
+  }
+
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      transparent,
+      hsl(var(--primary) / 0.1),
+      transparent
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+  }
+}
+
+/* Leaflet custom styles */
+.leaflet-container {
+  font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+  z-index: 1;
+}
+
+.leaflet-popup-content-wrapper {
+  @apply rounded-xl shadow-xl border-0 p-0 overflow-hidden;
+}
+
+.leaflet-popup-content {
+  margin: 0;
+  min-width: 280px;
+}
+
+.leaflet-popup-tip {
+  @apply bg-card;
+}
+
+.custom-marker {
+  @apply flex items-center justify-center;
+}
+
+.marker-cluster {
+  @apply bg-primary/90 text-primary-foreground rounded-full 
+         flex items-center justify-center font-semibold shadow-lg;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-muted;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-primary/30 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-primary/50;
+}
+
+/* Fade-in animation for filtered content */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out forwards;
+}

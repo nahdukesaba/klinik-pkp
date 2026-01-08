@@ -42,6 +42,9 @@ export function DesignPreviewDialog({
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isZoomed, setIsZoomed] = useState(false);
   const [transformOrigin, setTransformOrigin] = useState("center center");
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const lastTouchRef = useRef<{ x: number; y: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Reset index and zoom when dialog opens with new design
@@ -52,6 +55,7 @@ export function DesignPreviewDialog({
         setCurrentImageIndex(0);
         setIsZoomed(false);
         setTransformOrigin("center center");
+        setDragOffset({ x: 0, y: 0 });
       }
     },
     [onClose]
@@ -61,6 +65,7 @@ export function DesignPreviewDialog({
   useEffect(() => {
     setIsZoomed(false);
     setTransformOrigin("center center");
+    setDragOffset({ x: 0, y: 0 });
   }, [currentImageIndex]);
 
   const nextImage = useCallback(() => {
@@ -79,6 +84,11 @@ export function DesignPreviewDialog({
 
   const handleImageClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
+      // Don't toggle zoom if we were dragging
+      if (isDragging) {
+        setIsDragging(false);
+        return;
+      }
       e.stopPropagation();
 
       if (!isZoomed) {
@@ -86,13 +96,15 @@ export function DesignPreviewDialog({
         const x = ((e.clientX - rect.left) / rect.width) * 100;
         const y = ((e.clientY - rect.top) / rect.height) * 100;
         setTransformOrigin(`${x}% ${y}%`);
+        setDragOffset({ x: 0, y: 0 });
         setIsZoomed(true);
       } else {
         setIsZoomed(false);
         setTransformOrigin("center center");
+        setDragOffset({ x: 0, y: 0 });
       }
     },
-    [isZoomed]
+    [isZoomed, isDragging]
   );
 
   const handleMouseMove = useCallback(
@@ -113,6 +125,50 @@ export function DesignPreviewDialog({
     },
     [isZoomed]
   );
+
+  // Touch handlers for mobile pan
+  const handleTouchStart = useCallback(
+    (e: React.TouchEvent<HTMLDivElement>) => {
+      if (!isZoomed) return;
+      const touch = e.touches[0];
+      lastTouchRef.current = { x: touch.clientX, y: touch.clientY };
+    },
+    [isZoomed]
+  );
+
+  const handleTouchMove = useCallback(
+    (e: React.TouchEvent<HTMLDivElement>) => {
+      if (!isZoomed || !lastTouchRef.current || !containerRef.current) return;
+      
+      e.preventDefault();
+      const touch = e.touches[0];
+      const deltaX = touch.clientX - lastTouchRef.current.x;
+      const deltaY = touch.clientY - lastTouchRef.current.y;
+      
+      // Mark as dragging if significant movement
+      if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
+        setIsDragging(true);
+      }
+      
+      // Calculate new offset with bounds
+      const rect = containerRef.current.getBoundingClientRect();
+      const maxOffset = rect.width * 0.75; // 75% of container width as max offset
+      
+      setDragOffset(prev => ({
+        x: Math.max(-maxOffset, Math.min(maxOffset, prev.x + deltaX)),
+        y: Math.max(-maxOffset, Math.min(maxOffset, prev.y + deltaY))
+      }));
+      
+      lastTouchRef.current = { x: touch.clientX, y: touch.clientY };
+    },
+    [isZoomed]
+  );
+
+  const handleTouchEnd = useCallback(() => {
+    lastTouchRef.current = null;
+    // Reset dragging state after a short delay to allow click detection
+    setTimeout(() => setIsDragging(false), 100);
+  }, []);
 
   if (!design) return null;
 
@@ -149,14 +205,19 @@ export function DesignPreviewDialog({
           <div className="relative rounded-lg overflow-hidden bg-secondary">
             <div
               ref={containerRef}
-              className="relative aspect-video w-full cursor-pointer"
+              className="relative aspect-video w-full cursor-pointer touch-none"
               onMouseMove={handleMouseMove}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
               style={{ cursor: isZoomed ? cursorZoomOut : cursorZoomIn }}
             >
               <div
                 className="relative w-full h-full transition-transform duration-300 ease-out"
                 style={{
-                  transform: isZoomed ? "scale(2.5)" : "scale(1)",
+                  transform: isZoomed 
+                    ? `scale(2.5) translate(${dragOffset.x / 2.5}px, ${dragOffset.y / 2.5}px)` 
+                    : "scale(1)",
                   transformOrigin: transformOrigin,
                 }}
                 onClick={handleImageClick}
@@ -230,15 +291,11 @@ export function DesignPreviewDialog({
           )}
 
           {/* Instructions */}
-          <div className="text-center mt-4 space-y-2">
+          <div className="text-center mt-4">
             <p className="text-xs text-muted-foreground">
               {isZoomed
-                ? "Gerakkan mouse untuk menggeser • Klik untuk memperkecil"
-                : "Klik gambar untuk memperbesar"}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Gambar preview tidak dapat diunduh. Gunakan tombol &quot;Unduh
-              PDF&quot; untuk mendapatkan dokumen lengkap.
+                ? "Gerakkan mouse/sentuh untuk menggeser • Klik/tap untuk memperkecil"
+                : "Klik/tap gambar untuk memperbesar"}
             </p>
           </div>
         </div>

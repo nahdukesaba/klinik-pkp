@@ -10,22 +10,28 @@ interface FeatureCardProps {
   title: string;
   description: string;
   delay: string;
+  href: string;
 }
 
-function FeatureCard({ icon, title, description, delay }: FeatureCardProps) {
+function FeatureCard({ icon, title, description, delay, href }: FeatureCardProps) {
   return (
-    <div
-      className="p-6 bg-card/80 backdrop-blur-sm rounded-2xl border border-border shadow-lg hover:shadow-xl hover:border-primary/30 transition-all duration-300 group animate-slide-up"
+    <Link
+      href={href}
+      className="block p-6 bg-card/80 backdrop-blur-sm rounded-2xl border border-border shadow-lg hover:shadow-xl hover:border-primary/30 transition-all duration-300 group animate-slide-up cursor-pointer"
       style={{ animationDelay: delay }}
     >
-      <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-4 group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-300">
+      <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-4 group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-300 group-hover:scale-110">
         {icon}
       </div>
       <h3 className="font-semibold text-foreground mb-2 group-hover:text-primary transition-colors">
         {title}
       </h3>
       <p className="text-sm text-muted-foreground">{description}</p>
-    </div>
+      <div className="mt-3 flex items-center text-xs text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+        <span>Lihat Detail</span>
+        <ArrowRight className="w-3 h-3 ml-1 group-hover:translate-x-1 transition-transform" />
+      </div>
+    </Link>
   );
 }
 
@@ -95,24 +101,28 @@ export default function HeroSection() {
                 title="Sebaran Rusun"
                 description="Lihat lokasi rusun di wilayah Sumatera"
                 delay="0s"
+                href="/sebaran-rusun"
               />
               <FeatureCard
                 icon={<Building2 className="w-6 h-6" />}
                 title="Kawasan Kumuh"
                 description="Profil dan penanganan kawasan kumuh"
                 delay="0.1s"
+                href="/kawasan-kumuh"
               />
               <FeatureCard
                 icon={<Gift className="w-6 h-6" />}
                 title="Penerima BSPS"
                 description="Bantuan stimulan perumahan swadaya"
                 delay="0.2s"
+                href="/penerimaan-bsps"
               />
               <FeatureCard
                 icon={<Users className="w-6 h-6" />}
                 title="Sosialisasi"
                 description="Kegiatan edukasi dan sosialisasi"
                 delay="0.3s"
+                href="/sosialisasi-klinik-pkp"
               />
             </div>
           </div>

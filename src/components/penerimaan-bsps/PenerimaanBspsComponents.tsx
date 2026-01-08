@@ -124,40 +124,42 @@ export function BspsFilterBar({ filterState, filterActions }: BspsFilterBarProps
   const { setSearchQuery, setShowFilters, resetFilters } = filterActions;
 
   return (
-    <div className="flex flex-col sm:flex-row gap-3">
+    <div className="flex flex-col sm:flex-row gap-2">
       <div className="relative flex-1">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
           placeholder="Cari desa atau kelurahan..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10"
+          className="pl-10 h-9"
         />
       </div>
-      <button
-        onClick={() => setShowFilters(!showFilters)}
-        className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
-          showFilters || activeFilterCount > 0
-            ? "bg-primary text-primary-foreground border-primary"
-            : "bg-card border-border hover:border-primary/50"
-        }`}
-      >
-        <Filter className="w-4 h-4" />
-        <span>Filter</span>
-        {activeFilterCount > 0 && (
-          <span className="ml-1 w-5 h-5 flex items-center justify-center bg-white/20 rounded-full text-xs font-medium">
-            {activeFilterCount}
-          </span>
-        )}
-      </button>
-      {activeFilterCount > 0 && (
+      <div className="flex gap-2">
         <button
-          onClick={resetFilters}
-          className="px-4 py-2 text-primary hover:bg-primary/10 rounded-lg transition-colors border border-primary/30"
+          onClick={() => setShowFilters(!showFilters)}
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-colors text-sm ${
+            showFilters || activeFilterCount > 0
+              ? "bg-primary text-primary-foreground border-primary"
+              : "bg-card border-border hover:border-primary/50"
+          }`}
         >
-          Reset
+          <Filter className="w-4 h-4" />
+          <span>Filter</span>
+          {activeFilterCount > 0 && (
+            <span className="w-5 h-5 flex items-center justify-center bg-white/20 rounded-full text-xs font-medium">
+              {activeFilterCount}
+            </span>
+          )}
         </button>
-      )}
+        {activeFilterCount > 0 && (
+          <button
+            onClick={resetFilters}
+            className="px-3 py-1.5 text-sm text-primary hover:bg-primary/10 rounded-lg transition-colors border border-primary/30"
+          >
+            Reset
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -180,12 +182,12 @@ export function BspsFilterDropdowns({ filterState, filterActions, filterLists }:
   const { kabupatenList, kecamatanList, kelurahanList } = filterLists;
 
   return (
-    <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-3 p-4 bg-secondary/50 rounded-xl border border-border animate-in slide-in-from-top-2 duration-200">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 p-3 bg-secondary/50 rounded-xl border border-border animate-in slide-in-from-top-2 duration-200">
       <Select value={kabupatenFilter} onValueChange={handleKabupatenChange}>
-        <SelectTrigger className="bg-card">
+        <SelectTrigger className="bg-card h-9 text-sm">
           <SelectValue placeholder="Kabupaten/Kota" />
         </SelectTrigger>
-        <SelectContent className="bg-popover z-50 max-h-60">
+        <SelectContent className="bg-popover z-[9999] max-h-60">
           <SelectItem value="all">Semua Kabupaten/Kota</SelectItem>
           {kabupatenList.map((k) => (
             <SelectItem key={k} value={k}>{k}</SelectItem>
@@ -194,10 +196,10 @@ export function BspsFilterDropdowns({ filterState, filterActions, filterLists }:
       </Select>
 
       <Select value={kecamatanFilter} onValueChange={handleKecamatanChange}>
-        <SelectTrigger className="bg-card">
+        <SelectTrigger className="bg-card h-9 text-sm">
           <SelectValue placeholder="Kecamatan" />
         </SelectTrigger>
-        <SelectContent className="bg-popover z-50 max-h-60">
+        <SelectContent className="bg-popover z-[9999] max-h-60">
           <SelectItem value="all">Semua Kecamatan</SelectItem>
           {kecamatanList.map((k) => (
             <SelectItem key={k} value={k}>{k}</SelectItem>
@@ -206,10 +208,10 @@ export function BspsFilterDropdowns({ filterState, filterActions, filterLists }:
       </Select>
 
       <Select value={kelurahanFilter} onValueChange={setKelurahanFilter}>
-        <SelectTrigger className="bg-card">
+        <SelectTrigger className="bg-card h-9 text-sm">
           <SelectValue placeholder="Kelurahan/Desa" />
         </SelectTrigger>
-        <SelectContent className="bg-popover z-50 max-h-60">
+        <SelectContent className="bg-popover z-[9999] max-h-60">
           <SelectItem value="all">Semua Kelurahan/Desa</SelectItem>
           {kelurahanList.map((k) => (
             <SelectItem key={k} value={k}>{k}</SelectItem>
@@ -218,10 +220,10 @@ export function BspsFilterDropdowns({ filterState, filterActions, filterLists }:
       </Select>
 
       <Select value={statusFilter} onValueChange={setStatusFilter}>
-        <SelectTrigger className="bg-card">
+        <SelectTrigger className="bg-card h-9 text-sm">
           <SelectValue placeholder="Status" />
         </SelectTrigger>
-        <SelectContent className="bg-popover z-50">
+        <SelectContent className="bg-popover z-[9999]">
           <SelectItem value="all">Semua Status</SelectItem>
           {Object.entries(penerimaanStatusLabels).map(([key, label]) => (
             <SelectItem key={key} value={key}>{label}</SelectItem>

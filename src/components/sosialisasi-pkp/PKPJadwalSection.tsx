@@ -150,19 +150,27 @@ export function PKPJadwalSection({
             <div className="flex flex-col gap-2">
               <span className="text-sm font-medium text-foreground">Rentang:</span>
               <div className="flex items-center gap-2">
-                <input
-                  type="date"
-                  value={jadwalStartDate}
-                  onChange={(e) => setJadwalStartDate(e.target.value)}
-                  className="flex-1 min-w-0 px-2 py-2 bg-secondary border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                />
+                <div className="relative flex-1">
+                  <Calendar className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none z-10" />
+                  <input
+                    type="date"
+                    value={jadwalStartDate}
+                    onChange={(e) => setJadwalStartDate(e.target.value)}
+                    placeholder="mm/dd/yyyy"
+                    className="w-full pl-8 pr-2 py-2 bg-secondary border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                  />
+                </div>
                 <span className="text-muted-foreground">-</span>
-                <input
-                  type="date"
-                  value={jadwalEndDate}
-                  onChange={(e) => setJadwalEndDate(e.target.value)}
-                  className="flex-1 min-w-0 px-2 py-2 bg-secondary border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                />
+                <div className="relative flex-1">
+                  <Calendar className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none z-10" />
+                  <input
+                    type="date"
+                    value={jadwalEndDate}
+                    onChange={(e) => setJadwalEndDate(e.target.value)}
+                    placeholder="mm/dd/yyyy"
+                    className="w-full pl-8 pr-2 py-2 bg-secondary border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                  />
+                </div>
               </div>
             </div>
 

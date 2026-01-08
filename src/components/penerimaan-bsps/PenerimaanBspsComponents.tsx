@@ -339,7 +339,7 @@ export function BspsMapSection({ mapRef, filterState, filterActions, filterLists
       {/* Map Container - Responsive Height */}
       <div
         ref={mapRef}
-        className="w-full h-[300px] sm:h-[400px] md:h-[500px] rounded-lg sm:rounded-xl overflow-hidden border border-border"
+        className="w-full h-[350px] sm:h-[400px] md:h-[500px] lg:h-[550px] rounded-lg sm:rounded-xl overflow-hidden border border-border"
       />
       <p className="text-xs sm:text-sm text-muted-foreground mt-3 sm:mt-4 text-center">
         Klik pada area lingkaran untuk melihat detail penerima bantuan

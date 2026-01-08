@@ -38,6 +38,8 @@ const cursorZoomOut = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2
 export function ImageZoom({ src, alt, isOpen, onClose }: ImageZoomProps) {
   const [isZoomed, setIsZoomed] = useState(false);
   const [transformOrigin, setTransformOrigin] = useState("center center");
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [lastTouch, setLastTouch] = useState({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Reset state when modal closes
@@ -45,6 +47,7 @@ export function ImageZoom({ src, alt, isOpen, onClose }: ImageZoomProps) {
     if (!isOpen) {
       setIsZoomed(false);
       setTransformOrigin("center center");
+      setDragOffset({ x: 0, y: 0 });
     }
   }, [isOpen]);
 
@@ -96,6 +99,36 @@ export function ImageZoom({ src, alt, isOpen, onClose }: ImageZoomProps) {
     [isZoomed]
   );
 
+  // Touch handlers for mobile pan
+  const handleTouchStart = useCallback(
+    (e: React.TouchEvent<HTMLDivElement>) => {
+      if (!isZoomed || e.touches.length !== 1) return;
+      const touch = e.touches[0];
+      setLastTouch({ x: touch.clientX, y: touch.clientY });
+    },
+    [isZoomed]
+  );
+
+  const handleTouchMove = useCallback(
+    (e: React.TouchEvent<HTMLDivElement>) => {
+      if (!isZoomed || e.touches.length !== 1) return;
+      e.preventDefault();
+      const touch = e.touches[0];
+      const deltaX = touch.clientX - lastTouch.x;
+      const deltaY = touch.clientY - lastTouch.y;
+      setDragOffset((prev) => ({
+        x: Math.max(-200, Math.min(200, prev.x + deltaX)),
+        y: Math.max(-200, Math.min(200, prev.y + deltaY)),
+      }));
+      setLastTouch({ x: touch.clientX, y: touch.clientY });
+    },
+    [isZoomed, lastTouch]
+  );
+
+  const handleTouchEnd = useCallback(() => {
+    // Keep the current position
+  }, []);
+
   if (!isOpen) return null;
 
   return (
@@ -130,15 +163,20 @@ export function ImageZoom({ src, alt, isOpen, onClose }: ImageZoomProps) {
       {/* Image Container */}
       <div
         ref={containerRef}
-        className="relative w-full h-full max-w-[90vw] max-h-[90vh] flex items-center justify-center overflow-hidden"
+        className="relative w-full h-full max-w-[90vw] max-h-[90vh] flex items-center justify-center overflow-hidden touch-none"
         onClick={(e) => e.stopPropagation()}
         onMouseMove={handleMouseMove}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
         style={{ cursor: isZoomed ? cursorZoomOut : cursorZoomIn }}
       >
         <div
           className="relative w-full h-full transition-transform duration-300 ease-out"
           style={{
-            transform: isZoomed ? "scale(2.5)" : "scale(1)",
+            transform: isZoomed 
+              ? `scale(2.5) translate(${dragOffset.x / 2.5}px, ${dragOffset.y / 2.5}px)` 
+              : "scale(1)",
             transformOrigin: transformOrigin,
           }}
           onClick={handleImageClick}
@@ -157,8 +195,11 @@ export function ImageZoom({ src, alt, isOpen, onClose }: ImageZoomProps) {
 
       {/* Instructions */}
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2 bg-white/10 rounded-full backdrop-blur-sm">
-        <span className="text-sm text-white/80">
+        <span className="text-sm text-white/80 hidden sm:inline">
           {isZoomed ? "Gerakkan mouse untuk menggeser • Klik untuk memperkecil" : "Klik gambar untuk memperbesar"}
+        </span>
+        <span className="text-sm text-white/80 sm:hidden">
+          {isZoomed ? "Geser untuk menggeser • Tap untuk memperkecil" : "Tap gambar untuk memperbesar"}
         </span>
       </div>
     </div>
@@ -180,6 +221,8 @@ export function ImageCarouselZoom({
   const [activeIndex, setActiveIndex] = useState(currentIndex);
   const [isZoomed, setIsZoomed] = useState(false);
   const [transformOrigin, setTransformOrigin] = useState("center center");
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [lastTouch, setLastTouch] = useState({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Sync with external currentIndex
@@ -192,6 +235,7 @@ export function ImageCarouselZoom({
     if (!isOpen) {
       setIsZoomed(false);
       setTransformOrigin("center center");
+      setDragOffset({ x: 0, y: 0 });
     }
   }, [isOpen]);
 
@@ -258,6 +302,36 @@ export function ImageCarouselZoom({
     },
     [isZoomed]
   );
+
+  // Touch handlers for mobile pan
+  const handleTouchStart = useCallback(
+    (e: React.TouchEvent<HTMLDivElement>) => {
+      if (!isZoomed || e.touches.length !== 1) return;
+      const touch = e.touches[0];
+      setLastTouch({ x: touch.clientX, y: touch.clientY });
+    },
+    [isZoomed]
+  );
+
+  const handleTouchMove = useCallback(
+    (e: React.TouchEvent<HTMLDivElement>) => {
+      if (!isZoomed || e.touches.length !== 1) return;
+      e.preventDefault();
+      const touch = e.touches[0];
+      const deltaX = touch.clientX - lastTouch.x;
+      const deltaY = touch.clientY - lastTouch.y;
+      setDragOffset((prev) => ({
+        x: Math.max(-200, Math.min(200, prev.x + deltaX)),
+        y: Math.max(-200, Math.min(200, prev.y + deltaY)),
+      }));
+      setLastTouch({ x: touch.clientX, y: touch.clientY });
+    },
+    [isZoomed, lastTouch]
+  );
+
+  const handleTouchEnd = useCallback(() => {
+    // Keep the current position
+  }, []);
 
   if (!isOpen || images.length === 0) return null;
 
@@ -328,15 +402,20 @@ export function ImageCarouselZoom({
       {/* Image Container */}
       <div
         ref={containerRef}
-        className="relative w-full h-full max-w-[90vw] max-h-[85vh] flex items-center justify-center overflow-hidden"
+        className="relative w-full h-full max-w-[90vw] max-h-[85vh] flex items-center justify-center overflow-hidden touch-none"
         onClick={(e) => e.stopPropagation()}
         onMouseMove={handleMouseMove}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
         style={{ cursor: isZoomed ? cursorZoomOut : cursorZoomIn }}
       >
         <div
           className="relative w-full h-full transition-transform duration-300 ease-out"
           style={{
-            transform: isZoomed ? "scale(2.5)" : "scale(1)",
+            transform: isZoomed 
+              ? `scale(2.5) translate(${dragOffset.x / 2.5}px, ${dragOffset.y / 2.5}px)` 
+              : "scale(1)",
             transformOrigin: transformOrigin,
           }}
           onClick={handleImageClick}
@@ -384,12 +463,19 @@ export function ImageCarouselZoom({
 
       {/* Instructions */}
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2 bg-white/10 rounded-full backdrop-blur-sm">
-        <span className="text-sm text-white/80">
+        <span className="text-sm text-white/80 hidden sm:inline">
           {isZoomed
             ? "Gerakkan mouse untuk menggeser • Klik untuk memperkecil"
             : images.length > 1
             ? "← → untuk navigasi • Klik gambar untuk memperbesar"
             : "Klik gambar untuk memperbesar"}
+        </span>
+        <span className="text-sm text-white/80 sm:hidden">
+          {isZoomed
+            ? "Geser untuk menggeser • Tap untuk memperkecil"
+            : images.length > 1
+            ? "Swipe untuk navigasi • Tap untuk zoom"
+            : "Tap gambar untuk memperbesar"}
         </span>
       </div>
     </div>

@@ -75,8 +75,7 @@ export function PKPMapSection({
     if (mapReady) {
       updateMarkers(onImageClick);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mapReady, filteredLocations]);
+  }, [mapReady, filteredLocations, updateMarkers, onImageClick]);
 
   // Check if any filter is active
   const activeFilterCount = useMemo(() => {
@@ -169,8 +168,8 @@ export function PKPMapSection({
           />
         </div>
 
-        {/* Map Container - More Compact Height */}
-        <div className="relative w-full h-[300px] sm:h-[350px] md:h-[450px] min-h-[280px] bg-gray-100">
+        {/* Map Container - Larger Height */}
+        <div className="relative w-full h-[350px] sm:h-[400px] md:h-[500px] lg:h-[550px] min-h-[320px] bg-gray-100">
           <div
             id="peta-sosialisasi"
             ref={mapRef}

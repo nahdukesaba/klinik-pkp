@@ -192,12 +192,22 @@ export function useSosialisasiPKPMap() {
         ? "background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); color: #92400e; border: 1px solid #fcd34d;"
         : "background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); color: #1e40af; border: 1px solid #93c5fd;";
 
+      // Responsive popup - smaller on mobile
+      const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
+      const popupPadding = isMobile ? '12px' : '16px';
+      const popupMinWidth = isMobile ? '220px' : '280px';
+      const popupMaxWidth = isMobile ? '280px' : '320px';
+      const titleFontSize = isMobile ? '14px' : '16px';
+      const textFontSize = isMobile ? '12px' : '13px';
+      const iconSize = isMobile ? '16px' : '18px';
+      const imageSize = isMobile ? 'width: 60px; height: 45px;' : 'width: 80px; height: 60px;';
+
       const popupContent = `
-        <div style="padding: 16px; min-width: 280px; max-width: 320px; font-family: system-ui, -apple-system, sans-serif;">
-          <h3 style="font-size: 16px; font-weight: 700; color: #111827; margin: 0 0 12px 0; padding-bottom: 10px; border-bottom: 1px solid #e5e7eb; line-height: 1.3;">${loc.name}</h3>
+        <div style="padding: ${popupPadding}; min-width: ${popupMinWidth}; max-width: ${popupMaxWidth}; font-family: system-ui, -apple-system, sans-serif;">
+          <h3 style="font-size: ${titleFontSize}; font-weight: 700; color: #111827; margin: 0 0 10px 0; padding-bottom: 8px; border-bottom: 1px solid #e5e7eb; line-height: 1.3;">${loc.name}</h3>
           
-          <div style="display: flex; flex-direction: column; gap: 10px;">
-            <div style="display: flex; align-items: flex-start; gap: 10px;">
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; align-items: flex-start; gap: 8px;">
               <svg style="width: 18px; height: 18px; flex-shrink: 0; color: #0E5B73; margin-top: 2px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -251,8 +261,8 @@ export function useSosialisasiPKPMap() {
       const marker = L.marker(offsetCoordinates, { icon: markerIcon })
         .addTo(map)
         .bindPopup(popupContent, {
-          maxWidth: 380,
-          minWidth: 280,
+          maxWidth: isMobile ? 300 : 380,
+          minWidth: isMobile ? 220 : 280,
           className: "custom-popup",
         });
 
@@ -358,16 +368,15 @@ export function useSosialisasiPKPMap() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // STABLE - addMarkersToMap stable, tidak perlu dependency
 
-  // Update markers when filters change - STABLE
+  // Update markers when filters change - uses filteredMapLocations length as trigger
   const updateMarkers = useCallback((onImageClick?: (images: string[], index: number, title: string) => void) => {
-    if (!mapReady || !mapInstanceRef.current || !LeafletRef.current) return;
+    if (!mapInstanceRef.current || !LeafletRef.current) return;
     
     const map = mapInstanceRef.current;
     const L = LeafletRef.current;
     
     addMarkersToMap(L, map, onImageClick);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // STABLE - uses refs only
+  }, [addMarkersToMap]);
 
   // Fly to a specific location on the map
   const flyToLocation = useCallback((coordinatesOrId: [number, number] | number) => {

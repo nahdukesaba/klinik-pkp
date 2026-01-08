@@ -1,5 +1,5 @@
 /**
- * Route: /peta/kawasan-kumuh
+ * Route: /kawasan-kumuh
  * 
  * DESKRIPSI: Halaman Profil Kawasan Kumuh
  * Menampilkan peta dan data kawasan kumuh dengan filter lokasi & status

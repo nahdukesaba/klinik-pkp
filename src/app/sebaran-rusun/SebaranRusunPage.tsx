@@ -39,10 +39,11 @@ export default function SebaranRusunPage() {
     handleRusunSelect,
   } = useSebaranRusun();
 
-  // Handle rusun click - fly to location
+  // Handle rusun click - fly to location and close sidebar on mobile
   const handleRusunClick = useCallback(
     (rusun: RusunData) => {
       handleRusunSelect(rusun);
+      setSidebarOpen(false); // Close sidebar on mobile
       flyToLocation(rusun.lat, rusun.lng, 14);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -87,6 +88,14 @@ export default function SebaranRusunPage() {
 
         {/* Main Content: Sidebar + Map */}
         <div className="flex-1 flex relative overflow-hidden">
+          {/* Mobile Overlay when sidebar open */}
+          {sidebarOpen && (
+            <div 
+              className="lg:hidden fixed inset-0 bg-black/50 z-30"
+              onClick={() => setSidebarOpen(false)}
+            />
+          )}
+
           {/* Sidebar with Filters & List */}
           <RusunSidebar
             isOpen={sidebarOpen}
@@ -100,6 +109,7 @@ export default function SebaranRusunPage() {
             kelurahanList={filterOptions.kelurahanList}
             onRusunClick={(rusun) => {
               handleRusunSelect(rusun);
+              setSidebarOpen(false); // Close sidebar on mobile
               flyToLocation(rusun.lat, rusun.lng, 14);
             }}
             onKabupatenChange={setKabupatenFilter}
@@ -107,6 +117,7 @@ export default function SebaranRusunPage() {
             onKelurahanChange={setKelurahanFilter}
             onResetFilters={resetFilters}
             onToggleSidebar={() => setSidebarOpen(true)}
+            onCloseSidebar={() => setSidebarOpen(false)}
           />
 
           {/* Map Container */}

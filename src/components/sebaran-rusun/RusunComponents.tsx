@@ -2,7 +2,7 @@
 
 import { RefObject } from "react";
 
-import { ArrowLeft, Building2, Layers, MapPin, Search, Users } from "lucide-react";
+import { ArrowLeft, Building2, Layers, MapPin, Search, Users, X } from "lucide-react";
 
 import { Navbar } from "@/components/layout";
 import {
@@ -49,6 +49,7 @@ interface RusunSidebarProps {
   onKelurahanChange: (value: string) => void;
   onResetFilters: () => void;
   onToggleSidebar: () => void;
+  onCloseSidebar?: () => void;
 }
 
 interface FilterSelectProps {
@@ -125,7 +126,7 @@ export function RusunHeader({
         {/* Right: Search, Filter, Stats */}
         <div className="flex flex-wrap items-center gap-2">
           {/* Search Input */}
-          <div className="relative flex-1 min-w-[350px] max-w-md">
+          <div className="relative flex-1 min-w-0 sm:min-w-[200px] md:min-w-[300px] max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <input
               type="text"
@@ -138,7 +139,7 @@ export function RusunHeader({
 
           {/* Region Filter */}
           <Select value={regionFilter} onValueChange={onRegionChange}>
-            <SelectTrigger className="w-40">
+            <SelectTrigger className="w-full sm:w-40">
               <SelectValue placeholder="Pilih Region" />
             </SelectTrigger>
             <SelectContent>
@@ -153,9 +154,11 @@ export function RusunHeader({
           {/* Stats Badges */}
           <div className="stat-badge">
             <Building2 className="w-4 h-4" />
-            <span>{totalRusun} Rusun</span>
+            <span className="hidden xs:inline">{totalRusun}</span>
+            <span className="xs:hidden">{totalRusun}</span>
+            <span className="hidden sm:inline ml-1">Rusun</span>
           </div>
-          <div className="stat-badge hidden sm:flex">
+          <div className="stat-badge hidden md:flex">
             <Users className="w-4 h-4" />
             <span>{totalUnits} Unit</span>
           </div>
@@ -244,6 +247,7 @@ export function RusunSidebar({
   onKelurahanChange,
   onResetFilters,
   onToggleSidebar,
+  onCloseSidebar,
 }: RusunSidebarProps) {
   return (
     <>
@@ -251,8 +255,20 @@ export function RusunSidebar({
       <div
         className={`${
           isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-        } absolute lg:relative z-20 h-full w-80 lg:w-96 bg-card border-r border-border transition-transform duration-300 flex flex-col`}
+        } fixed lg:relative z-40 lg:z-20 h-[calc(100vh-4rem)] lg:h-full top-16 lg:top-0 left-0 w-[85vw] sm:w-80 lg:w-96 bg-card border-r border-border transition-transform duration-300 flex flex-col shadow-xl lg:shadow-none`}
       >
+        {/* Mobile Header with Close Button */}
+        <div className="lg:hidden flex items-center justify-between p-3 border-b border-border bg-secondary/50">
+          <span className="font-semibold text-foreground text-sm">Filter & Daftar Rusun</span>
+          <button
+            onClick={onCloseSidebar}
+            className="p-2 hover:bg-secondary rounded-lg transition-colors"
+            aria-label="Tutup sidebar"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
         {/* Filter Section */}
         <div className="p-3 border-b border-border flex-shrink-0">
           <div className="grid grid-cols-2 gap-2">
@@ -290,7 +306,7 @@ export function RusunSidebar({
         </div>
 
         {/* Rusun List */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-2 sm:space-y-3">
           {filteredRusun.length === 0 ? (
             <div className="text-center text-muted-foreground py-8">
               <p className="text-sm">Tidak ada rusun ditemukan</p>
@@ -308,14 +324,14 @@ export function RusunSidebar({
         </div>
       </div>
 
-      {/* Mobile Toggle Button (when sidebar is closed) */}
+      {/* Mobile Toggle Button (when sidebar is closed) - Positioned on right */}
       {!isOpen && (
         <button
           onClick={onToggleSidebar}
-          className="lg:hidden absolute top-4 left-4 bg-card border border-border rounded-lg p-3 shadow-lg z-[1000]"
-          aria-label="Open sidebar"
+          className="lg:hidden absolute top-4 right-4 bg-card border border-border rounded-lg p-3 shadow-lg z-[1000] hover:bg-secondary transition-colors"
+          aria-label="Buka filter"
         >
-          <Layers className="w-5 h-5" />
+          <Layers className="w-5 h-5 text-foreground" />
         </button>
       )}
     </>

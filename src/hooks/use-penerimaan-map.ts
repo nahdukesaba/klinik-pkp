@@ -143,48 +143,61 @@ export function usePenerimaanMap(filteredDesa: DesaPenerimaan[]): UsePenerimaanM
   // ============================================
 
   useEffect(() => {
-    if (typeof window === "undefined" || !mapRef.current || mapInstanceRef.current) return;
+    if (typeof window === "undefined" || mapInstanceRef.current) return;
 
     const initializeMap = async () => {
-      const L = (await import("leaflet")).default;
       const container = mapRef.current;
+      
+      // Safety check: container must exist and have dimensions
+      if (!container) {
+        return;
+      }
 
-      if (!container) return;
-
-      // Check container dimensions
-      if (container.offsetWidth === 0) {
+      // Wait for container to be rendered with proper dimensions
+      if (container.offsetWidth === 0 || container.offsetHeight === 0) {
         setTimeout(initializeMap, 100);
         return;
       }
 
-      // Clean container before init
-      type LeafletContainer = HTMLDivElement & { _leaflet_id?: number | null };
-      if ((container as LeafletContainer)._leaflet_id) {
-        (container as LeafletContainer)._leaflet_id = null;
-        container.innerHTML = "";
+      try {
+        const L = (await import("leaflet")).default;
+
+        // Double-check container is still valid after async import
+        if (!container || !mapRef.current) return;
+
+        // Clean container before init
+        type LeafletContainer = HTMLDivElement & { _leaflet_id?: number | null };
+        if ((container as LeafletContainer)._leaflet_id) {
+          (container as LeafletContainer)._leaflet_id = null;
+          container.innerHTML = "";
+        }
+
+        const map = L.map(container, {
+          center: [3.6, 98.7],
+          zoom: 11,
+          zoomControl: true,
+          dragging: true,
+          touchZoom: true,
+          scrollWheelZoom: true,
+          doubleClickZoom: true,
+        });
+
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution: "&copy; OpenStreetMap contributors",
+        }).addTo(map);
+
+        mapInstanceRef.current = map;
+        setIsMapReady(true);
+      } catch (error) {
+        console.error("Error initializing map:", error);
       }
-
-      const map = L.map(container, {
-        center: [3.6, 98.7],
-        zoom: 11,
-        zoomControl: true,
-        dragging: true,
-        touchZoom: true,
-        scrollWheelZoom: true,
-        doubleClickZoom: true,
-      });
-
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: "&copy; OpenStreetMap contributors",
-      }).addTo(map);
-
-      mapInstanceRef.current = map;
-      setIsMapReady(true);
     };
 
-    initializeMap();
+    // Start initialization with a small delay to ensure DOM is ready
+    const timeoutId = setTimeout(initializeMap, 50);
 
     return () => {
+      clearTimeout(timeoutId);
       if (mapInstanceRef.current) {
         try {
           mapInstanceRef.current.remove();

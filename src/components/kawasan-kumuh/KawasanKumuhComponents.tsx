@@ -16,7 +16,7 @@
 
 import Link from "next/link";
 
-import { ArrowLeft, Building2, Layers, MapPin, Search, Users } from "lucide-react";
+import { ArrowLeft, Building2, Layers, MapPin, Search, Users, X } from "lucide-react";
 
 import {
   Select,
@@ -159,7 +159,7 @@ export function KawasanKumuhHeader({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           {/* Title Section */}
           <div className="flex items-center gap-3">
-            <Link href="/peta" className="p-2 hover:bg-secondary rounded-lg transition-colors">
+            <Link href="/" className="p-2 hover:bg-secondary rounded-lg transition-colors">
               <ArrowLeft className="w-5 h-5" />
             </Link>
             <div>
@@ -171,7 +171,7 @@ export function KawasanKumuhHeader({
           {/* Controls Section */}
           <div className="flex flex-wrap items-center gap-2">
             {/* Search Input */}
-            <div className="relative flex-1 min-w-[350px] max-w-md">
+            <div className="relative flex-1 min-w-0 sm:min-w-[200px] md:min-w-[300px] max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <input
                 type="text"
@@ -184,7 +184,7 @@ export function KawasanKumuhHeader({
 
             {/* Region Filter */}
             <Select value={regionFilter} onValueChange={onRegionChange}>
-              <SelectTrigger className="w-40 h-10 text-sm">
+              <SelectTrigger className="w-full sm:w-40 h-10 text-sm">
                 <SelectValue placeholder="Pilih Region" />
               </SelectTrigger>
               <SelectContent>
@@ -215,9 +215,11 @@ export function KawasanKumuhHeader({
             {/* Stats Badges */}
             <div className="stat-badge">
               <Building2 className="w-4 h-4" />
-              <span>{totalKawasan} Kawasan</span>
+              <span className="hidden xs:inline">{totalKawasan}</span>
+              <span className="xs:hidden">{totalKawasan}</span>
+              <span className="hidden sm:inline ml-1">Kawasan</span>
             </div>
-            <div className="stat-badge hidden sm:flex">
+            <div className="stat-badge hidden md:flex">
               <Users className="w-4 h-4" />
               <span>{totalKK} KK</span>
             </div>
@@ -252,6 +254,7 @@ interface KawasanKumuhSidebarProps {
   filteredKawasan: KawasanKumuh[];
   selectedKawasanId: string | null;
   onKawasanClick: (kawasan: KawasanKumuh) => void;
+  onCloseSidebar?: () => void;
 }
 
 export function KawasanKumuhSidebar({
@@ -269,13 +272,26 @@ export function KawasanKumuhSidebar({
   filteredKawasan,
   selectedKawasanId,
   onKawasanClick,
+  onCloseSidebar,
 }: KawasanKumuhSidebarProps) {
   return (
     <div
       className={`${
         isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-      } absolute lg:relative z-10 h-full w-80 lg:w-80 bg-card border-r border-border transition-transform duration-300 flex flex-col overflow-hidden`}
+      } fixed lg:relative z-40 lg:z-10 h-[calc(100vh-4rem)] lg:h-full top-16 lg:top-0 left-0 w-[85vw] sm:w-80 lg:w-80 bg-card border-r border-border transition-transform duration-300 flex flex-col overflow-hidden shadow-xl lg:shadow-none`}
     >
+      {/* Mobile Header with Close Button */}
+      <div className="lg:hidden flex items-center justify-between p-3 border-b border-border bg-secondary/50">
+        <span className="font-semibold text-foreground text-sm">Filter & Daftar Kawasan</span>
+        <button
+          onClick={onCloseSidebar}
+          className="p-2 hover:bg-secondary rounded-lg transition-colors"
+          aria-label="Tutup sidebar"
+        >
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+
       {/* Filter Section - Fixed */}
       <div className="flex-shrink-0 p-3 border-b border-border bg-card">
         <div className="grid grid-cols-2 gap-2">
@@ -310,7 +326,7 @@ export function KawasanKumuhSidebar({
       </div>
 
       {/* Kawasan List - Scrollable */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-2 sm:space-y-3">
         {filteredKawasan.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground text-sm">
             Tidak ada kawasan ditemukan
@@ -336,16 +352,16 @@ export function KawasanKumuhSidebar({
 
 export function KawasanKumuhLegend() {
   return (
-    <div className="absolute bottom-6 right-6 bg-card/95 backdrop-blur-sm border border-border rounded-xl shadow-lg p-4 z-[1000] max-w-[200px]">
-      <span className="text-xs font-semibold text-foreground mb-3 flex items-center gap-2">
+    <div className="absolute bottom-4 sm:bottom-6 left-4 sm:left-auto sm:right-6 bg-card/95 backdrop-blur-sm border border-border rounded-xl shadow-lg p-3 sm:p-4 z-[1000] max-w-[180px] sm:max-w-[200px]">
+      <span className="text-xs font-semibold text-foreground mb-2 sm:mb-3 flex items-center gap-2">
         <span className="w-2 h-2 bg-primary rounded-full" />
         Status Kawasan
       </span>
-      <div className="space-y-2">
+      <div className="space-y-1.5 sm:space-y-2">
         {Object.entries(kawasanStatusColors).map(([key, value]) => (
           <div key={key} className="flex items-center gap-2 text-xs">
             <div
-              className="w-4 h-4 rounded border border-white/50 shadow-sm flex-shrink-0"
+              className="w-3 h-3 sm:w-4 sm:h-4 rounded border border-white/50 shadow-sm flex-shrink-0"
               style={{ backgroundColor: value.fill }}
             />
             <span className="text-foreground font-medium">{value.label}</span>
@@ -371,9 +387,10 @@ export function MobileSidebarToggle({ isVisible, onClick }: MobileSidebarToggleP
   return (
     <button
       onClick={onClick}
-      className="lg:hidden absolute top-4 left-4 bg-card border border-border rounded-lg p-3 shadow-lg z-[1000]"
+      className="lg:hidden absolute top-4 right-4 bg-card border border-border rounded-lg p-3 shadow-lg z-[1000] hover:bg-secondary transition-colors"
+      aria-label="Buka filter"
     >
-      <Layers className="w-5 h-5" />
+      <Layers className="w-5 h-5 text-foreground" />
     </button>
   );
 }

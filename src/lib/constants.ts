@@ -34,13 +34,13 @@ export const SERVICES = [
     image: "/service-rusun.jpg",
     title: "Sebaran Rusun",
     description: "Informasi lengkap lokasi rusun yang dibangun oleh BP3KP di berbagai wilayah Sumatera.",
-    href: "/peta/sebaran-rusun",
+    href: "/sebaran-rusun",
   },
   {
     image: "/service-kumuh.jpg",
     title: "Kawasan Kumuh",
     description: "Profil dan data kawasan kumuh beserta program penanganannya di wilayah kerja.",
-    href: "/peta/kawasan-kumuh",
+    href: "/kawasan-kumuh",
   },
   {
     image: "/service-bsps.jpg",

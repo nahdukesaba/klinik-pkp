@@ -64,10 +64,11 @@ export const buildingStepsData: BuildingStep[] = [
   },
   {
     id: "4",
-    icon: Home,
-    step: 6,
-    title: "Serah Terima",
-    description: "Pemeriksaan bangunan, Mengurus SLF, dan serah terima rumah.",
+    icon: Hammer,
+    step: 4,
+    title: "Konstruksi",
+    description:
+      "Lakukan pembangunan sesuai gambar teknis dan standar konstruksi.",
   },
   {
     id: "5",
@@ -79,10 +80,9 @@ export const buildingStepsData: BuildingStep[] = [
   },
   {
     id: "6",
-    icon: Hammer,
-    step: 4,
-    title: "Konstruksi",
-    description:
-      "Lakukan pembangunan sesuai gambar teknis dan standar konstruksi.",
+    icon: Home,
+    step: 6,
+    title: "Serah Terima",
+    description: "Pemeriksaan bangunan, Mengurus SLF, dan serah terima rumah.",
   },
 ];

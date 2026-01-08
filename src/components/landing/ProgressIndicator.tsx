@@ -17,8 +17,9 @@ export function ProgressIndicator({ totalSteps, hoveredStep }: ProgressIndicator
       <div className="inline-flex items-center gap-2 px-4 py-2 bg-card rounded-full border border-border shadow-sm">
         <div className="flex items-center gap-1.5">
           {Array.from({ length: totalSteps }).map((_, index) => {
-            const isCurrentlyHovered = hoveredStep === index;
-            const isLastStep = index === totalSteps - 1;
+            const stepNumber = index + 1;
+            const isCurrentlyHovered = hoveredStep === stepNumber;
+            const isLastStep = stepNumber === 6;
             // Only the last step (step 6) should be green when hovered
             // All other steps including step 4 should be blue (primary)
             const shouldBeGreen = isLastStep && isCurrentlyHovered;
@@ -39,7 +40,7 @@ export function ProgressIndicator({ totalSteps, hoveredStep }: ProgressIndicator
         </div>
         <span className="text-xs text-muted-foreground ml-2">
           {hoveredStep !== null
-            ? `Langkah ${hoveredStep + 1} dari ${totalSteps}`
+            ? `Langkah ${hoveredStep} dari ${totalSteps}`
             : `${totalSteps} Tahapan`}
         </span>
       </div>

@@ -96,11 +96,92 @@ export function PKPJadwalSection({
 
         {/* Filters Row */}
         <div className="flex flex-col gap-3 p-3 sm:p-4 bg-card rounded-xl border border-border">
-          {/* First row: Main filters */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:flex md:flex-wrap md:items-center gap-2 sm:gap-3">
+          {/* Mobile: stacked layout */}
+          <div className="md:hidden flex flex-col gap-3">
+            {/* Main filters */}
+            <div className="grid grid-cols-2 gap-2">
+              {/* Kabupaten Filter */}
+              <Select value={jadwalKabupatenFilter} onValueChange={setJadwalKabupatenFilter}>
+                <SelectTrigger className="w-full bg-secondary h-9 text-sm">
+                  <SelectValue placeholder="Kabupaten/Kota" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-[9999]">
+                  <SelectItem value="all">Semua Lokasi</SelectItem>
+                  {kabupatenList.filter(k => k !== "Semua Lokasi").map((kab) => (
+                    <SelectItem key={kab} value={kab}>
+                      {kab}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Year Filter */}
+              <Select value={jadwalYear} onValueChange={(v) => { setJadwalYear(v); setJadwalStartDate(""); setJadwalEndDate(""); }}>
+                <SelectTrigger className="w-full bg-secondary h-9 text-sm">
+                  <SelectValue placeholder="Tahun" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-[9999]">
+                  <SelectItem value="all">Semua Tahun</SelectItem>
+                  {jadwalYears.map((year) => (
+                    <SelectItem key={year} value={year.toString()}>
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Month Filter */}
+              <Select value={jadwalMonth} onValueChange={(v) => { setJadwalMonth(v); setJadwalStartDate(""); setJadwalEndDate(""); }}>
+                <SelectTrigger className="w-full bg-secondary h-9 text-sm">
+                  <SelectValue placeholder="Bulan" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-[9999]">
+                  <SelectItem value="all">Semua Bulan</SelectItem>
+                  {MONTHS_LIST.map((month) => (
+                    <SelectItem key={month.value} value={month.value}>
+                      {month.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Date range - Mobile */}
+            <div className="flex flex-col gap-2">
+              <span className="text-sm font-medium text-foreground">Rentang:</span>
+              <div className="flex items-center gap-2">
+                <input
+                  type="date"
+                  value={jadwalStartDate}
+                  onChange={(e) => setJadwalStartDate(e.target.value)}
+                  className="flex-1 min-w-0 px-2 py-2 bg-secondary border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                />
+                <span className="text-muted-foreground">-</span>
+                <input
+                  type="date"
+                  value={jadwalEndDate}
+                  onChange={(e) => setJadwalEndDate(e.target.value)}
+                  className="flex-1 min-w-0 px-2 py-2 bg-secondary border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                />
+              </div>
+            </div>
+
+            {/* Reset Button - Mobile */}
+            {hasActiveFilters && (
+              <button
+                onClick={resetFilters}
+                className="px-3 py-2 text-sm text-primary hover:bg-primary/10 rounded-lg transition-colors border border-primary/30"
+              >
+                Reset Filter
+              </button>
+            )}
+          </div>
+
+          {/* Desktop: single row layout */}
+          <div className="hidden md:flex md:flex-wrap md:items-center gap-3">
             {/* Kabupaten Filter */}
             <Select value={jadwalKabupatenFilter} onValueChange={setJadwalKabupatenFilter}>
-              <SelectTrigger className="w-full md:w-[160px] bg-secondary h-9 sm:h-10 text-sm">
+              <SelectTrigger className="w-[160px] bg-secondary h-10 text-sm">
                 <SelectValue placeholder="Kabupaten/Kota" />
               </SelectTrigger>
               <SelectContent className="bg-popover z-[9999]">
@@ -115,7 +196,7 @@ export function PKPJadwalSection({
 
             {/* Year Filter */}
             <Select value={jadwalYear} onValueChange={(v) => { setJadwalYear(v); setJadwalStartDate(""); setJadwalEndDate(""); }}>
-              <SelectTrigger className="w-full md:w-[120px] bg-secondary h-9 sm:h-10 text-sm">
+              <SelectTrigger className="w-[120px] bg-secondary h-10 text-sm">
                 <SelectValue placeholder="Tahun" />
               </SelectTrigger>
               <SelectContent className="bg-popover z-[9999]">
@@ -130,7 +211,7 @@ export function PKPJadwalSection({
 
             {/* Month Filter */}
             <Select value={jadwalMonth} onValueChange={(v) => { setJadwalMonth(v); setJadwalStartDate(""); setJadwalEndDate(""); }}>
-              <SelectTrigger className="w-full md:w-[140px] bg-secondary h-9 sm:h-10 text-sm">
+              <SelectTrigger className="w-[140px] bg-secondary h-10 text-sm">
                 <SelectValue placeholder="Bulan" />
               </SelectTrigger>
               <SelectContent className="bg-popover z-[9999]">
@@ -139,37 +220,34 @@ export function PKPJadwalSection({
                   <SelectItem key={month.value} value={month.value}>
                     {month.label}
                   </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          </div>
-          
-          {/* Second row: Date range and reset - responsive */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Divider */}
+            <div className="h-6 w-px bg-border" />
+
+            {/* Date Range */}
             <span className="text-sm font-medium text-foreground">Rentang:</span>
-            <div className="flex items-center gap-2 flex-1">
-              <input
-                type="date"
-                value={jadwalStartDate}
-                onChange={(e) => setJadwalStartDate(e.target.value)}
-                className="flex-1 sm:w-auto px-2 sm:px-3 py-2 bg-secondary border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                placeholder="Dari"
-              />
-              <span className="text-muted-foreground">-</span>
-              <input
-                type="date"
-                value={jadwalEndDate}
-                onChange={(e) => setJadwalEndDate(e.target.value)}
-                className="flex-1 sm:w-auto px-2 sm:px-3 py-2 bg-secondary border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                placeholder="Sampai"
-              />
-            </div>
+            <input
+              type="date"
+              value={jadwalStartDate}
+              onChange={(e) => setJadwalStartDate(e.target.value)}
+              className="w-[140px] px-3 py-2 bg-secondary border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+            <span className="text-muted-foreground">-</span>
+            <input
+              type="date"
+              value={jadwalEndDate}
+              onChange={(e) => setJadwalEndDate(e.target.value)}
+              className="w-[140px] px-3 py-2 bg-secondary border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
 
             {/* Reset Button */}
             {hasActiveFilters && (
               <button
                 onClick={resetFilters}
-                className="px-3 sm:px-4 py-2 text-sm text-primary hover:bg-primary/10 rounded-lg transition-colors border border-primary/30 whitespace-nowrap"
+                className="px-4 py-2 text-sm text-primary hover:bg-primary/10 rounded-lg transition-colors border border-primary/30"
               >
                 Reset Filter
               </button>

@@ -34,6 +34,7 @@ interface StepCardProps {
 // ============================================
 function StepCard({ item, isHovered, isAnyHovered }: StepCardProps) {
   const IconComponent = item.icon;
+  // Check if this is truly the last step (step 6 = Serah Terima)
   const isLast = item.step === 6;
   const cardOpacity = isAnyHovered && !isHovered ? "opacity-50" : "opacity-100";
   const cardScale = isHovered ? "scale-[1.02]" : "scale-100";
@@ -97,13 +98,8 @@ export default function BuildingStepsSection() {
 
   // Split steps: Row 1 = [1,2,3], Row 2 = [4,5,6]
   const firstRow = steps.slice(0, 3); // Steps 1, 2, 3
-  const secondRow = steps.slice(3, 6); // Steps 4, 5, 6
-
-  // Helper untuk cek apakah garis aktif berdasarkan hover
-  const isArrowActive = (targetStepIndex: number) => {
-    if (hoveredStep === null) return false;
-    return hoveredStep >= targetStepIndex;
-  };
+  const secondRow = steps.slice(3, 6); // Steps 4, 5, 6 (normal order)
+  const secondRowReversed = [...secondRow].reverse(); // Steps 6, 5, 4 (for desktop display)
 
   return (
     <section ref={ref} className="py-10 lg:py-12 relative overflow-hidden">
@@ -140,12 +136,12 @@ export default function BuildingStepsSection() {
                   {/* Step Card */}
                   <div
                     className="cursor-pointer"
-                    onMouseEnter={() => setHoveredStep(index)}
+                    onMouseEnter={() => setHoveredStep(item.step)}
                     onMouseLeave={() => setHoveredStep(null)}
                   >
                     <StepCard
                       item={item}
-                      isHovered={hoveredStep === index}
+                      isHovered={hoveredStep === item.step}
                       isAnyHovered={hoveredStep !== null}
                     />
                   </div>
@@ -154,7 +150,7 @@ export default function BuildingStepsSection() {
                   {index < 2 && (
                     <StepArrow
                       direction="right"
-                      isActive={isArrowActive(index + 1)}
+                      isActive={hoveredStep !== null && hoveredStep >= item.step + 1}
                       className="hidden md:flex items-center px-2"
                     />
                   )}
@@ -162,7 +158,7 @@ export default function BuildingStepsSection() {
                   {/* Mobile: vertical arrow */}
                   {index < 2 && (
                     <div className="md:hidden flex justify-center py-2">
-                      <StepArrow direction="down" isActive={isArrowActive(index + 1)} />
+                      <StepArrow direction="down" isActive={hoveredStep !== null && hoveredStep >= item.step + 1} />
                     </div>
                   )}
                 </div>
@@ -171,51 +167,61 @@ export default function BuildingStepsSection() {
 
             {/* ==================== Arrow from Step 3 to Step 4 (DOWN) ==================== */}
             <div className="hidden md:flex justify-end pr-[calc(16.67%-8px)] py-3">
-              <StepArrow direction="down" isActive={isArrowActive(3)} />
+              <StepArrow direction="down" isActive={hoveredStep !== null && hoveredStep >= 4} />
             </div>
             {/* Mobile: arrow down after step 3 */}
             <div className="md:hidden flex justify-center py-2">
-              <StepArrow direction="down" isActive={isArrowActive(3)} />
+              <StepArrow direction="down" isActive={hoveredStep !== null && hoveredStep >= 4} />
             </div>
 
-            {/* ==================== ROW 2: Steps 4→5→6 (Left to Right) ==================== */}
-            <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_auto_1fr] gap-3 md:gap-0 items-stretch">
-              {secondRow.map((item, index) => {
-                const stepIndex = index + 3; // 3, 4, 5 (representing steps 4, 5, 6)
-
-                return (
-                  <div key={item.id} className="contents">
-                    {/* Step Card */}
-                    <div
-                      className="cursor-pointer"
-                      onMouseEnter={() => setHoveredStep(stepIndex)}
-                      onMouseLeave={() => setHoveredStep(null)}
-                    >
-                      <StepCard
-                        item={item}
-                        isHovered={hoveredStep === stepIndex}
-                        isAnyHovered={hoveredStep !== null}
-                      />
-                    </div>
-
-                    {/* Arrow between cards: 4→5, 5→6 (pointing RIGHT - same direction as row 1) */}
-                    {index < 2 && (
-                      <StepArrow
-                        direction="right"
-                        isActive={isArrowActive(stepIndex + 1)}
-                        className="hidden md:flex items-center px-2"
-                      />
-                    )}
-
-                    {/* Mobile: vertical arrow */}
-                    {index < 2 && (
-                      <div className="md:hidden flex justify-center py-2">
-                        <StepArrow direction="down" isActive={isArrowActive(stepIndex + 1)} />
-                      </div>
-                    )}
+            {/* ==================== ROW 2 MOBILE: Steps 4→5→6 (normal order, vertical) ==================== */}
+            <div className="md:hidden grid grid-cols-1 gap-3">
+              {secondRow.map((item, index) => (
+                <div key={`mobile-${item.id}`}>
+                  <div
+                    className="cursor-pointer"
+                    onMouseEnter={() => setHoveredStep(item.step)}
+                    onMouseLeave={() => setHoveredStep(null)}
+                  >
+                    <StepCard
+                      item={item}
+                      isHovered={hoveredStep === item.step}
+                      isAnyHovered={hoveredStep !== null}
+                    />
                   </div>
-                );
-              })}
+                  {index < 2 && (
+                    <div className="flex justify-center py-2">
+                      <StepArrow direction="down" isActive={hoveredStep !== null && hoveredStep >= item.step + 1} />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* ==================== ROW 2 DESKTOP: Steps 6←5←4 (reversed order, horizontal left) ==================== */}
+            <div className="hidden md:grid grid-cols-[1fr_auto_1fr_auto_1fr] gap-0 items-stretch">
+              {secondRowReversed.map((item, index) => (
+                <div key={`desktop-${item.id}`} className="contents">
+                  <div
+                    className="cursor-pointer"
+                    onMouseEnter={() => setHoveredStep(item.step)}
+                    onMouseLeave={() => setHoveredStep(null)}
+                  >
+                    <StepCard
+                      item={item}
+                      isHovered={hoveredStep === item.step}
+                      isAnyHovered={hoveredStep !== null}
+                    />
+                  </div>
+                  {index < 2 && (
+                    <StepArrow
+                      direction="left"
+                      isActive={hoveredStep !== null && hoveredStep >= item.step + 1}
+                      className="flex items-center px-2"
+                    />
+                  )}
+                </div>
+              ))}
             </div>
 
             {/* Progress Indicator */}
@@ -242,6 +248,7 @@ export default function BuildingStepsSection() {
                 className="w-full h-[600px] md:h-[700px] border-0"
                 loading="lazy"
                 title="Instagram BP3KP Sumatera II"
+                allow="encrypted-media"
               />
             </div>
           </div>

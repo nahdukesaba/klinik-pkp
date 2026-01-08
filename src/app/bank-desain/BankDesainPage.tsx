@@ -105,7 +105,7 @@ export default function BankDesainPage() {
 
           {/* Search & Filter */}
           <div className="flex flex-col sm:flex-row gap-4 mb-8 animate-on-scroll">
-            <div className="relative flex-1 max-w-md">
+            <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
                 placeholder="Cari desain..."
@@ -116,7 +116,7 @@ export default function BankDesainPage() {
             </div>
 
             <Select value={activeCategory} onValueChange={setActiveCategory}>
-              <SelectTrigger className="w-[180px] bg-card">
+              <SelectTrigger className="w-full sm:w-[180px] bg-card">
                 <SelectValue placeholder="Filter Tipe" />
               </SelectTrigger>
               <SelectContent className="bg-popover">

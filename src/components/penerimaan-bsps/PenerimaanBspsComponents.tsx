@@ -20,6 +20,8 @@
 
 "use client";
 
+import { useState } from "react";
+
 import Link from "next/link";
 
 import {
@@ -36,6 +38,7 @@ import {
   X,
 } from "lucide-react";
 
+import { ProgressIndicator, StepArrow } from "@/components/landing";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -52,6 +55,8 @@ import {
   penerimaanStatusColors,
   penerimaanStatusLabels,
 } from "@/data/penerimaan-bsps";
+
+import type { LucideIcon } from "lucide-react";
 
 // ============================================
 // Types
@@ -281,19 +286,19 @@ export function BspsActiveFilters({ filterState, filterActions }: BspsActiveFilt
 }
 
 // ============================================
-// BspsLegend Component
+// BspsLegend Component - Responsive
 // ============================================
 
 export function BspsLegend() {
   return (
-    <div className="flex flex-wrap gap-4 mb-4">
+    <div className="flex flex-wrap gap-2 sm:gap-4 mb-3 sm:mb-4">
       {Object.entries(penerimaanStatusLabels).map(([key, label]) => (
-        <div key={key} className="flex items-center gap-2">
+        <div key={key} className="flex items-center gap-1.5 sm:gap-2">
           <div
-            className="w-4 h-4 rounded-full"
+            className="w-3 h-3 sm:w-4 sm:h-4 rounded-full"
             style={{ backgroundColor: penerimaanStatusColors[key].fill }}
           />
-          <span className="text-sm text-muted-foreground">{label}</span>
+          <span className="text-xs sm:text-sm text-muted-foreground">{label}</span>
         </div>
       ))}
     </div>
@@ -313,29 +318,29 @@ interface BspsMapSectionProps {
 
 export function BspsMapSection({ mapRef, filterState, filterActions, filterLists }: BspsMapSectionProps) {
   return (
-    <div className="mb-16 bg-card rounded-2xl border border-border p-6 shadow-lg animate-on-scroll">
-      <h2 className="text-2xl font-bold text-foreground mb-6 flex items-center gap-2">
-        <MapPin className="w-6 h-6 text-primary" />
-        Peta Lokasi Penerima BSPS
+    <div className="mb-12 sm:mb-16 bg-card rounded-xl sm:rounded-2xl border border-border p-4 sm:p-6 shadow-lg animate-on-scroll">
+      <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-4 sm:mb-6 flex items-center gap-2">
+        <MapPin className="w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0" />
+        <span>Peta Lokasi Penerima BSPS</span>
       </h2>
 
       {/* Filter Controls */}
-      <div className="mb-6 space-y-4">
+      <div className="mb-4 sm:mb-6 space-y-3 sm:space-y-4">
         <BspsFilterBar filterState={filterState} filterActions={filterActions} />
         <BspsFilterDropdowns filterState={filterState} filterActions={filterActions} filterLists={filterLists} />
         <BspsActiveFilters filterState={filterState} filterActions={filterActions} />
       </div>
 
-      {/* Legend */}
+      {/* Legend - Responsive */}
       <BspsLegend />
 
-      {/* Map Container */}
+      {/* Map Container - Responsive Height */}
       <div
         ref={mapRef}
-        className="w-full h-[500px] rounded-xl overflow-hidden border border-border"
+        className="w-full h-[300px] sm:h-[400px] md:h-[500px] rounded-lg sm:rounded-xl overflow-hidden border border-border"
       />
-      <p className="text-sm text-muted-foreground mt-4 text-center">
-        Klik pada area lingkaran untuk melihat detail penerima bantuan di desa tersebut
+      <p className="text-xs sm:text-sm text-muted-foreground mt-3 sm:mt-4 text-center">
+        Klik pada area lingkaran untuk melihat detail penerima bantuan
       </p>
     </div>
   );
@@ -427,29 +432,177 @@ export function BspsRequirements() {
 }
 
 // ============================================
-// BspsProcessSteps Component
+// BspsProcessSteps Component - With Interactive Steps like Landing Page
 // ============================================
 
+// Step icons mapping
+const stepIcons: Record<number, LucideIcon> = {
+  1: ClipboardList, // Pendaftaran
+  2: Search, // Verifikasi  
+  3: Users, // Seleksi
+  4: Gift, // Pencairan
+  5: FileCheck, // Pembangunan
+  6: CheckCircle, // Serah Terima
+};
+
+interface ProcessStepCardProps {
+  step: { step: number; title: string; description: string };
+  isHovered: boolean;
+  isAnyHovered: boolean;
+}
+
+function ProcessStepCard({ step, isHovered, isAnyHovered }: ProcessStepCardProps) {
+  const IconComponent = stepIcons[step.step] || ClipboardList;
+  const isLast = step.step === 6;
+  const cardOpacity = isAnyHovered && !isHovered ? "opacity-50" : "opacity-100";
+  const cardScale = isHovered ? "scale-[1.02]" : "scale-100";
+
+  return (
+    <div className={`h-full transition-all duration-300 ${cardOpacity} ${cardScale}`}>
+      <div
+        className={`flex flex-col h-full min-h-[160px] bg-card rounded-xl border p-4 shadow-md transition-all duration-300 ${
+          isHovered ? "border-primary shadow-lg shadow-primary/20" : "border-border"
+        } ${isLast && isHovered ? "ring-2 ring-green-500/50" : ""}`}
+      >
+        <div className="flex items-center gap-3 mb-3">
+          <div
+            className={`w-10 h-10 flex-shrink-0 ${
+              isLast
+                ? "bg-gradient-to-br from-green-500 to-green-600"
+                : "bg-gradient-to-br from-primary to-accent"
+            } rounded-lg flex items-center justify-center text-primary-foreground shadow-md transition-transform duration-300 ${
+              isHovered ? "scale-110" : ""
+            }`}
+          >
+            <IconComponent className="w-5 h-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <span className={`text-xs font-bold ${isLast ? "text-green-500" : "text-primary"}`}>
+              Langkah {step.step}
+            </span>
+            <h3
+              className={`text-sm font-semibold transition-colors duration-300 line-clamp-1 ${
+                isHovered ? "text-primary" : "text-foreground"
+              }`}
+            >
+              {step.title}
+            </h3>
+          </div>
+        </div>
+        <p className="text-muted-foreground text-xs leading-relaxed flex-grow line-clamp-3">
+          {step.description}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export function BspsProcessSteps() {
+  const [hoveredStep, setHoveredStep] = useState<number | null>(null);
+  const steps = bspsProcessSteps;
+
+  const firstRow = steps.slice(0, 3); // Steps 1, 2, 3
+  const secondRow = steps.slice(3, 6); // Steps 4, 5, 6 (normal order)
+  const secondRowReversed = [...secondRow].reverse(); // Steps 6, 5, 4 (for desktop display)
+
   return (
     <div id="prosedur" className="mb-16 scroll-mt-24">
       <h2 className="text-2xl font-bold text-foreground mb-8 text-center">
         Prosedur Pendaftaran
       </h2>
-      <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-        {bspsProcessSteps.map((step, index) => (
-          <div
-            key={step.step}
-            className="relative p-6 bg-card rounded-2xl border border-border text-center animate-on-scroll hover:border-primary/30 transition-colors"
-            style={{ transitionDelay: `${index * 0.1}s` }}
-          >
-            <div className="w-12 h-12 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center text-primary-foreground font-bold text-lg mx-auto mb-4">
-              {step.step}
+      
+      <div className="max-w-5xl mx-auto">
+        {/* ROW 1: Steps 1→2→3 */}
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_auto_1fr] gap-3 md:gap-0 items-stretch">
+          {firstRow.map((item, index) => (
+            <div key={item.step} className="contents">
+              <div
+                className="cursor-pointer"
+                onMouseEnter={() => setHoveredStep(item.step)}
+                onMouseLeave={() => setHoveredStep(null)}
+              >
+                <ProcessStepCard
+                  step={item}
+                  isHovered={hoveredStep === item.step}
+                  isAnyHovered={hoveredStep !== null}
+                />
+              </div>
+              {index < 2 && (
+                <StepArrow
+                  direction="right"
+                  isActive={hoveredStep !== null && hoveredStep >= item.step + 1}
+                  className="hidden md:flex items-center px-2"
+                />
+              )}
+              {index < 2 && (
+                <div className="md:hidden flex justify-center py-2">
+                  <StepArrow direction="down" isActive={hoveredStep !== null && hoveredStep >= item.step + 1} />
+                </div>
+              )}
             </div>
-            <h3 className="font-semibold text-foreground mb-2">{step.title}</h3>
-            <p className="text-sm text-muted-foreground">{step.description}</p>
-          </div>
-        ))}
+          ))}
+        </div>
+
+        {/* Arrow from Step 3 to Step 4 (DOWN) */}
+        <div className="hidden md:flex justify-end pr-[calc(16.67%-8px)] py-3">
+          <StepArrow direction="down" isActive={hoveredStep !== null && hoveredStep >= 4} />
+        </div>
+        <div className="md:hidden flex justify-center py-2">
+          <StepArrow direction="down" isActive={hoveredStep !== null && hoveredStep >= 4} />
+        </div>
+
+        {/* ROW 2 MOBILE: Steps 4→5→6 (normal order, vertical) */}
+        <div className="md:hidden grid grid-cols-1 gap-3">
+          {secondRow.map((item, index) => (
+            <div key={`mobile-${item.step}`}>
+              <div
+                className="cursor-pointer"
+                onMouseEnter={() => setHoveredStep(item.step)}
+                onMouseLeave={() => setHoveredStep(null)}
+              >
+                <ProcessStepCard
+                  step={item}
+                  isHovered={hoveredStep === item.step}
+                  isAnyHovered={hoveredStep !== null}
+                />
+              </div>
+              {index < 2 && (
+                <div className="flex justify-center py-2">
+                  <StepArrow direction="down" isActive={hoveredStep !== null && hoveredStep >= item.step + 1} />
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* ROW 2 DESKTOP: Steps 6←5←4 (reversed order, horizontal left) */}
+        <div className="hidden md:grid grid-cols-[1fr_auto_1fr_auto_1fr] gap-0 items-stretch">
+          {secondRowReversed.map((item, index) => (
+            <div key={`desktop-${item.step}`} className="contents">
+              <div
+                className="cursor-pointer"
+                onMouseEnter={() => setHoveredStep(item.step)}
+                onMouseLeave={() => setHoveredStep(null)}
+              >
+                <ProcessStepCard
+                  step={item}
+                  isHovered={hoveredStep === item.step}
+                  isAnyHovered={hoveredStep !== null}
+                />
+              </div>
+              {index < 2 && (
+                <StepArrow
+                  direction="left"
+                  isActive={hoveredStep !== null && hoveredStep >= item.step + 1}
+                  className="flex items-center px-2"
+                />
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Progress Indicator */}
+        <ProgressIndicator totalSteps={steps.length} hoveredStep={hoveredStep} />
       </div>
     </div>
   );

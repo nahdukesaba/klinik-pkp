@@ -34,7 +34,7 @@ export default function KawasanKumuhContent() {
   // Local State
   // ============================================
   const [selectedKawasan, setSelectedKawasan] = useState<KawasanKumuh | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false); // Default closed on mobile
   const mapRef = useRef<KawasanKumuhMapRef>(null);
 
   // ============================================
@@ -72,6 +72,7 @@ export default function KawasanKumuhContent() {
   // ============================================
   const handleKawasanClick = useCallback((kawasan: KawasanKumuh) => {
     setSelectedKawasan(kawasan);
+    setSidebarOpen(false); // Close sidebar on mobile when item clicked
     mapRef.current?.flyTo(kawasan.lat, kawasan.lng, 15);
   }, []);
 
@@ -109,7 +110,15 @@ export default function KawasanKumuhContent() {
         />
 
         {/* Main Content Area */}
-        <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 flex overflow-hidden relative">
+          {/* Mobile Overlay when sidebar open */}
+          {sidebarOpen && (
+            <div 
+              className="lg:hidden fixed inset-0 bg-black/50 z-30"
+              onClick={() => setSidebarOpen(false)}
+            />
+          )}
+
           {/* Sidebar */}
           <KawasanKumuhSidebar
             isOpen={sidebarOpen}
@@ -126,6 +135,7 @@ export default function KawasanKumuhContent() {
             filteredKawasan={filteredKawasan}
             selectedKawasanId={selectedKawasan?.id ?? null}
             onKawasanClick={handleKawasanClick}
+            onCloseSidebar={() => setSidebarOpen(false)}
           />
 
           {/* Map Section */}
@@ -139,7 +149,7 @@ export default function KawasanKumuhContent() {
               />
             </div>
 
-            {/* Legend */}
+            {/* Legend - Always visible on all devices */}
             <KawasanKumuhLegend />
 
             {/* Mobile Toggle */}

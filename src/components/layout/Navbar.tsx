@@ -42,11 +42,11 @@ const menuItems: MenuItem[] = [
     subItems: [
       {
         label: "Sebaran Rusun",
-        href: "/peta/sebaran-rusun",
+        href: "/sebaran-rusun",
       },
       {
         label: "Profil Kawasan Kumuh",
-        href: "/peta/kawasan-kumuh",
+        href: "/kawasan-kumuh",
       },
     ],
   },

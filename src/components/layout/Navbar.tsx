@@ -437,7 +437,7 @@ export default function Navbar() {
                 <Link
                   href="/login"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="bg-secondary text-secondary-foreground rounded-lg border border-border hover:bg-secondary/80 transition-colors ml-2"
+                  className="p-3 bg-secondary text-secondary-foreground rounded-lg border border-border hover:bg-secondary/80 transition-colors"
                   title="Login"
                 >
                   <LogIn className="w-5 h-5" />

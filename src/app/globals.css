@@ -457,3 +457,22 @@
 .animate-fade-in {
   animation: fade-in 0.3s ease-out forwards;
 }
+
+/* Date input placeholder styling */
+input[type="date"]::-webkit-datetime-edit-text,
+input[type="date"]::-webkit-datetime-edit-month-field,
+input[type="date"]::-webkit-datetime-edit-day-field,
+input[type="date"]::-webkit-datetime-edit-year-field {
+  color: hsl(var(--muted-foreground));
+}
+
+input[type="date"]:focus::-webkit-datetime-edit-text,
+input[type="date"]:focus::-webkit-datetime-edit-month-field,
+input[type="date"]:focus::-webkit-datetime-edit-day-field,
+input[type="date"]:focus::-webkit-datetime-edit-year-field {
+  color: hsl(var(--foreground));
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+}

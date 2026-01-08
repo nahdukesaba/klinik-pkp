@@ -145,7 +145,7 @@ export function PKPBeritaSection({
                       }
                     }}
                     placeholder="mm/dd/yyyy"
-                    className="w-full pl-8 pr-2 py-2 bg-secondary border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                    className="w-full pl-8 pr-2 py-2 bg-secondary border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&:not(:focus):invalid]:text-muted-foreground"
                   />
                 </div>
                 <span className="text-muted-foreground">-</span>
@@ -162,7 +162,7 @@ export function PKPBeritaSection({
                       }
                     }}
                     placeholder="mm/dd/yyyy"
-                    className="w-full pl-8 pr-2 py-2 bg-secondary border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                    className="w-full pl-8 pr-2 py-2 bg-secondary border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&:not(:focus):invalid]:text-muted-foreground"
                   />
                 </div>
               </div>

@@ -36,7 +36,7 @@ export interface UsePenerimaanMapReturn {
 
 function createDesaMarkerSvg(
   desaId: number,
-  jumlahPenerima: number,
+  alokasiUnit: number,
   fillColor: string
 ): string {
   return `
@@ -51,7 +51,7 @@ function createDesaMarkerSvg(
             stroke="white" 
             stroke-width="3" 
             filter="url(#shadow-${desaId})"/>
-      <text x="22.5" y="24" text-anchor="middle" fill="white" font-size="14" font-weight="bold">${jumlahPenerima}</text>
+      <text x="22.5" y="24" text-anchor="middle" fill="white" font-size="14" font-weight="bold">${alokasiUnit}</text>
     </svg>
   `;
 }
@@ -86,7 +86,6 @@ function createRecipientMarkerSvg(desaId: number): string {
 
 function createDesaPopupContent(desa: DesaPenerimaan, statusColor: string): string {
   const statusLabel = penerimaanStatusLabels[desa.status];
-  const sp2dCount = Math.floor(desa.jumlahPenerima * 0.8);
 
   return `
     <div style="padding: 12px; min-width: 280px; background: white; border-radius: 8px;">
@@ -94,8 +93,8 @@ function createDesaPopupContent(desa: DesaPenerimaan, statusColor: string): stri
       <div style="display: grid; gap: 8px; font-size: 13px;">
         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
           <div>
-            <span style="font-weight: 600; color: #64748b; font-size: 11px;">Kabupaten:</span>
-            <p style="color: #334155; margin: 2px 0 0 0; font-size: 12px;">${desa.kabupaten}</p>
+            <span style="font-weight: 600; color: #64748b; font-size: 11px;">Kelurahan:</span>
+            <p style="color: #334155; margin: 2px 0 0 0; font-size: 12px;">${desa.kelurahan}</p>
           </div>
           <div>
             <span style="font-weight: 600; color: #64748b; font-size: 11px;">Kecamatan:</span>
@@ -103,22 +102,12 @@ function createDesaPopupContent(desa: DesaPenerimaan, statusColor: string): stri
           </div>
         </div>
         <div>
-          <span style="font-weight: 600; color: #64748b; font-size: 11px;">Desa:</span>
-          <p style="color: #334155; margin: 2px 0 0 0; font-size: 12px;">${desa.nama}</p>
+          <span style="font-weight: 600; color: #64748b; font-size: 11px;">Kabupaten:</span>
+          <p style="color: #334155; margin: 2px 0 0 0; font-size: 12px;">${desa.kabupaten}</p>
         </div>
-        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; padding-top: 8px; border-top: 1px solid #e2e8f0;">
-          <div>
-            <span style="font-weight: 600; color: #64748b; font-size: 11px;">Alokasi Unit:</span>
-            <p style="color: #334155; margin: 2px 0 0 0; font-size: 12px; font-weight: 600;">${desa.jumlahPenerima} unit</p>
-          </div>
-          <div>
-            <span style="font-weight: 600; color: #64748b; font-size: 11px;">Total SK PPK:</span>
-            <p style="color: #334155; margin: 2px 0 0 0; font-size: 12px; font-weight: 600;">${desa.jumlahPenerima} unit</p>
-          </div>
-        </div>
-        <div>
-          <span style="font-weight: 600; color: #64748b; font-size: 11px;">SP2D:</span>
-          <p style="color: #334155; margin: 2px 0 0 0; font-size: 12px; font-weight: 600;">${sp2dCount} unit</p>
+        <div style="padding-top: 8px; border-top: 1px solid #e2e8f0;">
+          <span style="font-weight: 600; color: #64748b; font-size: 11px;">Alokasi Unit:</span>
+          <p style="color: #334155; margin: 2px 0 0 0; font-size: 12px; font-weight: 600;">${desa.alokasiUnit} unit</p>
         </div>
       </div>
       <span style="display: inline-block; margin-top: 10px; padding: 4px 12px; font-size: 11px; font-weight: 600; border-radius: 12px; color: white; background: ${statusColor};">
@@ -173,8 +162,8 @@ export function usePenerimaanMap(filteredDesa: DesaPenerimaan[]): UsePenerimaanM
         }
 
         const map = L.map(container, {
-          center: [3.6, 98.7],
-          zoom: 11,
+          center: [2.5, 99.0], // Fokus ke area Tapanuli Selatan & Padangsidimpuan
+          zoom: 8, // Zoom out untuk melihat semua kabupaten
           zoomControl: true,
           dragging: true,
           touchZoom: true,
@@ -247,7 +236,7 @@ export function usePenerimaanMap(filteredDesa: DesaPenerimaan[]): UsePenerimaanM
 
         // Center marker icon
         const centerIcon = L.divIcon({
-          html: createDesaMarkerSvg(desa.id, desa.jumlahPenerima, colors.fill),
+          html: createDesaMarkerSvg(desa.id, desa.alokasiUnit, colors.fill),
           className: "custom-marker",
           iconSize: [45, 56],
           iconAnchor: [22.5, 56],

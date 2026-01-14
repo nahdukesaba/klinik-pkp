@@ -37,6 +37,7 @@ interface PKPMapSectionProps {
   setShowFilters: (value: boolean) => void;
   searchQuery: string;
   setSearchQuery: (value: string) => void;
+  compact?: boolean; // New prop for side-by-side layout
 }
 
 export function PKPMapSection({
@@ -62,6 +63,7 @@ export function PKPMapSection({
   setShowFilters,
   searchQuery,
   setSearchQuery,
+  compact = false,
 }: PKPMapSectionProps) {
   // Initialize map on mount - hanya sekali
   useEffect(() => {
@@ -108,20 +110,27 @@ export function PKPMapSection({
     return { selesai, mendatang, total: filteredLocations.length };
   }, [filteredLocations]);
 
+  // Map height classes based on compact mode
+  const mapHeightClass = compact 
+    ? "h-[400px] sm:h-[450px] md:h-[550px] lg:h-[650px] xl:h-[750px] min-h-[400px]"
+    : "h-[350px] sm:h-[400px] md:h-[500px] lg:h-[550px] min-h-[320px]";
+
   return (
-    <section id="peta-section" className="mb-12 animate-on-scroll scroll-mt-24">
-      <div className="bg-card rounded-xl sm:rounded-2xl border border-border shadow-lg overflow-hidden">
+    <section id="peta-section" className={`${compact ? 'mb-0' : 'mb-12'} animate-on-scroll scroll-mt-24`}>
+      <div className="bg-card rounded-xl sm:rounded-2xl border border-border shadow-lg overflow-hidden h-full">
         {/* Header - More Compact */}
-        <div className="p-4 sm:p-5 border-b border-border bg-gradient-to-r from-primary/5 to-accent/5">
+        <div className={`${compact ? 'p-3 sm:p-4' : 'p-4 sm:p-5'} border-b border-border bg-gradient-to-r from-primary/5 to-accent/5`}>
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
             <div>
-              <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-foreground flex items-center gap-2">
-                <MapPin className="w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0" />
+              <h2 className={`${compact ? 'text-base sm:text-lg' : 'text-lg sm:text-xl md:text-2xl'} font-bold text-foreground flex items-center gap-2`}>
+                <MapPin className={`${compact ? 'w-4 h-4 sm:w-5 sm:h-5' : 'w-5 h-5 sm:w-6 sm:h-6'} text-primary flex-shrink-0`} />
                 <span>Peta Lokasi Sosialisasi</span>
               </h2>
-              <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-                Temukan lokasi kegiatan sosialisasi Klinik PKP
-              </p>
+              {!compact && (
+                <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                  Temukan lokasi kegiatan sosialisasi Klinik PKP
+                </p>
+              )}
             </div>
 
             {/* Stats Badges - More Compact */}
@@ -148,7 +157,7 @@ export function PKPMapSection({
             showSearch={true}
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
-            searchPlaceholder="Cari nama lokasi, kabupaten, atau kecamatan..."
+            searchPlaceholder={compact ? "Cari lokasi..." : "Cari nama lokasi, kabupaten, atau kecamatan..."}
             kabupatenFilter={kabupatenFilter}
             onKabupatenChange={setKabupatenFilter}
             kabupatenList={kabupatenList.filter(k => k !== "all")}
@@ -168,8 +177,8 @@ export function PKPMapSection({
           />
         </div>
 
-        {/* Map Container - Larger Height */}
-        <div className="relative w-full h-[350px] sm:h-[400px] md:h-[500px] lg:h-[550px] min-h-[320px] bg-gray-100">
+        {/* Map Container - Adaptive Height */}
+        <div className={`relative w-full ${mapHeightClass} bg-gray-100`}>
           <div
             id="peta-sosialisasi"
             ref={mapRef}
@@ -178,9 +187,9 @@ export function PKPMapSection({
         </div>
 
         {/* Footer with click instruction - More Compact */}
-        <div className="p-3 border-t border-border bg-secondary/20">
+        <div className="p-2 sm:p-3 border-t border-border bg-secondary/20">
           <p className="text-xs sm:text-sm text-muted-foreground text-center">
-            Klik marker untuk melihat detail lokasi • Geser dan zoom map
+            Klik marker untuk melihat detail lokasi
           </p>
         </div>
       </div>

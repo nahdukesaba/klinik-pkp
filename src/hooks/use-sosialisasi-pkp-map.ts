@@ -207,22 +207,22 @@ export function useSosialisasiPKPMap() {
           <h3 style="font-size: ${titleFontSize}; font-weight: 700; color: #111827; margin: 0 0 10px 0; padding-bottom: 8px; border-bottom: 1px solid #e5e7eb; line-height: 1.3;">${loc.name}</h3>
           
           <div style="display: flex; flex-direction: column; gap: 8px;">
-            <div style="display: flex; align-items: flex-start; gap: 8px;">
-              <svg style="width: 18px; height: 18px; flex-shrink: 0; color: #0E5B73; margin-top: 2px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-              </svg>
-              <span style="font-size: 13px; color: #374151; line-height: 1.4;">${loc.kabupaten}${loc.kecamatan ? `, ${loc.kecamatan}` : ""}${loc.kelurahan ? `, ${loc.kelurahan}` : ""}</span>
-            </div>
-            
             ${loc.alamat ? `
-            <div style="display: flex; align-items: flex-start; gap: 10px;">
+            <div style="display: flex; align-items: flex-start; gap: 8px;">
               <svg style="width: 18px; height: 18px; flex-shrink: 0; color: #0E5B73; margin-top: 2px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
               </svg>
               <span style="font-size: 13px; color: #374151; line-height: 1.4;">${loc.alamat}</span>
             </div>
             ` : ''}
+            
+            <div style="display: flex; align-items: flex-start; gap: 8px;">
+              <svg style="width: 18px; height: 18px; flex-shrink: 0; color: #0E5B73; margin-top: 2px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+              </svg>
+              <span style="font-size: 13px; color: #374151; line-height: 1.4;">${loc.kelurahan ? `${loc.kelurahan}, ` : ""}${loc.kecamatan ? `${loc.kecamatan}, ` : ""}${loc.kabupaten}</span>
+            </div>
             
             <div style="display: flex; align-items: center; gap: 10px;">
               <svg style="width: 18px; height: 18px; flex-shrink: 0; color: #0E5B73;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -393,20 +393,20 @@ export function useSosialisasiPKPMap() {
       coordinates = coordinatesOrId;
     }
     
-    // Scroll to map section
+    // Scroll to map section with full focus
     const mapSection = document.getElementById('peta-sosialisasi');
     if (mapSection) {
-      const mapContainer = mapSection.closest('section');
-      if (mapContainer) {
-        mapContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
+      // Scroll with extra offset to ensure map is fully visible
+      const yOffset = -20; // Small offset from top
+      const y = mapSection.getBoundingClientRect().top + window.pageYOffset + yOffset;
+      window.scrollTo({ top: y, behavior: 'smooth' });
     }
     
     // Wait a bit for scroll then fly to location
     setTimeout(() => {
       if (!mapInstanceRef.current) return;
       
-      mapInstanceRef.current.flyTo(coordinates, 14, {
+      mapInstanceRef.current.flyTo(coordinates, 16, {
         duration: 1.5,
       });
       

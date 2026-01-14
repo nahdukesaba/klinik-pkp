@@ -70,13 +70,8 @@ function createPopupContent(rusun: RusunData): string {
           <div><strong style="color: #1e293b;">Jumlah Tower:</strong> ${rusun.tower}</div>
           <div><strong style="color: #1e293b;">Jumlah Lantai:</strong> ${rusun.floors}</div>
           <div><strong style="color: #1e293b;">Tipe:</strong> ${rusun.type}</div>
-          <div><strong style="color: #1e293b;">Tahun Pembangunan:</strong> ${rusun.yearBuilt}</div>
-          <div><strong style="color: #1e293b;">Tahun Serah Terima:</strong> ${rusun.yearHandover}</div>
-          <div><strong style="color: #1e293b;">Unit Terisi:</strong> ${rusun.unitsFilled} / ${rusun.units}</div>
+          <div><strong style="color: #1e293b;">Tahun Diberikan:</strong> ${rusun.yearGiven}</div>
         </div>
-        <p style="margin-top: 8px;">
-          <strong style="color: #1e293b;">Kontraktor:</strong> ${rusun.contractor}
-        </p>
       </div>
     </div>
   `;

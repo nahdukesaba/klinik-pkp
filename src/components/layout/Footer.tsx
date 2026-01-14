@@ -88,18 +88,18 @@ export default function Footer() {
               </li>
               <li>
                 <a
-                  href="tel:+6261-1234567"
+                  href="tel:+62618003312"
                   className="flex items-start gap-3 text-sm text-muted-foreground hover:text-primary transition-colors"
                 >
                   <Phone className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                  <span>(061) 123-4567</span>
+                  <span>(061) 80033120</span>
                 </a>
               </li>
               <li>
                 <div className="flex items-start gap-3 text-sm text-muted-foreground">
                   <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
                   <span>
-                    Jl. Jendral Besar A.H Nasution No. 13, Medan, Sumatera Utara
+                    Jl. Suluh No.99, Sidorejo Hilir, Kec. Medan Tembung, Kota Medan, Sumatera Utara 20222
                   </span>
                 </div>
               </li>

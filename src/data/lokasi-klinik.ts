@@ -20,9 +20,9 @@ export interface KlinikData {
 
 export const klinikData: KlinikData = {
   name: "Klinik PKP BP3KP Sumatera II",
-  address: "Jl. Karya Rakyat No. 123, Medan, Sumatera Utara",
+  address: "Jl. Suluh No.99, Sidorejo Hilir, Kec. Medan Tembung, Kota Medan, Sumatera Utara 20222",
   coordinates: [3.5952, 98.6722],
-  phone: "(061) 123-4567",
+  phone: "(061) 80033120",
   email: "klinikpkp@bp3kp.go.id",
   operationalHours: [
     { day: "Senin - Kamis", hours: "07.30 - 16.00 WIB" },
@@ -38,13 +38,16 @@ export const klinikData: KlinikData = {
 };
 
 export const contactInfo = {
-  phone: "+62611234567",
+  phone: "+6261800033120",
   email: "info@bp3kp-sumut2.go.id",
-  whatsapp: "62611234567",
+  whatsapp: "6261800033120",
   address: {
-    street: "Jl. Karya Rakyat No. 123",
-    city: "Medan",
+    street: "Jl. Suluh No.99",
+    kelurahan: "Sidorejo Hilir",
+    kecamatan: "Medan Tembung",
+    city: "Kota Medan",
     province: "Sumatera Utara",
+    postalCode: "20222",
     country: "Indonesia",
   },
   googleMapsQuery: "3.5952,98.6722",

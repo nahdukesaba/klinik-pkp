@@ -1,6 +1,8 @@
 /**
  * Penerimaan BSPS Data
  * Data untuk halaman Penerimaan BSPS
+ * 
+ * Data real penerima BSPS di wilayah Sumatera Utara
  */
 
 export interface PenerimaBsps {
@@ -15,80 +17,137 @@ export interface DesaPenerimaan {
   kelurahan: string;
   kecamatan: string;
   kabupaten: string;
-  jumlahPenerima: number;
+  alokasiUnit: number;
   coordinates: [number, number];
   status: "selesai" | "proses" | "rencana";
   penerimaList: PenerimaBsps[];
 }
 
+// Data real penerima BSPS (updated from peta-penerima-bsps)
 export const desaPenerimaanData: DesaPenerimaan[] = [
+  // ==================== TAPANULI SELATAN ====================
   {
     id: 1,
-    nama: "Tanjung Rejo",
-    kelurahan: "Tanjung Rejo",
-    kecamatan: "Percut Sei Tuan",
-    kabupaten: "Deli Serdang",
-    jumlahPenerima: 25,
-    coordinates: [3.6123, 98.7456],
+    nama: "Tanjung Dolok",
+    kelurahan: "Tanjung Dolok",
+    kecamatan: "Marancar",
+    kabupaten: "Kab. Tapanuli Selatan",
+    alokasiUnit: 10,
+    coordinates: [1.5167050403142495, 99.16664798620452],
     status: "selesai",
-    penerimaList: [
-      {
-        nama: "Ahmad Sulaiman",
-        alamat: "Dusun I",
-        coordinates: [3.612, 98.745],
-      },
-      { nama: "Siti Aminah", alamat: "Dusun II", coordinates: [3.6125, 98.7458] },
-      { nama: "Budi Santoso", alamat: "Dusun III", coordinates: [3.6128, 98.7462] },
-    ],
+    penerimaList: [],
   },
   {
     id: 2,
-    nama: "Medan Krio",
-    kelurahan: "Medan Krio",
-    kecamatan: "Sunggal",
-    kabupaten: "Deli Serdang",
-    jumlahPenerima: 18,
-    coordinates: [3.5789, 98.6234],
-    status: "proses",
-    penerimaList: [
-      { nama: "Dewi Lestari", alamat: "Dusun I", coordinates: [3.5785, 98.623] },
-      { nama: "Eko Prasetyo", alamat: "Dusun II", coordinates: [3.5792, 98.6238] },
-    ],
+    nama: "Simaninggir",
+    kelurahan: "Simaninggir",
+    kecamatan: "Marancar",
+    kabupaten: "Kab. Tapanuli Selatan",
+    alokasiUnit: 10,
+    coordinates: [1.5978317515969158, 99.28030584647558],
+    status: "selesai",
+    penerimaList: [],
   },
   {
     id: 3,
-    nama: "Bandar Khalipah",
-    kelurahan: "Bandar Khalipah",
-    kecamatan: "Percut Sei Tuan",
-    kabupaten: "Deli Serdang",
-    jumlahPenerima: 32,
-    coordinates: [3.6345, 98.7789],
-    status: "selesai",
-    penerimaList: [
-      {
-        nama: "Rahmat Hidayat",
-        alamat: "Dusun I",
-        coordinates: [3.634, 98.7785],
-      },
-      { nama: "Nurul Aini", alamat: "Dusun II", coordinates: [3.6348, 98.7792] },
-    ],
+    nama: "Huraba",
+    kelurahan: "Huraba",
+    kecamatan: "Marancar",
+    kabupaten: "Kab. Tapanuli Selatan",
+    alokasiUnit: 10,
+    coordinates: [1.4902693569964154, 99.11895553532365],
+    status: "proses",
+    penerimaList: [],
   },
   {
     id: 4,
-    nama: "Padang Bulan",
-    kelurahan: "Padang Bulan",
-    kecamatan: "Medan Baru",
-    kabupaten: "Kota Medan",
-    jumlahPenerima: 15,
-    coordinates: [3.5678, 98.6543],
+    nama: "Marancar Hulu",
+    kelurahan: "Marancar Hulu",
+    kecamatan: "Marancar",
+    kabupaten: "Kab. Tapanuli Selatan",
+    alokasiUnit: 10,
+    coordinates: [1.5255969098295838, 99.15822610555627],
+    status: "proses",
+    penerimaList: [],
+  },
+  {
+    id: 5,
+    nama: "Paran Padang",
+    kelurahan: "Paran Padang",
+    kecamatan: "Sipirok",
+    kabupaten: "Kab. Tapanuli Selatan",
+    alokasiUnit: 10,
+    coordinates: [1.6041056779107654, 99.29363660710722],
     status: "rencana",
-    penerimaList: [
-      {
-        nama: "Joko Widodo",
-        alamat: "Lingkungan I",
-        coordinates: [3.5675, 98.654],
-      },
-    ],
+    penerimaList: [],
+  },
+  // ==================== KOTA PADANGSIDIMPUAN ====================
+  {
+    id: 6,
+    nama: "Simasom",
+    kelurahan: "Simasom",
+    kecamatan: "Padangsidimpuan Angkola Julu",
+    kabupaten: "Kota Padangsidimpuan",
+    alokasiUnit: 11,
+    coordinates: [1.4625567281827179, 99.26335369960111],
+    status: "selesai",
+    penerimaList: [],
+  },
+  {
+    id: 7,
+    nama: "Ujunggurap",
+    kelurahan: "Ujunggurap",
+    kecamatan: "Padangsidimpuan Batunadua",
+    kabupaten: "Kota Padangsidimpuan",
+    alokasiUnit: 18,
+    coordinates: [1.4017035050080835, 99.3005129541393],
+    status: "selesai",
+    penerimaList: [],
+  },
+  // ==================== LANGKAT ====================
+  {
+    id: 8,
+    nama: "Pekan Sawah",
+    kelurahan: "Pekan Sawah",
+    kecamatan: "Sei Bingai",
+    kabupaten: "Kab. Langkat",
+    alokasiUnit: 10,
+    coordinates: [3.425691414768961, 98.4919237164834],
+    status: "selesai",
+    penerimaList: [],
+  },
+  {
+    id: 9,
+    nama: "Tanjung Gunung",
+    kelurahan: "Tanjung Gunung",
+    kecamatan: "Sei Bingai",
+    kabupaten: "Kab. Langkat",
+    alokasiUnit: 10,
+    coordinates: [3.365480772955799, 98.48768066878638],
+    status: "proses",
+    penerimaList: [],
+  },
+  {
+    id: 10,
+    nama: "Simpang Kuta Buluh",
+    kelurahan: "Simpang Kuta Buluh",
+    kecamatan: "Sei Bingai",
+    kabupaten: "Kab. Langkat",
+    alokasiUnit: 10,
+    coordinates: [3.424260749288357, 98.43379243913056],
+    status: "proses",
+    penerimaList: [],
+  },
+  {
+    id: 11,
+    nama: "Suka Rakyat",
+    kelurahan: "Suka Rakyat",
+    kecamatan: "Bahorok",
+    kabupaten: "Kab. Langkat",
+    alokasiUnit: 10,
+    coordinates: [3.542959838597214, 98.22579160226147],
+    status: "rencana",
+    penerimaList: [],
   },
 ];
 

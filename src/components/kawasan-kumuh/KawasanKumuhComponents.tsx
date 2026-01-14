@@ -9,7 +9,6 @@
  * - KawasanKumuhSidebar: Sidebar dengan filter lokasi dan list kawasan
  * - KawasanKumuhLegend: Legend status warna kawasan
  * - KawasanCard: Card individual untuk setiap kawasan
- * - FilterSelect: Reusable dropdown filter
  */
 
 "use client";
@@ -18,6 +17,7 @@ import Link from "next/link";
 
 import { ArrowLeft, Building2, Layers, MapPin, Search, Users, X } from "lucide-react";
 
+import { SearchableFilterSelect } from "@/components/shared";
 import {
   Select,
   SelectContent,
@@ -42,44 +42,6 @@ const STATUS_OPTIONS: FilterOption[] = [
   { value: "sedang", label: "Kumuh Sedang" },
   { value: "ringan", label: "Kumuh Ringan" },
 ];
-
-// ============================================
-// FilterSelect Component (Reusable)
-// ============================================
-
-interface FilterSelectProps {
-  value: string;
-  onValueChange: (value: string) => void;
-  placeholder: string;
-  options: string[];
-  allLabel?: string;
-  className?: string;
-}
-
-export function FilterSelect({
-  value,
-  onValueChange,
-  placeholder,
-  options,
-  allLabel = "Semua",
-  className = "w-full h-9 text-xs",
-}: FilterSelectProps) {
-  return (
-    <Select value={value} onValueChange={onValueChange}>
-      <SelectTrigger className={className}>
-        <SelectValue placeholder={placeholder} />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="all">{allLabel}</SelectItem>
-        {options.map((option) => (
-          <SelectItem key={option} value={option}>
-            {option}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  );
-}
 
 // ============================================
 // KawasanCard Component
@@ -295,26 +257,31 @@ export function KawasanKumuhSidebar({
       {/* Filter Section - Fixed */}
       <div className="flex-shrink-0 p-3 border-b border-border bg-card">
         <div className="grid grid-cols-2 gap-2">
-          <FilterSelect
+          <SearchableFilterSelect
             value={kabupatenFilter}
             onValueChange={onKabupatenChange}
-            placeholder="Semua Kab/Kota"
+            placeholder="Kab/Kota"
+            searchPlaceholder="Cari kabupaten..."
             options={kabupatenList}
             allLabel="Semua Kab/Kota"
           />
-          <FilterSelect
+          <SearchableFilterSelect
             value={kecamatanFilter}
             onValueChange={onKecamatanChange}
-            placeholder="Semua Kec"
+            placeholder="Kecamatan"
+            searchPlaceholder="Cari kecamatan..."
             options={kecamatanList}
-            allLabel="Semua Kec"
+            allLabel="Semua Kecamatan"
+            disabled={kabupatenFilter === "all" && kecamatanList.length === 0}
           />
-          <FilterSelect
+          <SearchableFilterSelect
             value={kelurahanFilter}
             onValueChange={onKelurahanChange}
-            placeholder="Semua Kelurahan"
+            placeholder="Kelurahan"
+            searchPlaceholder="Cari kelurahan..."
             options={kelurahanList}
             allLabel="Semua Kelurahan"
+            disabled={kecamatanFilter === "all" && kelurahanList.length === 0}
           />
           <button
             onClick={onResetFilters}

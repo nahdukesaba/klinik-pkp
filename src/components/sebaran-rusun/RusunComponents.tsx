@@ -5,6 +5,7 @@ import { RefObject } from "react";
 import { ArrowLeft, Building2, Layers, MapPin, Search, Users, X } from "lucide-react";
 
 import { Navbar } from "@/components/layout";
+import { SearchableFilterSelect } from "@/components/shared";
 import {
   Select,
   SelectContent,
@@ -50,14 +51,6 @@ interface RusunSidebarProps {
   onResetFilters: () => void;
   onToggleSidebar: () => void;
   onCloseSidebar?: () => void;
-}
-
-interface FilterSelectProps {
-  value: string;
-  onValueChange: (value: string) => void;
-  placeholder: string;
-  allLabel: string;
-  options: string[];
 }
 
 interface RusunCardProps {
@@ -178,33 +171,6 @@ export function RusunHeader({
 }
 
 // ============================================
-// Filter Select Component (Reusable)
-// ============================================
-function FilterSelect({
-  value,
-  onValueChange,
-  placeholder,
-  allLabel,
-  options,
-}: FilterSelectProps) {
-  return (
-    <Select value={value} onValueChange={onValueChange}>
-      <SelectTrigger className="w-full h-9 text-xs">
-        <SelectValue placeholder={placeholder} />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="all">{allLabel}</SelectItem>
-        {options.map((option) => (
-          <SelectItem key={option} value={option}>
-            {option}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  );
-}
-
-// ============================================
 // Rusun Card Component
 // ============================================
 function RusunCard({ rusun, isSelected, onClick }: RusunCardProps) {
@@ -272,28 +238,33 @@ export function RusunSidebar({
         {/* Filter Section */}
         <div className="p-3 border-b border-border flex-shrink-0">
           <div className="grid grid-cols-2 gap-2">
-            <FilterSelect
+            <SearchableFilterSelect
               value={kabupatenFilter}
               onValueChange={onKabupatenChange}
               placeholder="Kab/Kota"
+              searchPlaceholder="Cari kabupaten..."
               allLabel="Semua Kab/Kota"
               options={kabupatenList}
             />
 
-            <FilterSelect
+            <SearchableFilterSelect
               value={kecamatanFilter}
               onValueChange={onKecamatanChange}
               placeholder="Kecamatan"
+              searchPlaceholder="Cari kecamatan..."
               allLabel="Semua Kecamatan"
               options={kecamatanList}
+              disabled={kabupatenFilter === "all" && kecamatanList.length === 0}
             />
 
-            <FilterSelect
+            <SearchableFilterSelect
               value={kelurahanFilter}
               onValueChange={onKelurahanChange}
               placeholder="Kelurahan"
+              searchPlaceholder="Cari kelurahan..."
               allLabel="Semua Kelurahan"
               options={kelurahanList}
+              disabled={kecamatanFilter === "all" && kelurahanList.length === 0}
             />
 
             <button

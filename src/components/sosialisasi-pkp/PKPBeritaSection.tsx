@@ -131,9 +131,9 @@ export function PKPBeritaSection({
             {/* Date Range - Mobile */}
             <div className="flex flex-col gap-2">
               <span className="text-sm font-medium text-foreground">Rentang:</span>
-              <div className="flex items-center gap-2">
-                <div className="relative flex-1">
-                  <Calendar className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none z-10" />
+              <div className="flex items-center gap-1.5">
+                <div className="relative flex-1 min-w-0">
+                  <Calendar className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none z-10" />
                   <input
                     type="date"
                     value={beritaStartDate}
@@ -145,12 +145,12 @@ export function PKPBeritaSection({
                       }
                     }}
                     placeholder="mm/dd/yyyy"
-                    className="w-full pl-8 pr-2 py-2 bg-secondary border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&:not(:focus):invalid]:text-muted-foreground"
+                    className="w-full pl-7 pr-1 py-2 bg-secondary border border-border rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-primary/50 [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&:not(:focus):invalid]:text-muted-foreground"
                   />
                 </div>
-                <span className="text-muted-foreground">-</span>
-                <div className="relative flex-1">
-                  <Calendar className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none z-10" />
+                <span className="text-muted-foreground text-xs flex-shrink-0">-</span>
+                <div className="relative flex-1 min-w-0">
+                  <Calendar className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none z-10" />
                   <input
                     type="date"
                     value={beritaEndDate}
@@ -162,7 +162,7 @@ export function PKPBeritaSection({
                       }
                     }}
                     placeholder="mm/dd/yyyy"
-                    className="w-full pl-8 pr-2 py-2 bg-secondary border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&:not(:focus):invalid]:text-muted-foreground"
+                    className="w-full pl-7 pr-1 py-2 bg-secondary border border-border rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-primary/50 [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&:not(:focus):invalid]:text-muted-foreground"
                   />
                 </div>
               </div>

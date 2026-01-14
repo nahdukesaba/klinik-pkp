@@ -10,7 +10,6 @@ export type { KawasanKumuhMapRef } from "./KawasanKumuhMap";
 
 // UI Components
 export {
-  FilterSelect,
   KawasanCard,
   KawasanKumuhHeader,
   KawasanKumuhSidebar,

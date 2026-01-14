@@ -73,7 +73,6 @@ const menuItems: MenuItem[] = [
       { label: "Kontak", href: "/informasi/kontak" },
       { label: "FAQ", href: "/informasi/faq" },
       { label: "Bahan Bangunan", href: "/informasi/bahan-bangunan" },
-      { label: "Kegiatan KRS", href: "/informasi/kegiatan-krs" },
       { label: "Perizinan", href: "/informasi/perizinan" },
       { label: "Peraturan", href: "/informasi/peraturan" },
     ],

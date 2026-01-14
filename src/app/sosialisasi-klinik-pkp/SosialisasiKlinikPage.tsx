@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 
-import { BookOpen } from "lucide-react";
+import { ArrowDown, BookOpen, Calendar, Newspaper } from "lucide-react";
 import "./sosialisasi.css";
 
 import { Footer, Navbar } from "@/components/layout";
@@ -16,6 +16,42 @@ import {
   useSosialisasiPKPBerita,
   useScrollAnimation,
 } from "@/hooks";
+
+// ============================================
+// Navigation Button Component (Reusable)
+// ============================================
+interface NavButtonProps {
+  targetId: string;
+  icon: React.ReactNode;
+  label: string;
+  sublabel?: string;
+  variant?: "primary" | "secondary";
+}
+
+function NavButton({ targetId, icon, label, sublabel, variant = "secondary" }: NavButtonProps) {
+  const handleClick = () => {
+    const element = document.getElementById(targetId);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
+  const baseClasses = "group flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 border";
+  const variantClasses = variant === "primary"
+    ? "bg-primary text-primary-foreground border-primary hover:bg-primary/90 shadow-lg hover:shadow-xl"
+    : "bg-card text-foreground border-border hover:border-primary/50 hover:bg-primary/5";
+
+  return (
+    <button onClick={handleClick} className={`${baseClasses} ${variantClasses}`}>
+      {icon}
+      <span className="flex flex-col items-start">
+        <span>{label}</span>
+        {sublabel && <span className="text-xs opacity-75">{sublabel}</span>}
+      </span>
+      <ArrowDown className="w-4 h-4 group-hover:translate-y-0.5 transition-transform" />
+    </button>
+  );
+}
 
 function SosialisasiKlinikPKPContent() {
   const ref = useScrollAnimation();
@@ -44,7 +80,7 @@ function SosialisasiKlinikPKPContent() {
 
         <div className="container mx-auto px-4">
           {/* Header */}
-          <div className="text-center mb-12 animate-on-scroll">
+          <div className="text-center mb-8 animate-on-scroll">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-full text-sm font-medium mb-4 border border-primary/20">
               <BookOpen className="w-4 h-4" />
               <span>Sosialisasi</span>
@@ -52,82 +88,100 @@ function SosialisasiKlinikPKPContent() {
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4">
               Sosialisasi Klinik PKP
             </h1>
-            <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
+            <p className="text-muted-foreground max-w-2xl mx-auto text-lg mb-6">
               Informasi kegiatan sosialisasi dan edukasi terkait perumahan dan kawasan permukiman di wilayah Sumatera
             </p>
+
+            {/* Quick Navigation Buttons */}
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <NavButton
+                targetId="berita-section"
+                icon={<Newspaper className="w-4 h-4" />}
+                label="Berita Sosialisasi"
+                variant="primary"
+              />
+            </div>
           </div>
 
-          {/* Map Section */}
-          <PKPMapSection
-            mapRef={mapLogic.mapRef}
-            filteredLocations={mapLogic.filteredMapLocations}
-            kabupatenFilter={mapLogic.mapKabupatenFilter}
-            setKabupatenFilter={mapLogic.setMapKabupatenFilter}
-            kecamatanFilter={mapLogic.mapKecamatanFilter}
-            setKecamatanFilter={mapLogic.setMapKecamatanFilter}
-            kelurahanFilter={mapLogic.mapKelurahanFilter}
-            setKelurahanFilter={mapLogic.setMapKelurahanFilter}
-            statusFilter={mapLogic.mapStatusFilter}
-            setStatusFilter={mapLogic.setMapStatusFilter}
-            kabupatenList={mapLogic.mapKabupatenList}
-            kecamatanList={mapLogic.mapKecamatanList}
-            kelurahanList={mapLogic.mapKelurahanList}
-            initializeMap={mapLogic.initializeMap}
-            cleanupMap={mapLogic.cleanupMap}
-            updateMarkers={mapLogic.updateMarkers}
-            mapReady={mapLogic.mapReady}
-            onImageClick={handleImageClick}
-            showFilters={mapLogic.mapShowFilters}
-            setShowFilters={mapLogic.setMapShowFilters}
-            searchQuery={mapLogic.mapSearchQuery}
-            setSearchQuery={mapLogic.setMapSearchQuery}
-          />
+          {/* Map + Jadwal Side by Side on Desktop */}
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-12">
+            {/* Map Section - Larger (3/5) */}
+            <div className="lg:col-span-3 lg:sticky lg:top-24 lg:self-start">
+              <PKPMapSection
+                mapRef={mapLogic.mapRef}
+                filteredLocations={mapLogic.filteredMapLocations}
+                kabupatenFilter={mapLogic.mapKabupatenFilter}
+                setKabupatenFilter={mapLogic.setMapKabupatenFilter}
+                kecamatanFilter={mapLogic.mapKecamatanFilter}
+                setKecamatanFilter={mapLogic.setMapKecamatanFilter}
+                kelurahanFilter={mapLogic.mapKelurahanFilter}
+                setKelurahanFilter={mapLogic.setMapKelurahanFilter}
+                statusFilter={mapLogic.mapStatusFilter}
+                setStatusFilter={mapLogic.setMapStatusFilter}
+                kabupatenList={mapLogic.mapKabupatenList}
+                kecamatanList={mapLogic.mapKecamatanList}
+                kelurahanList={mapLogic.mapKelurahanList}
+                initializeMap={mapLogic.initializeMap}
+                cleanupMap={mapLogic.cleanupMap}
+                updateMarkers={mapLogic.updateMarkers}
+                mapReady={mapLogic.mapReady}
+                onImageClick={handleImageClick}
+                showFilters={mapLogic.mapShowFilters}
+                setShowFilters={mapLogic.setMapShowFilters}
+                searchQuery={mapLogic.mapSearchQuery}
+                setSearchQuery={mapLogic.setMapSearchQuery}
+                compact={true}
+              />
+            </div>
 
-          {/* Jadwal Section */}
-          <PKPJadwalSection
-            jadwalYear={jadwalLogic.jadwalYear}
-            setJadwalYear={jadwalLogic.setJadwalYear}
-            jadwalMonth={jadwalLogic.jadwalMonth}
-            setJadwalMonth={jadwalLogic.setJadwalMonth}
-            jadwalStartDate={jadwalLogic.jadwalStartDate}
-            setJadwalStartDate={jadwalLogic.setJadwalStartDate}
-            jadwalEndDate={jadwalLogic.jadwalEndDate}
-            setJadwalEndDate={jadwalLogic.setJadwalEndDate}
-            jadwalSearch={jadwalLogic.jadwalSearch}
-            setJadwalSearch={jadwalLogic.setJadwalSearch}
-            jadwalKabupatenFilter={jadwalLogic.jadwalKabupatenFilter}
-            setJadwalKabupatenFilter={jadwalLogic.setJadwalKabupatenFilter}
-            jadwalPage={jadwalLogic.jadwalPage}
-            setJadwalPage={jadwalLogic.setJadwalPage}
-            jadwalYears={jadwalLogic.jadwalYears}
-            paginatedJadwal={jadwalLogic.paginatedJadwal}
-            totalPages={jadwalLogic.totalJadwalPages}
-            totalResults={jadwalLogic.filteredJadwal.length}
-            kabupatenList={jadwalLogic.kabupatenList}
-            resetFilters={jadwalLogic.resetFilters}
-            hasActiveFilters={jadwalLogic.hasActiveFilters}
-            onCardClick={mapLogic.flyToLocation}
-          />
+            {/* Jadwal Section - Scrollable (2/5) */}
+            <div id="jadwal-section" className="lg:col-span-2 scroll-mt-24">
+              <PKPJadwalSection
+                jadwalYear={jadwalLogic.jadwalYear}
+                setJadwalYear={jadwalLogic.setJadwalYear}
+                jadwalMonth={jadwalLogic.jadwalMonth}
+                setJadwalMonth={jadwalLogic.setJadwalMonth}
+                jadwalStartDate={jadwalLogic.jadwalStartDate}
+                setJadwalStartDate={jadwalLogic.setJadwalStartDate}
+                jadwalEndDate={jadwalLogic.jadwalEndDate}
+                setJadwalEndDate={jadwalLogic.setJadwalEndDate}
+                jadwalSearch={jadwalLogic.jadwalSearch}
+                setJadwalSearch={jadwalLogic.setJadwalSearch}
+                jadwalKabupatenFilter={jadwalLogic.jadwalKabupatenFilter}
+                setJadwalKabupatenFilter={jadwalLogic.setJadwalKabupatenFilter}
+                jadwalYears={jadwalLogic.jadwalYears}
+                filteredJadwal={jadwalLogic.filteredJadwal}
+                totalResults={jadwalLogic.filteredJadwal.length}
+                kabupatenList={jadwalLogic.kabupatenList}
+                resetFilters={jadwalLogic.resetFilters}
+                hasActiveFilters={jadwalLogic.hasActiveFilters}
+                onCardClick={mapLogic.flyToLocation}
+                compact={true}
+              />
+            </div>
+          </div>
 
-          {/* Berita Section */}
-          <PKPBeritaSection
-            beritaYear={beritaLogic.beritaYear}
-            setBeritaYear={beritaLogic.setBeritaYear}
-            beritaMonth={beritaLogic.beritaMonth}
-            setBeritaMonth={beritaLogic.setBeritaMonth}
-            beritaStartDate={beritaLogic.beritaStartDate}
-            setBeritaStartDate={beritaLogic.setBeritaStartDate}
-            beritaEndDate={beritaLogic.beritaEndDate}
-            setBeritaEndDate={beritaLogic.setBeritaEndDate}
-            beritaSearch={beritaLogic.beritaSearch}
-            setBeritaSearch={beritaLogic.setBeritaSearch}
-            beritaYears={beritaLogic.beritaYears}
-            filteredBerita={beritaLogic.filteredBerita}
-            resetFilters={beritaLogic.resetFilters}
-            hasActiveFilters={beritaLogic.hasActiveFilters}
-            onImageClick={handleImageClick}
-            onViewOnMap={mapLogic.flyToLocation}
-          />
+          {/* Berita Section - Full Width */}
+          <div id="berita-section" className="scroll-mt-24">
+            <PKPBeritaSection
+              beritaYear={beritaLogic.beritaYear}
+              setBeritaYear={beritaLogic.setBeritaYear}
+              beritaMonth={beritaLogic.beritaMonth}
+              setBeritaMonth={beritaLogic.setBeritaMonth}
+              beritaStartDate={beritaLogic.beritaStartDate}
+              setBeritaStartDate={beritaLogic.setBeritaStartDate}
+              beritaEndDate={beritaLogic.beritaEndDate}
+              setBeritaEndDate={beritaLogic.setBeritaEndDate}
+              beritaSearch={beritaLogic.beritaSearch}
+              setBeritaSearch={beritaLogic.setBeritaSearch}
+              beritaYears={beritaLogic.beritaYears}
+              filteredBerita={beritaLogic.filteredBerita}
+              resetFilters={beritaLogic.resetFilters}
+              hasActiveFilters={beritaLogic.hasActiveFilters}
+              onImageClick={handleImageClick}
+              onViewOnMap={mapLogic.flyToLocation}
+            />
+          </div>
 
           <Footer />
         </div>

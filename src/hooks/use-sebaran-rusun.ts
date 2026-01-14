@@ -53,7 +53,7 @@ export interface UseSebaranRusunReturn {
 // ============================================
 // Constants
 // ============================================
-const DEFAULT_REGION = "medan";
+const DEFAULT_REGION = "sumatera-utara";
 const ALL_FILTER = "all";
 
 // ============================================
@@ -107,7 +107,7 @@ export function useSebaranRusun(): UseSebaranRusunReturn {
       // Region filter
       const matchesRegion =
         regionFilter === "sumatera-utara" ||
-        (regionFilter === "medan" && rusun.kabupaten === "Medan");
+        (regionFilter === "medan" && rusun.kabupaten === "Kota Medan");
 
       // Search filter
       const searchLower = searchQuery.toLowerCase();

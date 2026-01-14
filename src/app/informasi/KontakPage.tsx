@@ -61,7 +61,7 @@ export default function KontakPage() {
                 Telepon
               </h3>
               <p className="text-primary font-semibold text-lg mb-2">
-                (061) 123-4567
+                (061) 80033120
               </p>
               <p className="text-muted-foreground text-sm">
                 Senin - Jumat, 08:00 - 16:00 WIB
@@ -111,7 +111,7 @@ export default function KontakPage() {
                 WhatsApp
               </h3>
               <p className="text-green-500 font-semibold text-lg mb-2">
-                +62 61 123-4567
+                +62 61 80033120
               </p>
               <p className="text-muted-foreground text-sm">
                 Chat langsung dengan tim kami

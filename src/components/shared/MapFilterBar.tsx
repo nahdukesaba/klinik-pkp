@@ -1,8 +1,10 @@
 "use client";
 
+import { useMemo } from "react";
 import { Search } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
+import { SearchableSelect, stringsToOptions } from "@/components/ui/searchable-select";
 import {
   Select,
   SelectContent,
@@ -55,7 +57,7 @@ interface MapFilterBarProps {
 
 // ============================================
 // MapFilterBar Component
-// Reusable filter bar for map pages
+// Reusable filter bar for map pages with searchable dropdowns
 // ============================================
 export function MapFilterBar({
   searchQuery = "",
@@ -79,6 +81,24 @@ export function MapFilterBar({
   activeFilterCount,
   onResetFilters,
 }: MapFilterBarProps) {
+  // Convert lists to searchable options
+  const kabupatenOptions = useMemo(() => stringsToOptions(kabupatenList), [kabupatenList]);
+  const kecamatanOptions = useMemo(() => stringsToOptions(kecamatanList), [kecamatanList]);
+  const kelurahanOptions = useMemo(() => stringsToOptions(kelurahanList), [kelurahanList]);
+
+  // Handle kabupaten change with cascade reset
+  const handleKabupatenChange = (value: string) => {
+    onKabupatenChange(value);
+    onKecamatanChange("all");
+    onKelurahanChange("all");
+  };
+
+  // Handle kecamatan change with cascade reset
+  const handleKecamatanChange = (value: string) => {
+    onKecamatanChange(value);
+    onKelurahanChange("all");
+  };
+
   return (
     <div className="space-y-3">
       {/* Search and Filter Toggle - More Compact */}
@@ -131,68 +151,48 @@ export function MapFilterBar({
         </div>
       </div>
 
-      {/* Collapsible Filters - More Compact */}
+      {/* Collapsible Filters with Searchable Selects */}
       {showFilters && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 p-3 bg-secondary/50 rounded-xl border border-border animate-in slide-in-from-top-2 duration-200">
-          {/* Kabupaten Filter */}
-          <Select
+          {/* Kabupaten Filter - Searchable */}
+          <SearchableSelect
             value={kabupatenFilter}
-            onValueChange={(v) => {
-              onKabupatenChange(v);
-              onKecamatanChange("all");
-              onKelurahanChange("all");
-            }}
-          >
-            <SelectTrigger className="bg-card h-9 text-sm">
-              <SelectValue placeholder="Kabupaten/Kota" />
-            </SelectTrigger>
-            <SelectContent className="bg-popover z-[9999] max-h-60">
-              <SelectItem value="all">Semua Kabupaten/Kota</SelectItem>
-              {kabupatenList.map((k) => (
-                <SelectItem key={k} value={k}>
-                  {k}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            onValueChange={handleKabupatenChange}
+            options={kabupatenOptions}
+            placeholder="Kab/Kota"
+            searchPlaceholder="Cari kabupaten..."
+            allOptionLabel="Semua Kab/Kota"
+            emptyText="Kabupaten tidak ditemukan"
+            className="bg-card"
+          />
 
-          {/* Kecamatan Filter */}
-          <Select
+          {/* Kecamatan Filter - Searchable */}
+          <SearchableSelect
             value={kecamatanFilter}
-            onValueChange={(v) => {
-              onKecamatanChange(v);
-              onKelurahanChange("all");
-            }}
-          >
-            <SelectTrigger className="bg-card h-9 text-sm">
-              <SelectValue placeholder="Kecamatan" />
-            </SelectTrigger>
-            <SelectContent className="bg-popover z-[9999] max-h-60">
-              <SelectItem value="all">Semua Kecamatan</SelectItem>
-              {kecamatanList.map((k) => (
-                <SelectItem key={k} value={k}>
-                  {k}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            onValueChange={handleKecamatanChange}
+            options={kecamatanOptions}
+            placeholder="Kecamatan"
+            searchPlaceholder="Cari kecamatan..."
+            allOptionLabel="Semua Kecamatan"
+            emptyText="Kecamatan tidak ditemukan"
+            className="bg-card"
+            disabled={kabupatenFilter === "all" && kecamatanList.length === 0}
+          />
 
-          {/* Kelurahan Filter */}
-          <Select value={kelurahanFilter} onValueChange={onKelurahanChange}>
-            <SelectTrigger className="bg-card h-9 text-sm">
-              <SelectValue placeholder="Kelurahan/Desa" />
-            </SelectTrigger>
-            <SelectContent className="bg-popover z-[9999] max-h-60">
-              <SelectItem value="all">Semua Kelurahan/Desa</SelectItem>
-              {kelurahanList.map((k) => (
-                <SelectItem key={k} value={k}>
-                  {k}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {/* Kelurahan Filter - Searchable */}
+          <SearchableSelect
+            value={kelurahanFilter}
+            onValueChange={onKelurahanChange}
+            options={kelurahanOptions}
+            placeholder="Kel/Desa"
+            searchPlaceholder="Cari kelurahan..."
+            allOptionLabel="Semua Kel/Desa"
+            emptyText="Kelurahan tidak ditemukan"
+            className="bg-card"
+            disabled={kecamatanFilter === "all" && kelurahanList.length === 0}
+          />
 
-          {/* Status Filter */}
+          {/* Status Filter - Regular Select (fewer options) */}
           <Select value={statusFilter} onValueChange={onStatusChange}>
             <SelectTrigger className="bg-card h-9 text-sm">
               <SelectValue placeholder="Status" />

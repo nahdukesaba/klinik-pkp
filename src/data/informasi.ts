@@ -205,7 +205,7 @@ export const faqList: Faq[] = [
   {
     category: "umum",
     q: "Dimana lokasi Klinik PKP BP3KP Sumatera II?",
-    a: "Klinik PKP berlokasi di Jl. Karya Rakyat, Medan, Sumatera Utara. Buka Senin-Jumat pukul 07:30-16:00 WIB (Jumat sampai 16:30).",
+    a: "Klinik PKP berlokasi di Jl. Suluh No.99, Sidorejo Hilir, Kec. Medan Tembung, Kota Medan, Sumatera Utara 20222. Buka Senin-Jumat pukul 07:30-16:00 WIB (Jumat sampai 16:30).",
   },
   {
     category: "umum",

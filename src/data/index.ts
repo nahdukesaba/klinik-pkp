@@ -24,13 +24,10 @@ export * from "./lokasi-klinik";
 // Peta - Kawasan Kumuh Data
 export * from "./peta-kawasan-kumuh";
 
-// Peta - Penerima BSPS Data
-export * from "./peta-penerima-bsps";
-
 // Peta - Sebaran Rusun Data
 export * from "./peta-sebaran-rusun";
 
-// Penerimaan BSPS Data
+// Penerimaan BSPS Data (includes map data)
 export * from "./penerimaan-bsps";
 
 // Sosialisasi Klinik PKP Data

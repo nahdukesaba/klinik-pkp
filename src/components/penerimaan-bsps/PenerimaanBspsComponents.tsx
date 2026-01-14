@@ -39,6 +39,7 @@ import {
 } from "lucide-react";
 
 import { ProgressIndicator, StepArrow } from "@/components/landing";
+import { SearchableFilterSelect } from "@/components/shared/SearchableFilterSelect";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -183,45 +184,41 @@ export function BspsFilterDropdowns({ filterState, filterActions, filterLists }:
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-2 p-3 bg-secondary/50 rounded-xl border border-border animate-in slide-in-from-top-2 duration-200">
-      <Select value={kabupatenFilter} onValueChange={handleKabupatenChange}>
-        <SelectTrigger className="bg-card h-9 text-sm">
-          <SelectValue placeholder="Kabupaten/Kota" />
-        </SelectTrigger>
-        <SelectContent className="bg-popover z-[9999] max-h-60">
-          <SelectItem value="all">Semua Kabupaten/Kota</SelectItem>
-          {kabupatenList.map((k) => (
-            <SelectItem key={k} value={k}>{k}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <SearchableFilterSelect
+        value={kabupatenFilter}
+        onValueChange={handleKabupatenChange}
+        placeholder="Semua Kabupaten/Kota"
+        searchPlaceholder="Cari kabupaten..."
+        options={kabupatenList}
+        allLabel="Semua Kabupaten/Kota"
+        className="bg-card h-9 text-sm"
+      />
 
-      <Select value={kecamatanFilter} onValueChange={handleKecamatanChange}>
-        <SelectTrigger className="bg-card h-9 text-sm">
-          <SelectValue placeholder="Kecamatan" />
-        </SelectTrigger>
-        <SelectContent className="bg-popover z-[9999] max-h-60">
-          <SelectItem value="all">Semua Kecamatan</SelectItem>
-          {kecamatanList.map((k) => (
-            <SelectItem key={k} value={k}>{k}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <SearchableFilterSelect
+        value={kecamatanFilter}
+        onValueChange={handleKecamatanChange}
+        placeholder="Semua Kecamatan"
+        searchPlaceholder="Cari kecamatan..."
+        options={kecamatanList}
+        allLabel="Semua Kecamatan"
+        className="bg-card h-9 text-sm"
+        disabled={kecamatanList.length === 0}
+      />
 
-      <Select value={kelurahanFilter} onValueChange={setKelurahanFilter}>
-        <SelectTrigger className="bg-card h-9 text-sm">
-          <SelectValue placeholder="Kelurahan/Desa" />
-        </SelectTrigger>
-        <SelectContent className="bg-popover z-[9999] max-h-60">
-          <SelectItem value="all">Semua Kelurahan/Desa</SelectItem>
-          {kelurahanList.map((k) => (
-            <SelectItem key={k} value={k}>{k}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <SearchableFilterSelect
+        value={kelurahanFilter}
+        onValueChange={setKelurahanFilter}
+        placeholder="Semua Kelurahan/Desa"
+        searchPlaceholder="Cari kelurahan/desa..."
+        options={kelurahanList}
+        allLabel="Semua Kelurahan/Desa"
+        className="bg-card h-9 text-sm"
+        disabled={kelurahanList.length === 0}
+      />
 
       <Select value={statusFilter} onValueChange={setStatusFilter}>
         <SelectTrigger className="bg-card h-9 text-sm">
-          <SelectValue placeholder="Status" />
+          <SelectValue placeholder="Semua Status" />
         </SelectTrigger>
         <SelectContent className="bg-popover z-[9999]">
           <SelectItem value="all">Semua Status</SelectItem>

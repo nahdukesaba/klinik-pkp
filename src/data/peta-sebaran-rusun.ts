@@ -16,10 +16,7 @@ export interface RusunData {
   tower: number;
   type: string;
   floors: number;
-  yearBuilt: number;
-  yearHandover: number;
-  unitsFilled: number;
-  contractor: string;
+  yearGiven: number;
   image?: string;
 }
 
@@ -34,7 +31,7 @@ export const rusunDataList: RusunData[] = [
   {
     id: "1",
     name: "Rusun Kejaksaan Tinggi",
-    kabupaten: "Medan",
+    kabupaten: "Kota Medan",
     kecamatan: "Medan Barat",
     kelurahan: "Sei Agul",
     address: "Jl. Karya Rakyat",
@@ -42,12 +39,9 @@ export const rusunDataList: RusunData[] = [
     lng: 98.6624,
     units: 16,
     tower: 1,
-    type: "Wisma Suralaya 36",
+    type: "Wisama Suralaya 36",
     floors: 2,
-    yearBuilt: 2016,
-    yearHandover: 2020,
-    unitsFilled: 16,
-    contractor: "PT. Hagitasinar Lestarimegah",
+    yearGiven: 2025,
     image: "/rusun.jpeg",
   },
 ];

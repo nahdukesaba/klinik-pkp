@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { Clock, Mail, MapPin, Phone } from "lucide-react";
+import { Clock, ExternalLink, Mail, MapPin, Phone } from "lucide-react";
 
 import { INFO_LINKS, QUICK_LINKS } from "@/lib/constants";
 
@@ -62,12 +62,24 @@ export default function Footer() {
             <ul className="space-y-3">
               {INFO_LINKS.map((link) => (
                 <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    {link.label}
-                  </Link>
+                  {link.href.startsWith("http") ? (
+                    <a
+                      href={link.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-1"
+                    >
+                      {link.label}
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  ) : (
+                    <Link
+                      href={link.href}
+                      className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      {link.label}
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>
@@ -79,20 +91,20 @@ export default function Footer() {
             <ul className="space-y-3">
               <li>
                 <a
-                  href="mailto:bp3kp.sumateraii@pu.go.id"
+                  href="mailto:klinikpkpsumateraii@gmail.com"
                   className="flex items-start gap-3 text-sm text-muted-foreground hover:text-primary transition-colors"
                 >
                   <Mail className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                  <span>bp3kp.sumateraii@pu.go.id</span>
+                  <span>klinikpkpsumateraii@gmail.com</span>
                 </a>
               </li>
               <li>
                 <a
-                  href="tel:+62618003312"
+                  href="tel:+6282246960231"
                   className="flex items-start gap-3 text-sm text-muted-foreground hover:text-primary transition-colors"
                 >
                   <Phone className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                  <span>(061) 80033120</span>
+                  <span>(061)80033120</span>
                 </a>
               </li>
               <li>

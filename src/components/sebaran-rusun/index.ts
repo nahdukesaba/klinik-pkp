@@ -5,3 +5,5 @@ export {
   RusunMapContainer,
   RusunLoadingSkeleton,
 } from "./RusunComponents";
+
+export { default as SebaranRusunPage } from "./SebaranRusunPage";

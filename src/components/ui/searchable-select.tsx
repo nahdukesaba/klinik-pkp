@@ -137,7 +137,7 @@ export function SearchableSelect({
       >
         <span className={cn(
           "truncate text-left flex-1",
-          value === "all" && "text-white"
+          value === "all" ? "text-foreground/70" : "text-foreground"
         )}>
           {displayLabel}
         </span>

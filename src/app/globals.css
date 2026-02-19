@@ -402,6 +402,15 @@
   z-index: 1;
 }
 
+.leaflet-zoom-animated {
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+}
+
+.leaflet-tile-pane {
+  will-change: transform;
+}
+
 .leaflet-popup-content-wrapper {
   @apply rounded-xl shadow-xl border-0 p-0 overflow-hidden;
 }
@@ -417,6 +426,21 @@
 
 .custom-marker {
   @apply flex items-center justify-center;
+  cursor: pointer !important;
+}
+
+/* Perbesar area klik marker agar mudah di-tap di mobile */
+.leaflet-marker-icon {
+  cursor: pointer !important;
+}
+
+.leaflet-marker-icon::after {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  right: -8px;
+  bottom: -8px;
 }
 
 .marker-cluster {
@@ -475,4 +499,40 @@ input[type="date"]:focus::-webkit-datetime-edit-year-field {
 
 input[type="date"]::-webkit-calendar-picker-indicator {
   cursor: pointer;
+}
+
+/* ============================================
+   Popup Styling - Penerimaan BSPS & Kawasan Kumuh
+   ============================================ */
+
+/* Styling untuk popup di halaman Penerimaan BSPS */
+#penerimaan-bsps-map .leaflet-popup-close-button {
+  top: 4px !important;
+  right: 8px !important;
+}
+
+#penerimaan-bsps-map .leaflet-popup-content h3 {
+  padding-left: 6px !important;
+}
+
+#penerimaan-bsps-map .leaflet-popup-content > div > div:last-child {
+  padding-top: 4px !important;
+  padding-bottom: 12px !important;
+  margin-top: 2px !important;
+}
+
+/* Styling untuk popup di halaman Kawasan Kumuh */
+#kawasan-kumuh-map .leaflet-popup-close-button {
+  top: 4px !important;
+  right: 8px !important;
+}
+
+#kawasan-kumuh-map .leaflet-popup-content h3 {
+  padding-left: 6px !important;
+}
+
+#kawasan-kumuh-map .leaflet-popup-content > div > div:last-child {
+  padding-top: 4px !important;
+  padding-bottom: 12px !important;
+  margin-top: 2px !important;
 }

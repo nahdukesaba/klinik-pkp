@@ -1,11 +1,21 @@
 "use client";
 
-import { CheckCircle, Target, Eye } from "lucide-react";
+import { useState } from "react";
 
+import { CheckCircle, ChevronDown, ChevronUp, ClipboardList, ListChecks } from "lucide-react";
+
+import { tugasDanFungsi } from "@/data/tentang";
 import useScrollAnimation from "@/hooks/use-scroll-animation";
+
+const INITIAL_ITEMS = 5;
 
 export default function AboutSection() {
   const ref = useScrollAnimation();
+  const [showAllFungsi, setShowAllFungsi] = useState(false);
+  const totalFungsi = tugasDanFungsi.fungsi.length;
+  const displayedFungsi = showAllFungsi
+    ? tugasDanFungsi.fungsi
+    : tugasDanFungsi.fungsi.slice(0, INITIAL_ITEMS);
 
   return (
     <section ref={ref} className="py-20 lg:py-32 relative overflow-hidden">
@@ -14,7 +24,7 @@ export default function AboutSection() {
       <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-primary/5 to-transparent" />
 
       <div className="container mx-auto px-4 relative z-10">
-        <div className="grid lg:grid-cols-2 gap-16 items-center">
+        <div className="grid lg:grid-cols-2 gap-16 items-start">
           {/* Left Content */}
           <div className="space-y-6 animate-on-scroll">
             <span className="inline-block px-4 py-1.5 bg-primary/10 text-primary rounded-full text-sm font-medium border border-primary/20">
@@ -55,19 +65,17 @@ export default function AboutSection() {
             </ul>
           </div>
 
-          {/* Right Content - Vision & Mission Cards */}
+          {/* Right Content - Tugas & Fungsi Cards */}
           <div className="space-y-6">
             <div className="p-8 bg-card rounded-2xl border border-border shadow-lg animate-on-scroll hover:shadow-xl transition-shadow">
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-12 h-12 bg-gradient-to-br from-primary to-accent rounded-xl flex items-center justify-center text-primary-foreground shadow-lg">
-                  <Eye className="w-6 h-6" />
+                  <ClipboardList className="w-6 h-6" />
                 </div>
-                <h3 className="text-xl font-semibold text-foreground">Visi</h3>
+                <h3 className="text-xl font-semibold text-foreground">Tugas</h3>
               </div>
-              <p className="text-muted-foreground leading-relaxed">
-                Mewujudkan penyediaan perumahan dan permukiman yang layak,
-                terjangkau, dan berkelanjutan bagi seluruh masyarakat di wilayah
-                Sumatera.
+              <p className="text-muted-foreground leading-relaxed capitalize">
+                {tugasDanFungsi.tugas}
               </p>
             </div>
 
@@ -77,24 +85,40 @@ export default function AboutSection() {
             >
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-12 h-12 bg-gradient-to-br from-accent to-primary rounded-xl flex items-center justify-center text-primary-foreground shadow-lg">
-                  <Target className="w-6 h-6" />
+                  <ListChecks className="w-6 h-6" />
                 </div>
-                <h3 className="text-xl font-semibold text-foreground">Misi</h3>
+                <h3 className="text-xl font-semibold text-foreground">
+                  Fungsi
+                </h3>
               </div>
-              <ul className="space-y-3 text-muted-foreground">
-                <li className="flex items-start gap-2">
-                  <span className="text-primary font-bold">•</span>
-                  Meningkatkan akses masyarakat terhadap informasi perumahan
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-primary font-bold">•</span>
-                  Menyediakan layanan konsultasi yang berkualitas
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-primary font-bold">•</span>
-                  Mendukung program penanganan kawasan kumuh
-                </li>
+              <ul className="space-y-2.5 text-muted-foreground">
+                {displayedFungsi.map((item, index) => (
+                  <li key={index} className="flex items-start gap-2 text-sm">
+                    <span className="text-primary font-bold mt-0.5 flex-shrink-0">
+                      {index + 1}.
+                    </span>
+                    <span className="capitalize leading-relaxed">{item}</span>
+                  </li>
+                ))}
               </ul>
+              {totalFungsi > INITIAL_ITEMS && (
+                <button
+                  onClick={() => setShowAllFungsi(!showAllFungsi)}
+                  className="mt-4 w-full flex items-center justify-center gap-2 py-2 px-4 text-sm font-medium text-primary hover:bg-primary/10 rounded-lg transition-colors border border-primary/20"
+                >
+                  {showAllFungsi ? (
+                    <>
+                      <ChevronUp className="w-4 h-4" />
+                      Tampilkan Lebih Sedikit
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="w-4 h-4" />
+                      Lihat Semua ({totalFungsi - INITIAL_ITEMS} lainnya)
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           </div>
         </div>

@@ -73,9 +73,7 @@ export default function HeroSection() {
               className="text-lg text-muted-foreground max-w-xl animate-slide-up"
               style={{ animationDelay: "0.1s" }}
             >
-              Layanan konsultasi dan informasi terpadu untuk perumahan,
-              permukiman, dan kawasan kumuh di wilayah Sumatera. Temukan solusi
-              hunian yang tepat untuk Anda.
+              Klinik PKP merupakan layanan informasi, konsultasi, serta pendampingan dan bantuan teknis yang diselenggarakan oleh Balai Pelaksana Penyediaan Perumahan dan Kawasan Permukiman (Balai P3KP).
             </p>
 
             <div

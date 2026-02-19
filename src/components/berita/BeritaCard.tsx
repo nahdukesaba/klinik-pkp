@@ -5,6 +5,8 @@ import Link from "next/link";
 
 import { Calendar, MapPin, ArrowRight } from "lucide-react";
 
+import { formatDateId } from "@/lib/date";
+
 // ============================================
 // Types & Interfaces
 // ============================================
@@ -40,14 +42,13 @@ export function BeritaCard({
   onImageClick,
   onViewOnMap,
 }: BeritaCardProps) {
-  const eventDate = new Date(berita.rawDate);
-  const formattedDate = `${eventDate.getDate()} ${eventDate.toLocaleDateString("id-ID", { month: "short" })} ${eventDate.getFullYear()}`;
+  const formattedDate = formatDateId(berita.rawDate, { month: "short" });
   
   if (variant === "compact") {
     return (
       <div className="bg-card dark:bg-card border border-border rounded-xl p-3 hover:border-primary/30 hover:shadow-md transition-all group">
         <Link 
-          href={`/berita/${berita.id}`}
+          href={`/sosialisasi-klinik-pkp/berita/${berita.id}`}
           className="flex gap-3"
         >
           <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 relative">
@@ -80,7 +81,7 @@ export function BeritaCard({
   if (variant === "horizontal") {
     return (
       <Link 
-        href={`/berita/${berita.id}`}
+        href={`/sosialisasi-klinik-pkp/berita/${berita.id}`}
         className="flex gap-4 p-4 rounded-2xl border border-border hover:border-primary/30 hover:shadow-lg transition-all group bg-card dark:bg-white"
       >
         <div className="w-32 h-24 rounded-xl overflow-hidden flex-shrink-0 relative">
@@ -157,7 +158,7 @@ export function BeritaCard({
           </div>
         </div>
         
-        <Link href={`/berita/${berita.id}`}>
+        <Link href={`/sosialisasi-klinik-pkp/berita/${berita.id}`}>
           <h3 className="text-lg font-semibold text-foreground dark:text-gray-800 line-clamp-2 mb-2 group-hover:text-primary transition-colors">
             {berita.title}
           </h3>
@@ -172,7 +173,7 @@ export function BeritaCard({
         {/* Actions */}
         <div className="flex items-center gap-2 mt-4">
           <Link
-            href={`/berita/${berita.id}`}
+            href={`/sosialisasi-klinik-pkp/berita/${berita.id}`}
             className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium"
           >
             Baca Selengkapnya

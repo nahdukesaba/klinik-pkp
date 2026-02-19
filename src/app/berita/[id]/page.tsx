@@ -1,18 +1,24 @@
-// ============================================
-// ROUTE: /berita/[id]
-// DESKRIPSI: Halaman detail berita (dynamic route)
-//
-// CARA KERJA:
-// - File ini WAJIB bernama "page.tsx" (requirement Next.js)
-// - Folder [id] menangkap parameter dari URL
-// - Contoh: /berita/1 → params.id = "1"
-//           /berita/123 → params.id = "123"
-//
-// SAAT PAKAI API BACKEND:
-// - Edit BeritaDetailContent.tsx untuk fetch dari API
-// - File ini tidak perlu diubah
-// ============================================
+/**
+ * Route: /berita/[id]
+ *
+ * Redirect ke halaman sosialisasi detail.
+ * Validasi format ID untuk mencegah path traversal.
+ */
 
-import BeritaDetailContent from "./BeritaDetailContent";
+import { notFound, redirect } from "next/navigation";
 
-export default BeritaDetailContent;
+interface PageProps {
+  params: { id: string };
+}
+
+/** Hanya izinkan ID berupa alphanumeric dan dash */
+const VALID_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
+
+export default function BeritaDetailRedirectPage({ params }: PageProps) {
+  // Validasi format ID untuk mencegah path traversal (e.g. ../../admin)
+  if (!VALID_ID_PATTERN.test(params.id)) {
+    notFound();
+  }
+
+  redirect(`/sosialisasi-klinik-pkp/berita/${params.id}`);
+}

@@ -3,7 +3,6 @@
 import { useState } from "react";
 
 import { SectionHeader } from "@/components/shared";
-import { StepCardSkeleton } from "@/components/ui/skeleton";
 import { useBuildingSteps } from "@/hooks/use-building-steps";
 import useScrollAnimation from "@/hooks/use-scroll-animation";
 
@@ -89,10 +88,10 @@ function StepCard({ item, isHovered, isAnyHovered }: StepCardProps) {
 // ============================================
 export default function BuildingStepsSection() {
   const ref = useScrollAnimation();
-  const { data: steps, isLoading } = useBuildingSteps();
+  const steps = useBuildingSteps();
   const [hoveredStep, setHoveredStep] = useState<number | null>(null);
 
-  if (!steps || steps.length === 0) {
+  if (steps.length === 0) {
     return null;
   }
 
@@ -119,16 +118,8 @@ export default function BuildingStepsSection() {
           description="Ikuti langkah-langkah berikut untuk membangun rumah impian Anda dengan terencana dan aman."
         />
 
-        {/* Loading State */}
-        {isLoading ? (
-          <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-4">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <StepCardSkeleton key={i} />
-            ))}
-          </div>
-        ) : (
-          /* Steps Grid with Arrows */
-          <div className="max-w-5xl mx-auto">
+        {/* Steps Grid with Arrows */}
+        <div className="max-w-5xl mx-auto">
             {/* ==================== ROW 1: Steps 1→2→3 ==================== */}
             <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_auto_1fr] gap-3 md:gap-0 items-stretch">
               {firstRow.map((item, index) => (
@@ -227,7 +218,6 @@ export default function BuildingStepsSection() {
             {/* Progress Indicator */}
             <ProgressIndicator totalSteps={steps.length} hoveredStep={hoveredStep} />
           </div>
-        )}
 
         {/* ==================== Instagram Section ==================== */}
         <div className="mt-16">
@@ -235,9 +225,6 @@ export default function BuildingStepsSection() {
             <h3 className="text-xl lg:text-2xl font-bold text-foreground mb-2">
               Ikuti Kami di Instagram
             </h3>
-            <p className="text-muted-foreground text-sm max-w-xl mx-auto">
-              Dapatkan inspirasi desain rumah, tips pembangunan, dan update kegiatan sosialisasi terbaru
-            </p>
           </div>
 
           {/* Instagram Embed */}
@@ -248,7 +235,10 @@ export default function BuildingStepsSection() {
                 className="w-full h-[600px] md:h-[700px] border-0"
                 loading="lazy"
                 title="Instagram BP3KP Sumatera II"
+                sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms allow-top-navigation-by-user-activation"
                 allow="encrypted-media"
+                scrolling="no"
+                style={{ border: 0, overflow: 'hidden' }}
               />
             </div>
           </div>

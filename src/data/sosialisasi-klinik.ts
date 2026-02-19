@@ -3,7 +3,12 @@
  * Data untuk halaman Sosialisasi Klinik PKP
  */
 
-export interface SosialisasiEvent {
+/**
+ * Data mentah sosialisasi (tanpa status).
+ * Status dihitung otomatis oleh computeStatus() di use-sosialisasi-data.ts
+ * berdasarkan tanggal kegiatan vs hari ini.
+ */
+export interface RawSosialisasiLocation {
   id: number;
   name: string;
   kabupaten: string;
@@ -14,8 +19,12 @@ export interface SosialisasiEvent {
   time: string; // Format: "09:00 - 12:00"
   peserta: number;
   alamat: string;
-  status: "selesai" | "mendatang";
   images: string[];
+}
+
+/** Data sosialisasi dengan status ter-compute (dipakai oleh semua consumer) */
+export interface SosialisasiLocation extends RawSosialisasiLocation {
+  status: "selesai" | "mendatang";
 }
 
 export interface BeritaSosialisasi {
@@ -42,7 +51,7 @@ export const kabupatenList: string[] = [
   "Pematang Siantar",
 ];
 
-export const sosialisasiLocations: SosialisasiEvent[] = [
+export const sosialisasiLocations: RawSosialisasiLocation[] = [
   {
     id: 1,
     name: "Sosialisasi BSPS Deli Serdang",
@@ -54,7 +63,6 @@ export const sosialisasiLocations: SosialisasiEvent[] = [
     time: "09:00 - 12:00",
     peserta: 150,
     alamat: "Aula Kecamatan Percut Sei Tuan",
-    status: "selesai",
     images: [
       "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&h=300&fit=crop",
       "https://images.unsplash.com/photo-1511578314322-379afb476865?w=400&h=300&fit=crop",
@@ -72,7 +80,6 @@ export const sosialisasiLocations: SosialisasiEvent[] = [
     time: "08:30 - 11:30",
     peserta: 200,
     alamat: "Gedung Serbaguna Medan",
-    status: "selesai",
     images: [
       "https://images.unsplash.com/photo-1587825140708-dfaf72ae4b04?w=400&h=300&fit=crop",
       "https://images.unsplash.com/photo-1528605248644-14dd04022da1?w=400&h=300&fit=crop",
@@ -90,7 +97,6 @@ export const sosialisasiLocations: SosialisasiEvent[] = [
     time: "09:00 - 12:00",
     peserta: 120,
     alamat: "Balai Desa Stabat",
-    status: "selesai",
     images: [
       "https://images.unsplash.com/photo-1591115765373-5207764f72e7?w=400&h=300&fit=crop",
       "https://images.unsplash.com/photo-1560439514-4e9645039924?w=400&h=300&fit=crop",
@@ -108,7 +114,6 @@ export const sosialisasiLocations: SosialisasiEvent[] = [
     time: "10:00 - 13:00",
     peserta: 100,
     alamat: "Kantor Camat Sei Rampah",
-    status: "selesai",
     images: [
       "https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=300&fit=crop",
       "https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=400&h=300&fit=crop",
@@ -126,7 +131,6 @@ export const sosialisasiLocations: SosialisasiEvent[] = [
     time: "09:00 - 11:00",
     peserta: 80,
     alamat: "Aula Kota Binjai",
-    status: "selesai",
     images: [
       "https://images.unsplash.com/photo-1559223607-a43c990c692c?w=400&h=300&fit=crop",
       "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=400&h=300&fit=crop",
@@ -144,7 +148,6 @@ export const sosialisasiLocations: SosialisasiEvent[] = [
     time: "09:00 - 12:00",
     peserta: 0,
     alamat: "Gedung Balai Kota Tebing Tinggi",
-    status: "mendatang",
     images: [],
   },
   {
@@ -158,7 +161,6 @@ export const sosialisasiLocations: SosialisasiEvent[] = [
     time: "08:00 - 11:00",
     peserta: 0,
     alamat: "Aula Pemerintah Kota",
-    status: "mendatang",
     images: [],
   },
   {
@@ -171,7 +173,6 @@ export const sosialisasiLocations: SosialisasiEvent[] = [
     time: "09:30 - 12:30",
     peserta: 0,
     alamat: "Balai Kota Medan",
-    status: "mendatang",
     images: [],
   },
   {
@@ -184,7 +185,6 @@ export const sosialisasiLocations: SosialisasiEvent[] = [
     time: "10:00 - 13:00",
     peserta: 0,
     alamat: "Gedung Serbaguna Langkat",
-    status: "mendatang",
     images: [],
   },
   {
@@ -198,7 +198,6 @@ export const sosialisasiLocations: SosialisasiEvent[] = [
     time: "09:00 - 12:00",
     peserta: 0,
     alamat: "Kantor Bupati Deli Serdang",
-    status: "mendatang",
     images: [],
   },
   {
@@ -212,7 +211,6 @@ export const sosialisasiLocations: SosialisasiEvent[] = [
     time: "08:30 - 11:30",
     peserta: 0,
     alamat: "Balai Kelurahan Jati Makmur",
-    status: "mendatang",
     images: [],
   },
   {
@@ -226,7 +224,6 @@ export const sosialisasiLocations: SosialisasiEvent[] = [
     time: "09:00 - 12:00",
     peserta: 0,
     alamat: "Aula Kecamatan Perbaungan",
-    status: "mendatang",
     images: [],
   },
   {
@@ -240,7 +237,6 @@ export const sosialisasiLocations: SosialisasiEvent[] = [
     time: "10:00 - 13:00",
     peserta: 0,
     alamat: "Kantor Kecamatan Medan Tembung",
-    status: "mendatang",
     images: [],
   },
   {
@@ -254,7 +250,6 @@ export const sosialisasiLocations: SosialisasiEvent[] = [
     time: "09:00 - 11:30",
     peserta: 0,
     alamat: "Gedung Balai Desa Rambutan",
-    status: "mendatang",
     images: [],
   },
   {
@@ -268,7 +263,20 @@ export const sosialisasiLocations: SosialisasiEvent[] = [
     time: "08:00 - 11:00",
     peserta: 0,
     alamat: "Aula Kelurahan Pardomuan",
-    status: "mendatang",
+    images: [],
+  },
+  // Jadwal mendatang (setelah 18 Feb 2026)
+  {
+    id: 16,
+    name: "Sosialisasi BSPS Deli Serdang III",
+    kabupaten: "Deli Serdang",
+    kecamatan: "Tanjung Morawa",
+    kelurahan: "Tanjung Morawa B",
+    coordinates: [3.5312, 98.8045],
+    date: "2026-03-15",
+    time: "09:00 - 12:00",
+    peserta: 0,
+    alamat: "Aula Kecamatan Tanjung Morawa",
     images: [],
   },
 ];
@@ -384,7 +392,3 @@ export const beritaSosialisasiList: BeritaSosialisasi[] = [
   },
 ];
 
-export const sosialisasiStatusColors = {
-  selesai: { fill: "#22c55e", label: "Selesai" },
-  mendatang: { fill: "#3b82f6", label: "Mendatang" },
-};

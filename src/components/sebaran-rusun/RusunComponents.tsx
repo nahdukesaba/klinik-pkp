@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { rusunRegionCenters, type RusunData } from "@/data/peta-sebaran-rusun";
+import { type RusunData } from "@/data/peta-sebaran-rusun";
 
 // ============================================
 // Types
@@ -22,6 +22,7 @@ interface RusunHeaderProps {
   regionName: string;
   searchQuery: string;
   regionFilter: string;
+  regionOptions: { id: string; name: string }[];
   totalRusun: number;
   totalUnits: number;
   onBack: () => void;
@@ -78,7 +79,7 @@ export function RusunLoadingSkeleton() {
 // ============================================
 export function RusunMapContainer({ mapRef }: RusunMapContainerProps) {
   return (
-    <div className="flex-1 relative z-10">
+    <div className="absolute inset-0 z-10 bg-[#e5e7eb]">
       <div ref={mapRef} className="w-full h-full" />
     </div>
   );
@@ -91,6 +92,7 @@ export function RusunHeader({
   regionName,
   searchQuery,
   regionFilter,
+  regionOptions,
   totalRusun,
   totalUnits,
   onBack,
@@ -136,9 +138,9 @@ export function RusunHeader({
               <SelectValue placeholder="Pilih Region" />
             </SelectTrigger>
             <SelectContent>
-              {Object.entries(rusunRegionCenters).map(([key, value]) => (
-                <SelectItem key={key} value={key}>
-                  {value.name}
+              {regionOptions.map((option) => (
+                <SelectItem key={option.id} value={option.id}>
+                  {option.name}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -177,9 +179,8 @@ function RusunCard({ rusun, isSelected, onClick }: RusunCardProps) {
   return (
     <div
       onClick={onClick}
-      className={`clinic-card cursor-pointer ${
-        isSelected ? "clinic-card-active" : ""
-      }`}
+      className={`clinic-card cursor-pointer ${isSelected ? "clinic-card-active" : ""
+        }`}
     >
       <h3 className="font-semibold text-foreground text-sm">{rusun.name}</h3>
       <p className="text-xs text-muted-foreground mt-1">
@@ -219,9 +220,8 @@ export function RusunSidebar({
     <>
       {/* Sidebar */}
       <div
-        className={`${
-          isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-        } fixed lg:relative z-40 lg:z-20 h-[calc(100vh-4rem)] lg:h-full top-16 lg:top-0 left-0 w-[85vw] sm:w-80 lg:w-96 bg-card border-r border-border transition-transform duration-300 flex flex-col shadow-xl lg:shadow-none`}
+        className={`${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+          } fixed lg:relative z-40 lg:z-20 h-[calc(100vh-4rem)] lg:h-full top-16 lg:top-0 left-0 w-[85vw] sm:w-80 lg:w-96 bg-card border-r border-border transition-transform duration-300 flex flex-col shadow-xl lg:shadow-none`}
       >
         {/* Mobile Header with Close Button */}
         <div className="lg:hidden flex items-center justify-between p-3 border-b border-border bg-secondary/50">
@@ -277,7 +277,7 @@ export function RusunSidebar({
         </div>
 
         {/* Rusun List */}
-        <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-2 sm:space-y-3">
+        <div className="flex-1 min-h-0 overflow-y-scroll p-3 sm:p-4 space-y-2 sm:space-y-3">
           {filteredRusun.length === 0 ? (
             <div className="text-center text-muted-foreground py-8">
               <p className="text-sm">Tidak ada rusun ditemukan</p>

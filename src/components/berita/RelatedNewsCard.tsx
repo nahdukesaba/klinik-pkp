@@ -5,6 +5,8 @@ import Link from "next/link";
 
 import { Calendar, MapPin } from "lucide-react";
 
+import { formatDateId } from "@/lib/date";
+
 // ============================================
 // Types
 // ============================================
@@ -27,14 +29,9 @@ export function RelatedNewsCard({
   rawDate,
   kabupaten,
 }: RelatedNewsCardProps) {
-  const formatDate = (rawDate: string): string => {
-    const date = new Date(rawDate);
-    return `${date.getDate()} ${date.toLocaleDateString("id-ID", { month: "long" })} ${date.getFullYear()}`;
-  };
-
   return (
     <Link
-      href={`/berita/${id}`}
+      href={`/sosialisasi-klinik-pkp/berita/${id}`}
       className="group flex gap-2 md:gap-3 bg-background border border-border rounded-xl overflow-hidden hover:border-primary/40 hover:shadow-md transition-all duration-300 p-2 md:p-3"
     >
       {/* Image Section - Left */}
@@ -59,7 +56,7 @@ export function RelatedNewsCard({
         <div className="space-y-1">
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Calendar className="w-3 h-3 md:w-3.5 md:h-3.5 text-primary flex-shrink-0" />
-            <span className="line-clamp-1">{formatDate(rawDate)}</span>
+            <span className="line-clamp-1">{formatDateId(rawDate)}</span>
           </div>
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <MapPin className="w-3 h-3 md:w-3.5 md:h-3.5 text-primary flex-shrink-0" />

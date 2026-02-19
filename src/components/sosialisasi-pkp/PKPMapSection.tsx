@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, RefObject, useMemo } from "react";
+import { RefObject, useMemo } from "react";
 
 import { MapPin } from "lucide-react";
 
@@ -28,16 +28,11 @@ interface PKPMapSectionProps {
   kabupatenList: string[];
   kecamatanList: string[];
   kelurahanList: string[];
-  initializeMap: (onImageClick?: (images: string[], index: number, title: string) => void) => void;
-  cleanupMap: () => void;
-  updateMarkers: (onImageClick?: (images: string[], index: number, title: string) => void) => void;
-  mapReady: boolean;
-  onImageClick?: (images: string[], index: number, title: string) => void;
   showFilters: boolean;
   setShowFilters: (value: boolean) => void;
   searchQuery: string;
   setSearchQuery: (value: string) => void;
-  compact?: boolean; // New prop for side-by-side layout
+  compact?: boolean;
 }
 
 export function PKPMapSection({
@@ -54,30 +49,13 @@ export function PKPMapSection({
   kabupatenList,
   kecamatanList,
   kelurahanList,
-  initializeMap,
-  cleanupMap,
-  updateMarkers,
-  mapReady,
-  onImageClick,
   showFilters,
   setShowFilters,
   searchQuery,
   setSearchQuery,
   compact = false,
 }: PKPMapSectionProps) {
-  // Initialize map on mount - hanya sekali
-  useEffect(() => {
-    initializeMap(onImageClick);
-    return () => cleanupMap();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Update markers when filtered locations change
-  useEffect(() => {
-    if (mapReady) {
-      updateMarkers(onImageClick);
-    }
-  }, [mapReady, filteredLocations, updateMarkers, onImageClick]);
+  // Map is now initialized automatically in the hook
 
   // Check if any filter is active
   const activeFilterCount = useMemo(() => {
@@ -111,12 +89,12 @@ export function PKPMapSection({
   }, [filteredLocations]);
 
   // Map height classes based on compact mode
-  const mapHeightClass = compact 
+  const mapHeightClass = compact
     ? "h-[400px] sm:h-[450px] md:h-[550px] lg:h-[650px] xl:h-[750px] min-h-[400px]"
     : "h-[350px] sm:h-[400px] md:h-[500px] lg:h-[550px] min-h-[320px]";
 
   return (
-    <section id="peta-section" className={`${compact ? 'mb-0' : 'mb-12'} animate-on-scroll scroll-mt-24`}>
+    <section id="peta-section" className={`${compact ? 'mb-0' : 'mb-12'} scroll-mt-24`}>
       <div className="bg-card rounded-xl sm:rounded-2xl border border-border shadow-lg overflow-hidden h-full">
         {/* Header - More Compact */}
         <div className={`${compact ? 'p-3 sm:p-4' : 'p-4 sm:p-5'} border-b border-border bg-gradient-to-r from-primary/5 to-accent/5`}>
@@ -182,7 +160,8 @@ export function PKPMapSection({
           <div
             id="peta-sosialisasi"
             ref={mapRef}
-            className="absolute inset-0 w-full h-full"
+            className="w-full h-full"
+            style={{ minHeight: "400px" }}
           />
         </div>
 

@@ -1,12 +1,11 @@
-// ============================================
-// ROUTE: /berita
-// DESKRIPSI: Halaman list semua berita
-//
-// SAAT PAKAI API BACKEND:
-// - Edit BeritaListContent.tsx untuk fetch dari API
-// - File ini tidak perlu diubah
-// ============================================
+/**
+ * Route: /berita
+ *
+ * Redirect ke halaman sosialisasi.
+ */
 
-import BeritaListContent from "./BeritaListContent";
+import { redirect } from "next/navigation";
 
-export default BeritaListContent;
+export default function BeritaRedirectPage() {
+  redirect("/sosialisasi-klinik-pkp");
+}

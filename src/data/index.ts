@@ -15,7 +15,7 @@ export * from "./building-steps";
 // Bank Desain Data
 export * from "./bank-desain";
 
-// Informasi Data (Bahan Bangunan, FAQ, KRS, Peraturan, Perizinan)
+// Informasi Data (Bahan Bangunan, FAQ, Peraturan, Perizinan)
 export * from "./informasi";
 
 // Lokasi Klinik Data

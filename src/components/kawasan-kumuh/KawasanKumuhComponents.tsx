@@ -25,7 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { kawasanRegionCenters, kawasanStatusColors, type KawasanKumuh } from "@/data/peta-kawasan-kumuh";
+import { type KawasanKumuh } from "@/data/peta-kawasan-kumuh";
 
 // ============================================
 // Types & Constants
@@ -47,15 +47,19 @@ const STATUS_OPTIONS: FilterOption[] = [
 // KawasanCard Component
 // ============================================
 
+interface StatusColor {
+  fill: string;
+  label: string;
+}
+
 interface KawasanCardProps {
   kawasan: KawasanKumuh;
   isSelected: boolean;
+  statusColor: StatusColor;
   onClick: () => void;
 }
 
-export function KawasanCard({ kawasan, isSelected, onClick }: KawasanCardProps) {
-  const statusColor = kawasanStatusColors[kawasan.status];
-
+export function KawasanCard({ kawasan, isSelected, statusColor, onClick }: KawasanCardProps) {
   return (
     <div
       onClick={onClick}
@@ -80,7 +84,7 @@ export function KawasanCard({ kawasan, isSelected, onClick }: KawasanCardProps) 
       </p>
       <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
         <span>{kawasan.luas} Ha</span>
-        <span>{kawasan.kk} KK</span>
+        <span>{kawasan.penduduk.toLocaleString("id-ID")} Penduduk</span>
       </div>
     </div>
   );
@@ -94,11 +98,13 @@ interface KawasanKumuhHeaderProps {
   searchQuery: string;
   onSearchChange: (value: string) => void;
   regionFilter: string;
+  regionName: string;
+  regionOptions: { id: string; name: string }[];
   onRegionChange: (value: string) => void;
   statusFilter: string;
   onStatusChange: (value: string) => void;
   totalKawasan: number;
-  totalKK: number;
+  totalPenduduk: number;
   onToggleSidebar: () => void;
 }
 
@@ -106,15 +112,15 @@ export function KawasanKumuhHeader({
   searchQuery,
   onSearchChange,
   regionFilter,
+  regionName,
+  regionOptions,
   onRegionChange,
   statusFilter,
   onStatusChange,
   totalKawasan,
-  totalKK,
+  totalPenduduk,
   onToggleSidebar,
 }: KawasanKumuhHeaderProps) {
-  const regionData = kawasanRegionCenters[regionFilter] || kawasanRegionCenters["sumatera-utara"];
-
   return (
     <div className="bg-card border-b border-border px-4 py-3 flex-shrink-0 relative z-10">
       <div className="flex flex-col gap-3">
@@ -126,7 +132,7 @@ export function KawasanKumuhHeader({
             </Link>
             <div>
               <p className="text-xs text-muted-foreground">Kawasan Kumuh</p>
-              <h1 className="text-lg font-bold text-foreground">{regionData.name}</h1>
+              <h1 className="text-lg font-bold text-foreground">{regionName}</h1>
             </div>
           </div>
 
@@ -150,9 +156,9 @@ export function KawasanKumuhHeader({
                 <SelectValue placeholder="Pilih Region" />
               </SelectTrigger>
               <SelectContent>
-                {Object.entries(kawasanRegionCenters).map(([key, value]) => (
-                  <SelectItem key={key} value={key}>
-                    {value.name}
+                {regionOptions.map((option) => (
+                  <SelectItem key={option.id} value={option.id}>
+                    {option.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -183,7 +189,7 @@ export function KawasanKumuhHeader({
             </div>
             <div className="stat-badge hidden md:flex">
               <Users className="w-4 h-4" />
-              <span>{totalKK} KK</span>
+              <span>{totalPenduduk.toLocaleString("id-ID")} Penduduk</span>
             </div>
 
             {/* Mobile Sidebar Toggle */}
@@ -206,6 +212,7 @@ interface KawasanKumuhSidebarProps {
   kabupatenFilter: string;
   kecamatanFilter: string;
   kelurahanFilter: string;
+  statusColors: Record<string, StatusColor>;
   onKabupatenChange: (value: string) => void;
   onKecamatanChange: (value: string) => void;
   onKelurahanChange: (value: string) => void;
@@ -224,6 +231,7 @@ export function KawasanKumuhSidebar({
   kabupatenFilter,
   kecamatanFilter,
   kelurahanFilter,
+  statusColors,
   onKabupatenChange,
   onKecamatanChange,
   onKelurahanChange,
@@ -240,10 +248,10 @@ export function KawasanKumuhSidebar({
     <div
       className={`${
         isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-      } fixed lg:relative z-40 lg:z-10 h-[calc(100vh-4rem)] lg:h-full top-16 lg:top-0 left-0 w-[85vw] sm:w-80 lg:w-80 bg-card border-r border-border transition-transform duration-300 flex flex-col overflow-hidden shadow-xl lg:shadow-none`}
+      } fixed lg:relative z-40 lg:z-10 h-[calc(100vh-4rem)] lg:h-full top-16 lg:top-0 left-0 w-[85vw] sm:w-80 lg:w-96 bg-card border-r border-border transition-transform duration-300 flex flex-col shadow-xl lg:shadow-none`}
     >
       {/* Mobile Header with Close Button */}
-      <div className="lg:hidden flex items-center justify-between p-3 border-b border-border bg-secondary/50">
+      <div className="lg:hidden flex items-center justify-between p-3 border-b border-border bg-secondary/50 flex-shrink-0">
         <span className="font-semibold text-foreground text-sm">Filter & Daftar Kawasan</span>
         <button
           onClick={onCloseSidebar}
@@ -293,7 +301,7 @@ export function KawasanKumuhSidebar({
       </div>
 
       {/* Kawasan List - Scrollable */}
-      <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-2 sm:space-y-3">
+      <div className="flex-1 min-h-0 overflow-y-scroll p-3 sm:p-4 space-y-2 sm:space-y-3">
         {filteredKawasan.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground text-sm">
             Tidak ada kawasan ditemukan
@@ -304,6 +312,7 @@ export function KawasanKumuhSidebar({
               key={kawasan.id}
               kawasan={kawasan}
               isSelected={selectedKawasanId === kawasan.id}
+              statusColor={statusColors[kawasan.status]}
               onClick={() => onKawasanClick(kawasan)}
             />
           ))
@@ -317,15 +326,19 @@ export function KawasanKumuhSidebar({
 // KawasanKumuhLegend Component
 // ============================================
 
-export function KawasanKumuhLegend() {
+interface KawasanKumuhLegendProps {
+  statusColors: Record<string, StatusColor>;
+}
+
+export function KawasanKumuhLegend({ statusColors }: KawasanKumuhLegendProps) {
   return (
-    <div className="absolute bottom-4 sm:bottom-6 left-4 sm:left-auto sm:right-6 bg-card/95 backdrop-blur-sm border border-border rounded-xl shadow-lg p-3 sm:p-4 z-[1000] max-w-[180px] sm:max-w-[200px]">
+    <div className="absolute bottom-4 right-4 bg-card/95 backdrop-blur-sm border border-border rounded-xl shadow-lg p-3 sm:p-4 z-[500] max-w-[180px] sm:max-w-[200px] pointer-events-auto">
       <span className="text-xs font-semibold text-foreground mb-2 sm:mb-3 flex items-center gap-2">
         <span className="w-2 h-2 bg-primary rounded-full" />
         Status Kawasan
       </span>
       <div className="space-y-1.5 sm:space-y-2">
-        {Object.entries(kawasanStatusColors).map(([key, value]) => (
+        {Object.entries(statusColors).map(([key, value]) => (
           <div key={key} className="flex items-center gap-2 text-xs">
             <div
               className="w-3 h-3 sm:w-4 sm:h-4 rounded border border-white/50 shadow-sm flex-shrink-0"

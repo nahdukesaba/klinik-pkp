@@ -1,19 +1,12 @@
-import BahanBangunanPage from "./BahanBangunanPage";
-import FaqPage from "./FaqPage";
-import KegiatanKrsPage from "./KegiatanKrsPage";
-import KontakPage from "./KontakPage";
-import PeraturanPage from "./PeraturanPage";
-import PerizinanPage from "./PerizinanPage";
+/**
+ * Route: /informasi
+ * 
+ * FILE INI HANYA UNTUK ROUTING!
+ * Redirect ke halaman tentang sebagai default
+ */
 
-export default function InformasiAllPages() {
-	return (
-		<>
-			<BahanBangunanPage />
-			<FaqPage />
-			<KegiatanKrsPage />
-			<KontakPage />
-			<PeraturanPage />
-			<PerizinanPage />
-		</>
-	);
+import { redirect } from "next/navigation";
+
+export default function InformasiPage() {
+  redirect("/informasi/tentang");
 }

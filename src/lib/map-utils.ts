@@ -1,0 +1,283 @@
+/**
+ * Map Utilities
+ *
+ * Shared utilities untuk inisialisasi dan manajemen peta Leaflet.
+ * Termasuk: dynamic loading, cleanup, marker interaction, dan popup builder.
+ *
+ * Fitur keamanan:
+ * - Semua konten popup di-escape via escapeHtml/escapeAttr (anti-XSS)
+ * - URL di-sanitize via sanitizeUrl sebelum dirender ke HTML
+ *
+ * @module map-utils
+ */
+
+import { escapeHtml, escapeAttr, sanitizeUrl } from "@/lib/security";
+
+import type * as L from "leaflet";
+
+export interface MapInitOptions {
+  center: [number, number];
+  zoom: number;
+  zoomControl?: boolean;
+  dragging?: boolean;
+  touchZoom?: boolean;
+  scrollWheelZoom?: boolean;
+  doubleClickZoom?: boolean;
+}
+
+const DEFAULT_MAP_OPTIONS: Partial<MapInitOptions> = {
+  zoomControl: true,
+  dragging: true,
+  touchZoom: true,
+  scrollWheelZoom: true,
+  doubleClickZoom: true,
+};
+
+/**
+ * Load Leaflet module dynamically
+ */
+export async function loadLeaflet(): Promise<typeof L> {
+  const mod = await import("leaflet");
+  const Lmod = mod as typeof import("leaflet") & { default?: typeof import("leaflet") };
+  return (Lmod.default ?? Lmod) as typeof import("leaflet");
+}
+
+/**
+ * Clean up Leaflet container to prevent re-initialization issues
+ */
+export function cleanupMapContainer(container: HTMLElement | null): void {
+  if (!container) return;
+
+  type LeafletContainer = HTMLElement & { _leaflet_id?: number };
+  const leafletContainer = container as LeafletContainer;
+
+  if (leafletContainer._leaflet_id) {
+    delete leafletContainer._leaflet_id;
+    container.innerHTML = "";
+  }
+}
+
+/**
+ * Check if container is already initialized with Leaflet
+ */
+export function isMapInitialized(container: HTMLElement | null): boolean {
+  if (!container) return false;
+  type LeafletContainer = HTMLElement & { _leaflet_id?: number };
+  return !!(container as LeafletContainer)._leaflet_id;
+}
+
+/**
+ * Create a Leaflet map instance
+ */
+export function createMap(
+  L: typeof import("leaflet"),
+  container: HTMLElement,
+  options: MapInitOptions
+): L.Map {
+  const mergedOptions = { ...DEFAULT_MAP_OPTIONS, ...options };
+
+  const map = L.map(container, {
+    center: mergedOptions.center,
+    zoom: mergedOptions.zoom,
+    zoomControl: mergedOptions.zoomControl,
+    dragging: mergedOptions.dragging,
+    touchZoom: mergedOptions.touchZoom,
+    scrollWheelZoom: mergedOptions.scrollWheelZoom,
+    doubleClickZoom: mergedOptions.doubleClickZoom,
+  });
+
+  // Add OpenStreetMap tile layer
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    maxZoom: 19,
+  }).addTo(map);
+
+  // Invalidate size after mount
+  setTimeout(() => map.invalidateSize(), 100);
+  setTimeout(() => map.invalidateSize(), 500);
+
+  return map;
+}
+
+/**
+ * Safely remove a Leaflet map instance
+ */
+export function destroyMap(map: L.Map | null): void {
+  if (!map) return;
+  try {
+    map.remove();
+  } catch {
+    // Ignore cleanup errors
+  }
+}
+
+/**
+ * Bind hover+click interaction to a Leaflet layer (marker, circle, polygon).
+ * - Desktop: hover shows popup, mouse away hides it
+ * - Click: pins the popup open (mouseout won't close it)
+ * - Mobile: tap opens popup and keeps it pinned
+ *
+ * Provides great UX for both desktop and mobile users,
+ * especially for elderly users who need more time to read popups.
+ */
+export function bindMarkerInteraction(
+  layer: L.Layer,
+  options?: { onClick?: () => void }
+): void {
+  let isPinned = false;
+
+  layer.on("mouseover", () => {
+    (layer as unknown as L.Marker).openPopup();
+  });
+
+  layer.on("mouseout", () => {
+    if (!isPinned) {
+      (layer as unknown as L.Marker).closePopup();
+    }
+  });
+
+  layer.on("click", () => {
+    isPinned = true;
+    (layer as unknown as L.Marker).openPopup();
+    options?.onClick?.();
+  });
+
+  layer.on("popupclose", () => {
+    isPinned = false;
+  });
+}
+
+/**
+ * Standard marker SVG icon template
+ */
+export function createMarkerSvg(color: string, id: string | number): string {
+  return `
+    <svg width="40" height="50" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <filter id="shadow-${escapeAttr(String(id))}" x="-50%" y="-50%" width="200%" height="200%">
+          <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+        </filter>
+      </defs>
+      <path d="M20 2 C 11 2, 4 9, 4 18 C 4 28, 20 46, 20 46 C 20 46, 36 28, 36 18 C 36 9, 29 2, 20 2 Z" 
+            fill="${escapeAttr(color)}" 
+            filter="url(#shadow-${escapeAttr(String(id))})"
+            stroke="white" 
+            stroke-width="2"/>
+      <circle cx="20" cy="18" r="8" fill="white" fill-opacity="0.9"/>
+    </svg>
+  `;
+}
+
+// ============================================
+// Safe HTML builders for map popups
+// ============================================
+
+/**
+ * Buat safe popup HTML. Semua data di-escape untuk mencegah XSS.
+ * Gunakan fungsi ini di semua map hooks alih-alih template literal langsung.
+ *
+ * @example
+ * marker.bindPopup(buildSafePopup({
+ *   title: kawasan.name,
+ *   fields: [
+ *     { label: "Lokasi", value: kawasan.kelurahan },
+ *   ],
+ * }));
+ */
+export interface PopupField {
+  label: string;
+  value: string | number;
+}
+
+export interface SafePopupOptions {
+  title: string;
+  headerColor?: string;
+  headerGradientEnd?: string;
+  imageUrl?: string;
+  imageAlt?: string;
+  fields?: PopupField[];
+  gridFields?: PopupField[];
+  /** Render gridFields sebelum fields (default: false — fields dulu) */
+  gridFirst?: boolean;
+  extraHtml?: string;
+  statusBadge?: { label: string; color: string };
+}
+
+export function buildSafePopup(options: SafePopupOptions): string {
+  const {
+    title,
+    headerColor = "hsl(191, 79%, 35%)",
+    headerGradientEnd,
+    imageUrl,
+    imageAlt,
+    fields = [],
+    gridFields = [],
+    statusBadge,
+  } = options;
+
+  const safeTitle = escapeHtml(title);
+  const safeHeaderColor = escapeAttr(headerColor);
+  const safeGradientEnd = headerGradientEnd
+    ? escapeAttr(headerGradientEnd)
+    : `${safeHeaderColor}dd`;
+
+  const imageSection =
+    imageUrl
+      ? `<div style="margin: -8px -8px 0 -8px; height: 140px; overflow: hidden; border-radius: 4px 4px 0 0;">
+          <img src="${escapeAttr(sanitizeUrl(imageUrl))}" alt="${escapeAttr(imageAlt ?? title)}" style="width: 100%; height: 100%; object-fit: cover;" />
+         </div>`
+      : "";
+
+  const headerStyle = imageUrl
+    ? "padding: 10px 14px;"
+    : "margin: -8px -8px 6px -8px; border-radius: 4px 4px 0 0; padding: 10px 14px;";
+
+  const fieldsHtml = fields
+    .map(
+      (f) => `
+      <p style="margin: 0 0 6px 0; overflow-wrap: break-word; word-break: break-word;">
+        <strong style="color: #1e293b;">${escapeHtml(f.label)}:</strong> ${escapeHtml(String(f.value))}
+      </p>`
+    )
+    .join("");
+
+  const gridHtml =
+    gridFields.length > 0
+      ? `<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px 10px; font-size: 12px; margin-top: 6px;">
+          ${gridFields
+            .map(
+              (f) =>
+                `<div style="overflow-wrap: break-word;"><strong style="color: #1e293b;">${escapeHtml(f.label)}:</strong> ${escapeHtml(String(f.value))}</div>`
+            )
+            .join("")}
+         </div>`
+      : "";
+
+  const extraSection = options.extraHtml ?? "";
+
+  const badgeHtml = statusBadge
+    ? `<div style="margin-top: 8px;">
+        <span style="display: inline-block; padding: 4px 12px; font-size: 11px; font-weight: 600; border-radius: 12px; color: white; background: ${escapeAttr(statusBadge.color)};">
+          ${escapeHtml(statusBadge.label)}
+        </span>
+       </div>`
+    : "";
+
+  return `
+    <div style="min-width: 220px; max-width: 340px; width: max-content; font-family: system-ui, sans-serif;">
+      ${imageSection}
+      <div style="background: linear-gradient(135deg, ${safeHeaderColor}, ${safeGradientEnd}); color: white; ${headerStyle}">
+        <h3 style="font-weight: bold; font-size: 14px; margin: 0; line-height: 1.3; word-break: break-word;">${safeTitle}</h3>
+      </div>
+      <div style="padding: 10px 12px 12px 12px; font-size: 12px; color: #64748b; line-height: 1.5;">
+        ${options.gridFirst ? gridHtml : fieldsHtml}
+        ${options.gridFirst ? fieldsHtml : gridHtml}
+        ${extraSection}
+        ${badgeHtml}
+      </div>
+    </div>
+  `;
+}
+
+// Re-export security helpers for map hooks convenience
+export { escapeHtml, escapeAttr, sanitizeUrl } from "@/lib/security";

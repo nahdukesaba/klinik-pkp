@@ -1,20 +1,16 @@
 /**
  * Penerimaan BSPS Components
- * 
- * Barrel export untuk semua komponen Penerimaan BSPS
+ * Barrel export untuk komponen Penerimaan BSPS
  */
 
+export { default as PenerimaanBspsPage } from "./PenerimaanBspsPage";
+export { BspsMapSection } from "./BspsMapSection";
+export { BspsSidebar } from "./BspsSidebar";
 export {
-  BspsHeader,
-  BspsFilterBar,
-  BspsFilterDropdowns,
-  BspsActiveFilters,
-  BspsLegend,
-  BspsMapSection,
+  BspsBackgroundPattern,
   BspsInfoCards,
   BspsRequirements,
   BspsProcessSteps,
   BspsKriteria,
   BspsCta,
-  BspsBackgroundPattern,
-} from "./PenerimaanBspsComponents";
+} from "./BspsSections";

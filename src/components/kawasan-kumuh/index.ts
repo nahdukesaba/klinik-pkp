@@ -5,8 +5,6 @@
  */
 
 // Map Component
-export { KawasanKumuhMap } from "./KawasanKumuhMap";
-export type { KawasanKumuhMapRef } from "./KawasanKumuhMap";
 
 // UI Components
 export {
@@ -16,3 +14,5 @@ export {
   KawasanKumuhLegend,
   MobileSidebarToggle,
 } from "./KawasanKumuhComponents";
+
+export { default as KawasanKumuhPage } from "./KawasanKumuhPage";

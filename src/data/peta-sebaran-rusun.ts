@@ -47,7 +47,7 @@ export const rusunDataList: RusunData[] = [
 ];
 
 export const rusunRegionCenters: Record<string, RusunRegionCenter> = {
-  medan: { lat: 3.5952, lng: 98.6722, zoom: 11, name: "Kota Medan" },
+  medan: { lat: 3.5952, lng: 98.6722, zoom: 12, name: "Kota Medan" },
   "sumatera-utara": {
     lat: 3.3,
     lng: 99.0,

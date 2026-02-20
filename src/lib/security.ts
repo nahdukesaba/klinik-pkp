@@ -186,11 +186,27 @@ export function checkRateLimit(
  * Generate CSRF token menggunakan crypto.randomUUID.
  * Simpan di sessionStorage (BUKAN localStorage — lebih aman).
  */
+/**
+ * Generate CSRF token menggunakan double-submit cookie pattern.
+ *
+ * 1. Generate random token
+ * 2. Simpan di cookie (accessible oleh server)
+ * 3. Return token untuk dikirim di header (X-CSRF-Token)
+ * 4. Server memverifikasi header === cookie
+ *
+ * Ini aman karena:
+ * - Attacker dari domain lain TIDAK bisa membaca cookie kita (SameSite + same-origin policy)
+ * - Attacker TIDAK bisa mengetahui nilai token untuk dikirim di header
+ * - Server memastikan kedua nilai cocok
+ */
 export function generateCsrfToken(): string {
   if (typeof window === "undefined") return "";
 
   const token = crypto.randomUUID();
-  sessionStorage.setItem("csrf-token", token);
+
+  // Set cookie dengan SameSite=Strict agar tidak dikirim dari cross-origin
+  document.cookie = `csrf-token=${token}; path=/; SameSite=Strict; max-age=600`;
+
   return token;
 }
 

@@ -199,7 +199,14 @@ export interface SafePopupOptions {
   gridFields?: PopupField[];
   /** Render gridFields sebelum fields (default: false — fields dulu) */
   gridFirst?: boolean;
+  /**
+   * HTML tambahan untuk popup. PERINGATAN: Konten ini di-sanitize
+   * dengan menghapus semua <script> tags dan event handlers.
+   * Untuk keamanan maksimal, gunakan `extraFields` sebagai gantinya.
+   */
   extraHtml?: string;
+  /** Fields tambahan yang di-render dengan auto-escaping (lebih aman dari extraHtml) */
+  extraFields?: PopupField[];
   statusBadge?: { label: string; color: string };
 }
 
@@ -253,7 +260,25 @@ export function buildSafePopup(options: SafePopupOptions): string {
          </div>`
       : "";
 
-  const extraSection = options.extraHtml ?? "";
+  // Sanitize extraHtml — hapus script tags dan event handlers untuk mencegah XSS
+  const rawExtraHtml = options.extraHtml ?? "";
+  const extraSection = rawExtraHtml
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
+    .replace(/<script[^>]*\/>/gi, "")
+    .replace(/on\w+\s*=\s*["'][^"']*["']/gi, "")
+    .replace(/on\w+\s*=\s*\S+/gi, "")
+    .replace(/javascript\s*:/gi, "")
+    .replace(/data\s*:\s*text\/html/gi, "");
+
+  // Render extraFields dengan auto-escaping (cara aman)
+  const extraFieldsHtml = (options.extraFields ?? [])
+    .map(
+      (f) => `
+      <p style="margin: 0 0 6px 0; overflow-wrap: break-word; word-break: break-word;">
+        <strong style="color: #1e293b;">${escapeHtml(f.label)}:</strong> ${escapeHtml(String(f.value))}
+      </p>`
+    )
+    .join("");
 
   const badgeHtml = statusBadge
     ? `<div style="margin-top: 8px;">
@@ -273,6 +298,7 @@ export function buildSafePopup(options: SafePopupOptions): string {
         ${options.gridFirst ? gridHtml : fieldsHtml}
         ${options.gridFirst ? fieldsHtml : gridHtml}
         ${extraSection}
+        ${extraFieldsHtml}
         ${badgeHtml}
       </div>
     </div>

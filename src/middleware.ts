@@ -104,9 +104,13 @@ export function middleware(request: NextRequest) {
   // - Third-party script injection
   // - Data exfiltration
   // - Clickjacking (via frame-ancestors)
+  //
+  // CATATAN: 'strict-dynamic' TIDAK digunakan karena akan men-disable 'self'
+  // sehingga Next.js script chunks dari origin sendiri akan diblokir browser.
+  // Nonce tetap digunakan untuk inline scripts (mis. next-themes).
   const cspHeader = `
     default-src 'self';
-    script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""} https://www.instagram.com https://*.cdninstagram.com https://*.facebook.com https://*.fbcdn.net;
+    script-src 'self' 'nonce-${nonce}'${isDev ? " 'unsafe-eval'" : ""} https://www.instagram.com https://*.cdninstagram.com https://*.facebook.com https://*.fbcdn.net;
     style-src 'self' 'unsafe-inline' https://unpkg.com https://cdnjs.cloudflare.com https://fonts.googleapis.com https://www.instagram.com https://*.cdninstagram.com;
     img-src 'self' blob: data: https: http:;
     font-src 'self' data: https://fonts.gstatic.com https://www.instagram.com https://*.cdninstagram.com;

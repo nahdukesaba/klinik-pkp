@@ -79,9 +79,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 2. Verifikasi CSRF token (harus ada di header)
-    const csrfToken = request.headers.get("x-csrf-token");
-    if (!csrfToken || csrfToken.length < 10) {
+    // 2. Verifikasi CSRF token (double-submit cookie pattern)
+    // Client mengirim token di header DAN cookie.
+    // Server memverifikasi keduanya cocok.
+    const csrfTokenHeader = request.headers.get("x-csrf-token");
+    const csrfTokenCookie = request.cookies.get("csrf-token")?.value;
+
+    if (
+      !csrfTokenHeader ||
+      !csrfTokenCookie ||
+      csrfTokenHeader.length < 10 ||
+      csrfTokenHeader !== csrfTokenCookie
+    ) {
       return NextResponse.json(
         { error: "Request tidak valid. Silakan muat ulang halaman." },
         { status: 403 }
@@ -126,9 +135,24 @@ export async function POST(request: NextRequest) {
 
     // --- Demo mode: validasi sederhana ---
     // Hapus blok ini dan ganti dengan database query saat production.
-    const DEMO_EMAIL = process.env.DEMO_USER_EMAIL ?? "admin@klinikpkp.go.id";
-    const DEMO_NIP = process.env.DEMO_USER_NIP ?? "199001012020";
-    const DEMO_PASSWORD = process.env.DEMO_USER_PASSWORD ?? "KlinikPKP2024!";
+    //
+    // KEAMANAN: Credentials HARUS di set via environment variables.
+    // TIDAK ada fallback hardcoded — jika env var kosong, login selalu gagal.
+    const DEMO_EMAIL = process.env.DEMO_USER_EMAIL ?? "";
+    const DEMO_NIP = process.env.DEMO_USER_NIP ?? "";
+    const DEMO_PASSWORD = process.env.DEMO_USER_PASSWORD ?? "";
+
+    // Jika env vars belum dikonfigurasi, tolak semua login
+    if (!DEMO_EMAIL || !DEMO_NIP || !DEMO_PASSWORD) {
+      console.error(
+        "[AUTH] DEMO_USER_EMAIL, DEMO_USER_NIP, dan DEMO_USER_PASSWORD " +
+        "harus di-set di environment variables."
+      );
+      return NextResponse.json(
+        { error: "Sistem autentikasi belum dikonfigurasi." },
+        { status: 503 }
+      );
+    }
 
     if (email !== DEMO_EMAIL || nip !== DEMO_NIP || password !== DEMO_PASSWORD) {
       // Jangan beri tahu field mana yang salah (anti-enumeration)

@@ -21,6 +21,10 @@ export const metadata: Metadata = {
     "rusun",
     "bsps",
   ],
+  icons: {
+    icon: "/logo-bp3kp.png",
+    apple: "/logo-bp3kp.png",
+  },
 };
 
 export default async function RootLayout({

@@ -61,9 +61,10 @@ const nextConfig = {
         },
         // === Permissions Policy ===
         // Batasi fitur browser — hanya izinkan yang dibutuhkan
+        // CATATAN: unload tidak diblokir karena Next.js membutuhkannya
         {
           key: 'Permissions-Policy',
-          value: 'camera=(), microphone=(), geolocation=(self), payment=(), usb=(), unload=()',
+          value: 'camera=(), microphone=(), geolocation=(self), payment=(), usb=()',
         },
       ],
     },

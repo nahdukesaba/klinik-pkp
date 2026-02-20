@@ -192,9 +192,10 @@ export function middleware(request: NextRequest) {
   response.headers.set("Cross-Origin-Resource-Policy", "same-origin");
 
   // Permissions Policy — batasi fitur browser yang bisa digunakan
+  // CATATAN: Tidak memblokir 'unload' karena Next.js membutuhkannya untuk cleanup
   response.headers.set(
     "Permissions-Policy",
-    "camera=(), microphone=(), geolocation=(self), payment=(), usb=(), unload=()"
+    "camera=(), microphone=(), geolocation=(self), payment=(), usb=()"
   );
 
   // Remove X-Powered-By header (information disclosure)

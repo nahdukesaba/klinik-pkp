@@ -6,10 +6,10 @@
 "use client";
 
 import { ImageZoomDialog } from "@/components/shared";
-import type { Design } from "@/data/bank-desain";
+import type { BankDesainData } from "@/hooks/bank-desain/use-bank-desain-query";
 
 interface DesignPreviewDialogProps {
-  design: Design | null;
+  design: BankDesainData | null;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -31,5 +31,3 @@ export function DesignPreviewDialog({
     />
   );
 }
-
-export default DesignPreviewDialog;

@@ -9,7 +9,7 @@ import { ArrowDown, BookOpen, Newspaper } from "lucide-react";
 import "./sosialisasi.css";
 
 import { Footer, Navbar } from "@/components/layout";
-import { ImageZoomDialog } from "@/components/shared";
+import { ApiErrorState, ImageZoomDialog } from "@/components/shared";
 import { PKPBeritaSection } from "@/components/sosialisasi-pkp/PKPBeritaSection";
 import { PKPJadwalSection } from "@/components/sosialisasi-pkp/PKPJadwalSection";
 import { PKPMapSection } from "@/components/sosialisasi-pkp/PKPMapSection";
@@ -82,6 +82,11 @@ function SosialisasiKlinikPKPContent() {
   // Hooks untuk logic - pass handleImageClick for map popup image zoom
   const pageLogic = useSosialisasiPKPPage(handleImageClick);
 
+  // Error state tetap full-page karena tidak ada data sama sekali
+  if (pageLogic.isError) {
+    return <ApiErrorState error={pageLogic.error} onRetry={pageLogic.refetch} />;
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -126,6 +131,9 @@ function SosialisasiKlinikPKPContent() {
                 <PKPMapSection
                   mapRef={pageLogic.map.mapRef}
                   filteredLocations={pageLogic.map.filteredMapLocations}
+                  mapYear={pageLogic.map.mapYear}
+                  setMapYear={pageLogic.map.setMapYear}
+                  mapYears={pageLogic.map.mapYears}
                   kabupatenFilter={pageLogic.map.mapKabupatenFilter}
                   setKabupatenFilter={pageLogic.map.setMapKabupatenFilter}
                   kecamatanFilter={pageLogic.map.mapKecamatanFilter}
@@ -150,7 +158,7 @@ function SosialisasiKlinikPKPContent() {
 
             {/* Jadwal Section - Scrollable (2/5) */}
             <div id="jadwal-section" className="lg:col-span-2 scroll-mt-24">
-              <PKPJadwalSection
+                <PKPJadwalSection
                 jadwalYear={pageLogic.jadwal.jadwalYear}
                 setJadwalYear={pageLogic.jadwal.setJadwalYear}
                 jadwalMonth={pageLogic.jadwal.jadwalMonth}
@@ -177,28 +185,30 @@ function SosialisasiKlinikPKPContent() {
 
           {/* Berita Section - Full Width */}
           <div id="berita-section" className="scroll-mt-24">
-            <PKPBeritaSection
-              beritaYear={pageLogic.berita.beritaYear}
-              setBeritaYear={pageLogic.berita.setBeritaYear}
-              beritaMonth={pageLogic.berita.beritaMonth}
-              setBeritaMonth={pageLogic.berita.setBeritaMonth}
-              beritaStartDate={pageLogic.berita.beritaStartDate}
-              setBeritaStartDate={pageLogic.berita.setBeritaStartDate}
-              beritaEndDate={pageLogic.berita.beritaEndDate}
-              setBeritaEndDate={pageLogic.berita.setBeritaEndDate}
-              beritaSearch={pageLogic.berita.beritaSearch}
-              setBeritaSearch={pageLogic.berita.setBeritaSearch}
-              beritaYears={pageLogic.berita.beritaYears}
-              filteredBerita={pageLogic.berita.filteredBerita}
-              resetFilters={pageLogic.berita.resetFilters}
-              hasActiveFilters={pageLogic.berita.hasActiveFilters}
-              onImageClick={handleImageClick}
-              onViewOnMap={pageLogic.flyToLocation}
-            />
+              <PKPBeritaSection
+                beritaYear={pageLogic.berita.beritaYear}
+                setBeritaYear={pageLogic.berita.setBeritaYear}
+                beritaMonth={pageLogic.berita.beritaMonth}
+                setBeritaMonth={pageLogic.berita.setBeritaMonth}
+                beritaStartDate={pageLogic.berita.beritaStartDate}
+                setBeritaStartDate={pageLogic.berita.setBeritaStartDate}
+                beritaEndDate={pageLogic.berita.beritaEndDate}
+                setBeritaEndDate={pageLogic.berita.setBeritaEndDate}
+                beritaSearch={pageLogic.berita.beritaSearch}
+                setBeritaSearch={pageLogic.berita.setBeritaSearch}
+                beritaYears={pageLogic.berita.beritaYears}
+                filteredBerita={pageLogic.berita.filteredBerita}
+                paginatedBerita={pageLogic.berita.paginatedBerita}
+                pagination={pageLogic.berita.pagination}
+                resetFilters={pageLogic.berita.resetFilters}
+                hasActiveFilters={pageLogic.berita.hasActiveFilters}
+                onImageClick={handleImageClick}
+                onViewOnMap={pageLogic.flyToLocation}
+              />
           </div>
-
-          <Footer />
         </div>
+
+        <Footer />
       </main>
       {/* Image Zoom Modal */}
       {zoomState && (

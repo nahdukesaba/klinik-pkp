@@ -15,6 +15,15 @@ import { escapeHtml, escapeAttr, sanitizeUrl } from "@/lib/security";
 
 import type * as L from "leaflet";
 
+// Hoist RegExp ke module-level untuk popup HTML sanitization.
+// Ref: vercel-react-best-practices/js-hoist-regexp
+const RE_SCRIPT_TAGS = /<script[^>]*>[\s\S]*?<\/script>/gi;
+const RE_SELF_CLOSING_SCRIPT = /<script[^>]*\/>/gi;
+const RE_EVENT_ATTR_QUOTED = /on\w+\s*=\s*["'][^"']*["']/gi;
+const RE_EVENT_ATTR_UNQUOTED = /on\w+\s*=\s*\S+/gi;
+const RE_JAVASCRIPT_URI = /javascript\s*:/gi;
+const RE_DATA_TEXT_HTML = /data\s*:\s*text\/html/gi;
+
 export interface MapInitOptions {
   center: [number, number];
   zoom: number;
@@ -34,7 +43,7 @@ const DEFAULT_MAP_OPTIONS: Partial<MapInitOptions> = {
 };
 
 /**
- * Load Leaflet module dynamically
+ * Muat modul Leaflet secara dinamis
  */
 export async function loadLeaflet(): Promise<typeof L> {
   const mod = await import("leaflet");
@@ -43,7 +52,7 @@ export async function loadLeaflet(): Promise<typeof L> {
 }
 
 /**
- * Clean up Leaflet container to prevent re-initialization issues
+ * Bersihkan kontainer Leaflet untuk mencegah masalah re-inisialisasi
  */
 export function cleanupMapContainer(container: HTMLElement | null): void {
   if (!container) return;
@@ -58,7 +67,7 @@ export function cleanupMapContainer(container: HTMLElement | null): void {
 }
 
 /**
- * Check if container is already initialized with Leaflet
+ * Cek apakah kontainer sudah diinisialisasi Leaflet
  */
 export function isMapInitialized(container: HTMLElement | null): boolean {
   if (!container) return false;
@@ -67,7 +76,7 @@ export function isMapInitialized(container: HTMLElement | null): boolean {
 }
 
 /**
- * Create a Leaflet map instance
+ * Buat instance peta Leaflet
  */
 export function createMap(
   L: typeof import("leaflet"),
@@ -86,13 +95,13 @@ export function createMap(
     doubleClickZoom: mergedOptions.doubleClickZoom,
   });
 
-  // Add OpenStreetMap tile layer
+  // Tambahkan tile layer OpenStreetMap
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     maxZoom: 19,
   }).addTo(map);
 
-  // Invalidate size after mount
+  // Sesuaikan ukuran setelah mount
   setTimeout(() => map.invalidateSize(), 100);
   setTimeout(() => map.invalidateSize(), 500);
 
@@ -100,25 +109,25 @@ export function createMap(
 }
 
 /**
- * Safely remove a Leaflet map instance
+ * Hapus instance peta Leaflet dengan aman
  */
 export function destroyMap(map: L.Map | null): void {
   if (!map) return;
   try {
     map.remove();
   } catch {
-    // Ignore cleanup errors
+    // Abaikan error saat cleanup
   }
 }
 
 /**
- * Bind hover+click interaction to a Leaflet layer (marker, circle, polygon).
- * - Desktop: hover shows popup, mouse away hides it
- * - Click: pins the popup open (mouseout won't close it)
- * - Mobile: tap opens popup and keeps it pinned
+ * Bind interaksi hover+klik ke layer Leaflet (marker, circle, polygon).
+ * - Desktop: hover menampilkan popup, mouse keluar menyembunyikan
+ * - Klik: popup tetap terbuka (mouseout tidak menutup)
+ * - Mobile: tap membuka popup dan tetap terbuka
  *
- * Provides great UX for both desktop and mobile users,
- * especially for elderly users who need more time to read popups.
+ * UX yang baik untuk pengguna desktop dan mobile,
+ * terutama untuk pengguna yang butuh waktu lebih lama membaca popup.
  */
 export function bindMarkerInteraction(
   layer: L.Layer,
@@ -148,7 +157,7 @@ export function bindMarkerInteraction(
 }
 
 /**
- * Standard marker SVG icon template
+ * Template ikon SVG marker standar
  */
 export function createMarkerSvg(color: string, id: string | number): string {
   return `
@@ -169,7 +178,7 @@ export function createMarkerSvg(color: string, id: string | number): string {
 }
 
 // ============================================
-// Safe HTML builders for map popups
+// Pembangun HTML aman untuk popup peta
 // ============================================
 
 /**
@@ -230,14 +239,15 @@ export function buildSafePopup(options: SafePopupOptions): string {
 
   const imageSection =
     imageUrl
-      ? `<div style="margin: -8px -8px 0 -8px; height: 140px; overflow: hidden; border-radius: 4px 4px 0 0;">
-          <img src="${escapeAttr(sanitizeUrl(imageUrl))}" alt="${escapeAttr(imageAlt ?? title)}" style="width: 100%; height: 100%; object-fit: cover;" />
+      ? `<div style="height: 160px; overflow: hidden; border-radius: 8px 8px 0 0;">
+          <img src="${escapeAttr(sanitizeUrl(imageUrl))}" alt="${escapeAttr(imageAlt ?? title)}" 
+               style="width: 100%; height: 100%; object-fit: cover; display: block;" />
          </div>`
       : "";
 
   const headerStyle = imageUrl
     ? "padding: 10px 14px;"
-    : "margin: -8px -8px 6px -8px; border-radius: 4px 4px 0 0; padding: 10px 14px;";
+    : "border-radius: 8px 8px 0 0; padding: 10px 14px;";
 
   const fieldsHtml = fields
     .map(
@@ -263,12 +273,12 @@ export function buildSafePopup(options: SafePopupOptions): string {
   // Sanitize extraHtml — hapus script tags dan event handlers untuk mencegah XSS
   const rawExtraHtml = options.extraHtml ?? "";
   const extraSection = rawExtraHtml
-    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
-    .replace(/<script[^>]*\/>/gi, "")
-    .replace(/on\w+\s*=\s*["'][^"']*["']/gi, "")
-    .replace(/on\w+\s*=\s*\S+/gi, "")
-    .replace(/javascript\s*:/gi, "")
-    .replace(/data\s*:\s*text\/html/gi, "");
+    .replace(RE_SCRIPT_TAGS, "")
+    .replace(RE_SELF_CLOSING_SCRIPT, "")
+    .replace(RE_EVENT_ATTR_QUOTED, "")
+    .replace(RE_EVENT_ATTR_UNQUOTED, "")
+    .replace(RE_JAVASCRIPT_URI, "")
+    .replace(RE_DATA_TEXT_HTML, "");
 
   // Render extraFields dengan auto-escaping (cara aman)
   const extraFieldsHtml = (options.extraFields ?? [])

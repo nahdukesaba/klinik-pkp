@@ -1,111 +1,122 @@
 /**
- * Hook: useSebaranRusun
- * Mengelola filter, pencarian, dan data untuk halaman Sebaran Rusun.
- * Menggunakan useCascadingFilter untuk filter lokasi cascading.
- *
- * Saat API siap, ganti isi `data` dan `regionCenters` dengan response API
- * (misalnya via React Query) tanpa mengubah return type.
+ * useSebaranRusun — Semua logika halaman Sebaran Rusun.
+ * Menggabungkan fetching data, filter, kontrol peta, dan navigasi dalam satu hook.
  */
 
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
 
-import {
-  rusunDataList,
-  rusunRegionCenters,
-  type RusunData,
-} from "@/data/peta-sebaran-rusun";
+import { useRouter } from "next/navigation";
+
+import { useRusunMap } from "@/hooks/sebaran-rusun/use-rusun-map";
+import { useRusunQuery, type RusunData } from "@/hooks/sebaran-rusun/use-rusun-query";
 import { useCascadingFilter } from "@/hooks/use-cascading-filter";
 import { useDebounce } from "@/hooks/use-debounce";
+import { useLazyMount } from "@/hooks/use-lazy-mount";
+import { usePagination } from "@/hooks/use-pagination";
+import { useYearFilter } from "@/hooks/use-year-filter";
 
-// ============================================
-// Constants
-// ============================================
-const DEFAULT_REGION = "sumatera-utara";
+const SIDEBAR_PER_PAGE = 12;
 
-// ============================================
-// Hook Implementation
-// ============================================
 export function useSebaranRusun() {
-  // Data source (ganti dengan API call saat siap)
-  const data = rusunDataList;
-  const regionCenters = rusunRegionCenters;
+  const router = useRouter();
+  const { data, isLoading, isError, error } = useRusunQuery();
 
-  // Filter states
+  // Filter
   const [searchQuery, setSearchQuery] = useState("");
-  const [regionFilter, setRegionFilter] = useState(DEFAULT_REGION);
+  const debouncedSearch = useDebounce(searchQuery, 300);
+  const cascading = useCascadingFilter(data);
 
-  // UI states
+  // Year filter — default "all" agar semua tahun tampil saat pertama kali buka
+  const yearFilter = useYearFilter(data, (r: RusunData) => Number(r.yearGiven), "all");
+
+  // State UI
   const [selectedRusun, setSelectedRusun] = useState<RusunData | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  const debouncedSearch = useDebounce(searchQuery, 300);
+  // Peta (lazy-mount, aktif hanya saat data siap)
+  const mapLazy = useLazyMount();
+  const enableMap = mapLazy.isMounted && !isLoading && !isError;
 
-  // Shared cascading filter for location (kabupaten → kecamatan → kelurahan)
-  const cascading = useCascadingFilter(data);
-
-  // Derived: Region data
-  const regionData = useMemo(
-    () => regionCenters[regionFilter] ?? regionCenters[DEFAULT_REGION],
-    [regionFilter, regionCenters]
-  );
-
-  const regionOptions = useMemo(
-    () => Object.entries(regionCenters).map(([key, value]) => ({ id: key, name: value.name })),
-    [regionCenters]
-  );
-
-  // Derived: Filtered rusun (cascading + region + search)
+  // Turunan: daftar terfilter (year + cascading + pencarian)
   const filteredRusun = useMemo(() => {
-    const searchLower = debouncedSearch.toLowerCase();
+    const q = debouncedSearch.toLowerCase();
+    // yearFilter.filteredItems sudah filter by year dari `data` — tapi kita perlu chain
+    // dengan cascading. Cascading operates on `data`, jadi kita filter manual.
+    const yearFiltered = yearFilter.filteredItems;
+    const cascadingFiltered = cascading.filteredItems;
 
-    return cascading.filteredItems.filter((rusun: RusunData) => {
-      const matchesRegion =
-        regionFilter === "sumatera-utara" ||
-        (regionFilter === "medan" && rusun.kabupaten === "Kota Medan");
+    // Intersection: item yang lolos both year filter AND cascading filter
+    const cascadingIds = new Set(cascadingFiltered.map((r: RusunData) => r.id));
 
-      const matchesSearch =
+    return yearFiltered.filter((rusun: RusunData) => {
+      if (!cascadingIds.has(rusun.id)) return false;
+
+      const matchSearch =
         !debouncedSearch ||
-        rusun.name.toLowerCase().includes(searchLower) ||
-        rusun.address.toLowerCase().includes(searchLower) ||
-        rusun.kelurahan.toLowerCase().includes(searchLower) ||
-        rusun.kecamatan.toLowerCase().includes(searchLower);
+        rusun.name.toLowerCase().includes(q) ||
+        rusun.address.toLowerCase().includes(q) ||
+        rusun.kelurahan.toLowerCase().includes(q) ||
+        rusun.kecamatan.toLowerCase().includes(q);
 
-      return matchesRegion && matchesSearch;
+      return matchSearch;
     });
-  }, [debouncedSearch, regionFilter, cascading.filteredItems]);
+  }, [debouncedSearch, yearFilter.filteredItems, cascading.filteredItems]);
 
-  // Derived: Statistics
+  // Pagination untuk sidebar
+  const pagination = usePagination(filteredRusun, { perPage: SIDEBAR_PER_PAGE });
+
+  // Turunan: statistik
   const stats = useMemo(
     () => ({
       totalRusun: filteredRusun.length,
       totalUnits: filteredRusun.reduce((acc, r) => acc + r.units, 0),
     }),
-    [filteredRusun]
+    [filteredRusun],
   );
 
-  // Actions
-  const handleRegionChange = useCallback((value: string) => {
-    setRegionFilter(value);
-    cascading.filterActions.resetFilters();
-  }, [cascading.filterActions]);
-
-  const resetFilters = useCallback(() => {
-    setSearchQuery("");
-    cascading.filterActions.resetFilters();
-  }, [cascading.filterActions]);
-
-  const handleRusunSelect = useCallback((rusun: RusunData) => {
+  // Hook peta (klik marker → pilih + tutup sidebar)
+  const handleMarkerSelect = useCallback((rusun: RusunData) => {
     setSelectedRusun(rusun);
     setSidebarOpen(false);
   }, []);
 
+  const map = useRusunMap(filteredRusun, handleMarkerSelect, enableMap, sidebarOpen);
+
+  // Aksi
+  const handleYearChange = useCallback(
+    (value: string) => {
+      yearFilter.setYear(value);
+    },
+    [yearFilter],
+  );
+
+  const resetFilters = useCallback(() => {
+    setSearchQuery("");
+    yearFilter.setYear("all");
+    cascading.filterActions.resetFilters();
+  }, [cascading.filterActions, yearFilter]);
+
+  const handleRusunClick = useCallback(
+    (rusun: RusunData) => {
+      setSelectedRusun(rusun);
+      setSidebarOpen(false);
+      map.flyToLocation(rusun.lat, rusun.lng, 14);
+    },
+    [map],
+  );
+
+  const handleBack = useCallback(() => router.push("/"), [router]);
+
   return {
     // State
+    isLoading,
+    isError,
+    error,
     filters: {
       searchQuery,
-      regionFilter,
+      yearFilter: yearFilter.year,
       kabupatenFilter: cascading.filterState.kabupatenFilter,
       kecamatanFilter: cascading.filterState.kecamatanFilter,
       kelurahanFilter: cascading.filterState.kelurahanFilter,
@@ -113,9 +124,8 @@ export function useSebaranRusun() {
     selectedRusun,
     sidebarOpen,
 
-    // Derived data
-    regionData,
-    regionOptions,
+    // Turunan
+    availableYears: yearFilter.availableYears,
     filteredRusun,
     filterOptions: {
       kabupatenList: cascading.filterLists.kabupatenList,
@@ -123,16 +133,19 @@ export function useSebaranRusun() {
       kelurahanList: cascading.filterLists.kelurahanList,
     },
     stats,
+    mapRef: map.mapRef,
+    mapLazy,
+    pagination,
 
-    // Actions
+    // Aksi
     setSearchQuery,
-    setRegionFilter: handleRegionChange,
+    setYearFilter: handleYearChange,
     setKabupatenFilter: cascading.filterActions.setKabupatenFilter,
     setKecamatanFilter: cascading.filterActions.setKecamatanFilter,
     setKelurahanFilter: cascading.filterActions.setKelurahanFilter,
-    setSelectedRusun,
     setSidebarOpen,
     resetFilters,
-    handleRusunSelect,
+    handleRusunClick,
+    handleBack,
   };
 }

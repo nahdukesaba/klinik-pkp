@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 
-import { type BeritaSosialisasi } from "@/data/sosialisasi-klinik";
+import { usePagination } from "@/hooks/use-pagination";
+import { type BeritaSosialisasi } from "@/services/sosialisasi.service";
 
 /**
  * Hook untuk mengelola filtering berita sosialisasi.
@@ -15,6 +16,7 @@ import { type BeritaSosialisasi } from "@/data/sosialisasi-klinik";
 export function useSosialisasiPKPBerita(
   rawBerita: BeritaSosialisasi[]
 ) {
+  // Default: semua tahun agar berita langsung terlihat saat halaman dimuat
   const [beritaYear, setBeritaYear] = useState<string>("all");
   const [beritaMonth, setBeritaMonth] = useState<string>("all");
   const [beritaStartDate, setBeritaStartDate] = useState<string>("");
@@ -69,13 +71,15 @@ export function useSosialisasiPKPBerita(
     return result.sort((a, b) => new Date(b.rawDate).getTime() - new Date(a.rawDate).getTime());
   }, [rawBerita, beritaYear, beritaMonth, beritaStartDate, beritaEndDate, beritaSearch]);
 
-  const resetFilters = () => {
+  // Wrap resetFilters in useCallback for stable reference.
+  // Ref: vercel-react-best-practices/rerender-functional-setstate
+  const resetFilters = useCallback(() => {
     setBeritaYear("all");
     setBeritaMonth("all");
     setBeritaStartDate("");
     setBeritaEndDate("");
     setBeritaSearch("");
-  };
+  }, []);
 
   const hasActiveFilters =
     beritaYear !== "all" ||
@@ -83,6 +87,9 @@ export function useSosialisasiPKPBerita(
     beritaStartDate !== "" ||
     beritaEndDate !== "" ||
     beritaSearch.trim() !== "";
+
+  // Pagination: 8 berita per halaman (grid 4 kolom × 2 baris)
+  const pagination = usePagination(filteredBerita, { perPage: 8 });
 
   return {
     beritaYear,
@@ -97,6 +104,8 @@ export function useSosialisasiPKPBerita(
     setBeritaSearch,
     beritaYears,
     filteredBerita,
+    paginatedBerita: pagination.paginatedItems,
+    pagination,
     resetFilters,
     hasActiveFilters,
   };

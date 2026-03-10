@@ -4,8 +4,8 @@ import { useState } from "react";
 
 import { CheckCircle, ChevronDown, ChevronUp, ClipboardList, ListChecks } from "lucide-react";
 
-import { tugasDanFungsi } from "@/data/tentang";
-import useScrollAnimation from "@/hooks/use-scroll-animation";
+import { tugasDanFungsi } from "@/content/tentang";
+import { useScrollAnimation } from "@/hooks/use-scroll-animation";
 
 const INITIAL_ITEMS = 5;
 

@@ -5,7 +5,7 @@ import Link from "next/link";
 
 import { ArrowRight } from "lucide-react";
 
-import useScrollAnimation from "@/hooks/use-scroll-animation";
+import { useScrollAnimation } from "@/hooks/use-scroll-animation";
 import { SERVICES } from "@/lib/constants";
 
 export default function ServicesSection() {

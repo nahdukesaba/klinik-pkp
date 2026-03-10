@@ -1,33 +1,30 @@
 "use client";
 
-import { RefObject } from "react";
+import { memo, type RefObject } from "react";
 
 import { ArrowLeft, Building2, Layers, MapPin, Search, Users, X } from "lucide-react";
 
-import { Navbar } from "@/components/layout";
-import { SearchableFilterSelect } from "@/components/shared";
+import { SearchableFilterSelect, SidebarPagination } from "@/components/shared";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
-import { type RusunData } from "@/data/peta-sebaran-rusun";
+import { type RusunData } from "@/hooks/sebaran-rusun/use-rusun-query";
 
 // ============================================
-// Types
+// Tipe Data
 // ============================================
 interface RusunHeaderProps {
-  regionName: string;
   searchQuery: string;
-  regionFilter: string;
-  regionOptions: { id: string; name: string }[];
+  yearFilter: string;
+  availableYears: number[];
   totalRusun: number;
   totalUnits: number;
   onBack: () => void;
   onSearchChange: (value: string) => void;
-  onRegionChange: (value: string) => void;
+  onYearChange: (value: string) => void;
   onToggleSidebar: () => void;
 }
 
@@ -37,7 +34,10 @@ interface RusunMapContainerProps {
 
 interface RusunSidebarProps {
   isOpen: boolean;
-  filteredRusun: RusunData[];
+  paginatedRusun: RusunData[];
+  totalItems: number;
+  currentPage: number;
+  totalPages: number;
   selectedRusun: RusunData | null;
   kabupatenFilter: string;
   kecamatanFilter: string;
@@ -52,6 +52,7 @@ interface RusunSidebarProps {
   onResetFilters: () => void;
   onToggleSidebar: () => void;
   onCloseSidebar?: () => void;
+  onPageChange: (page: number) => void;
 }
 
 interface RusunCardProps {
@@ -61,21 +62,7 @@ interface RusunCardProps {
 }
 
 // ============================================
-// Loading Skeleton Component
-// ============================================
-export function RusunLoadingSkeleton() {
-  return (
-    <div className="h-screen flex flex-col bg-background">
-      <Navbar />
-      <div className="flex-1 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
-      </div>
-    </div>
-  );
-}
-
-// ============================================
-// Map Container Component
+// Komponen Kontainer Peta
 // ============================================
 export function RusunMapContainer({ mapRef }: RusunMapContainerProps) {
   return (
@@ -86,24 +73,23 @@ export function RusunMapContainer({ mapRef }: RusunMapContainerProps) {
 }
 
 // ============================================
-// Header Component
+// Komponen Header
 // ============================================
 export function RusunHeader({
-  regionName,
   searchQuery,
-  regionFilter,
-  regionOptions,
+  yearFilter,
+  availableYears,
   totalRusun,
   totalUnits,
   onBack,
   onSearchChange,
-  onRegionChange,
+  onYearChange,
   onToggleSidebar,
 }: RusunHeaderProps) {
   return (
     <div className="bg-card border-b border-border px-4 py-3 flex-shrink-0">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        {/* Left: Back button & Title */}
+        {/* Kiri: Tombol kembali & Judul */}
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
@@ -114,13 +100,13 @@ export function RusunHeader({
           </button>
           <div>
             <p className="text-xs text-muted-foreground">Sebaran Rusun</p>
-            <h1 className="text-lg font-bold text-foreground">{regionName}</h1>
+            <h1 className="text-lg font-bold text-foreground">Sumatera Utara</h1>
           </div>
         </div>
 
-        {/* Right: Search, Filter, Stats */}
+        {/* Kanan: Pencarian, Filter, Statistik */}
         <div className="flex flex-wrap items-center gap-2">
-          {/* Search Input */}
+          {/* Input Pencarian */}
           <div className="relative flex-1 min-w-0 sm:min-w-[200px] md:min-w-[300px] max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <input
@@ -132,21 +118,22 @@ export function RusunHeader({
             />
           </div>
 
-          {/* Region Filter */}
-          <Select value={regionFilter} onValueChange={onRegionChange}>
+          {/* Filter Tahun */}
+          <Select value={yearFilter} onValueChange={onYearChange}>
             <SelectTrigger className="w-full sm:w-40">
-              <SelectValue placeholder="Pilih Region" />
+              <span className="truncate">
+                Tahun: {yearFilter === "all" ? "Semua" : yearFilter}
+              </span>
             </SelectTrigger>
             <SelectContent>
-              {regionOptions.map((option) => (
-                <SelectItem key={option.id} value={option.id}>
-                  {option.name}
-                </SelectItem>
+              <SelectItem value="all">Semua Tahun</SelectItem>
+              {availableYears.map((y) => (
+                <SelectItem key={y} value={String(y)}>{y}</SelectItem>
               ))}
             </SelectContent>
           </Select>
 
-          {/* Stats Badges */}
+          {/* Badge Statistik */}
           <div className="stat-badge">
             <Building2 className="w-4 h-4" />
             <span className="hidden xs:inline">{totalRusun}</span>
@@ -158,7 +145,7 @@ export function RusunHeader({
             <span>{totalUnits} Unit</span>
           </div>
 
-          {/* Mobile Sidebar Toggle */}
+          {/* Toggle Sidebar Mobile */}
           <button
             onClick={onToggleSidebar}
             className="lg:hidden p-2 hover:bg-secondary rounded-lg"
@@ -173,13 +160,15 @@ export function RusunHeader({
 }
 
 // ============================================
-// Rusun Card Component
+// Komponen Kartu Rusun — React.memo agar tidak re-render
+// saat item lain di list berubah (selection change).
+// Ref: vercel-react-best-practices/rerender-memo
 // ============================================
-function RusunCard({ rusun, isSelected, onClick }: RusunCardProps) {
+const RusunCard = memo(function RusunCard({ rusun, isSelected, onClick }: RusunCardProps) {
   return (
     <div
       onClick={onClick}
-      className={`clinic-card cursor-pointer ${isSelected ? "clinic-card-active" : ""
+      className={`clinic-card cursor-pointer overflow-hidden ${isSelected ? "clinic-card-active" : ""
         }`}
     >
       <h3 className="font-semibold text-foreground text-sm">{rusun.name}</h3>
@@ -193,14 +182,17 @@ function RusunCard({ rusun, isSelected, onClick }: RusunCardProps) {
       </div>
     </div>
   );
-}
+});
 
 // ============================================
-// Sidebar Component
+// Komponen Sidebar
 // ============================================
 export function RusunSidebar({
   isOpen,
-  filteredRusun,
+  paginatedRusun,
+  totalItems,
+  currentPage,
+  totalPages,
   selectedRusun,
   kabupatenFilter,
   kecamatanFilter,
@@ -215,6 +207,7 @@ export function RusunSidebar({
   onResetFilters,
   onToggleSidebar,
   onCloseSidebar,
+  onPageChange,
 }: RusunSidebarProps) {
   return (
     <>
@@ -223,7 +216,7 @@ export function RusunSidebar({
         className={`${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
           } fixed lg:relative z-40 lg:z-20 h-[calc(100vh-4rem)] lg:h-full top-16 lg:top-0 left-0 w-[85vw] sm:w-80 lg:w-96 bg-card border-r border-border transition-transform duration-300 flex flex-col shadow-xl lg:shadow-none`}
       >
-        {/* Mobile Header with Close Button */}
+        {/* Header Mobile dengan Tombol Tutup */}
         <div className="lg:hidden flex items-center justify-between p-3 border-b border-border bg-secondary/50">
           <span className="font-semibold text-foreground text-sm">Filter & Daftar Rusun</span>
           <button
@@ -235,7 +228,7 @@ export function RusunSidebar({
           </button>
         </div>
 
-        {/* Filter Section */}
+        {/* Bagian Filter */}
         <div className="p-3 border-b border-border flex-shrink-0">
           <div className="grid grid-cols-2 gap-2">
             <SearchableFilterSelect
@@ -254,7 +247,7 @@ export function RusunSidebar({
               searchPlaceholder="Cari kecamatan..."
               allLabel="Semua Kecamatan"
               options={kecamatanList}
-              disabled={kabupatenFilter === "all" && kecamatanList.length === 0}
+              disabled={kabupatenFilter === "all"}
             />
 
             <SearchableFilterSelect
@@ -264,7 +257,7 @@ export function RusunSidebar({
               searchPlaceholder="Cari kelurahan..."
               allLabel="Semua Kelurahan"
               options={kelurahanList}
-              disabled={kecamatanFilter === "all" && kelurahanList.length === 0}
+              disabled={kecamatanFilter === "all"}
             />
 
             <button
@@ -276,14 +269,14 @@ export function RusunSidebar({
           </div>
         </div>
 
-        {/* Rusun List */}
+        {/* Daftar Rusun */}
         <div className="flex-1 min-h-0 overflow-y-scroll p-3 sm:p-4 space-y-2 sm:space-y-3">
-          {filteredRusun.length === 0 ? (
+          {paginatedRusun.length === 0 ? (
             <div className="text-center text-muted-foreground py-8">
               <p className="text-sm">Tidak ada rusun ditemukan</p>
             </div>
           ) : (
-            filteredRusun.map((rusun) => (
+            paginatedRusun.map((rusun) => (
               <RusunCard
                 key={rusun.id}
                 rusun={rusun}
@@ -293,9 +286,18 @@ export function RusunSidebar({
             ))
           )}
         </div>
+
+        {/* Pagination */}
+        <SidebarPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          onPageChange={onPageChange}
+          itemLabel="rusun"
+        />
       </div>
 
-      {/* Mobile Toggle Button (when sidebar is closed) - Positioned on right */}
+      {/* Tombol Toggle Mobile (saat sidebar tertutup) - Posisi kanan */}
       {!isOpen && (
         <button
           onClick={onToggleSidebar}

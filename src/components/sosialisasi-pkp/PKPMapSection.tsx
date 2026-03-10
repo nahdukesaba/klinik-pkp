@@ -2,7 +2,7 @@
 
 import { RefObject, useMemo } from "react";
 
-import { MapPin } from "lucide-react";
+import { CalendarDays, MapPin } from "lucide-react";
 
 import { MapFilterBar } from "@/components/shared/MapFilterBar";
 
@@ -17,6 +17,10 @@ interface PKPMapSectionProps {
     coordinates: [number, number];
     status: string;
   }>;
+  /** Filter tahun — default: tahun sekarang */
+  mapYear: string;
+  setMapYear: (year: string) => void;
+  mapYears: number[];
   kabupatenFilter: string;
   setKabupatenFilter: (value: string) => void;
   kecamatanFilter: string;
@@ -38,6 +42,9 @@ interface PKPMapSectionProps {
 export function PKPMapSection({
   mapRef,
   filteredLocations,
+  mapYear,
+  setMapYear,
+  mapYears,
   kabupatenFilter,
   setKabupatenFilter,
   kecamatanFilter,
@@ -56,19 +63,22 @@ export function PKPMapSection({
   compact = false,
 }: PKPMapSectionProps) {
   // Map is now initialized automatically in the hook
+  const currentYear = new Date().getFullYear().toString();
 
   // Check if any filter is active
   const activeFilterCount = useMemo(() => {
     let count = 0;
+    if (mapYear !== "all" && mapYear !== currentYear) count++;
     if (kabupatenFilter !== "all") count++;
     if (kecamatanFilter !== "all") count++;
     if (kelurahanFilter !== "all") count++;
     if (statusFilter !== "all") count++;
     return count;
-  }, [kabupatenFilter, kecamatanFilter, kelurahanFilter, statusFilter]);
+  }, [mapYear, kabupatenFilter, kecamatanFilter, kelurahanFilter, statusFilter, currentYear]);
 
-  // Reset filters
+  // Reset filters (termasuk tahun kembali ke tahun sekarang)
   const resetFilters = () => {
+    setMapYear(currentYear);
     setKabupatenFilter("all");
     setKecamatanFilter("all");
     setKelurahanFilter("all");
@@ -90,8 +100,8 @@ export function PKPMapSection({
 
   // Map height classes based on compact mode
   const mapHeightClass = compact
-    ? "h-[400px] sm:h-[450px] md:h-[550px] lg:h-[650px] xl:h-[750px] min-h-[400px]"
-    : "h-[350px] sm:h-[400px] md:h-[500px] lg:h-[550px] min-h-[320px]";
+    ? "h-[400px] sm:h-[450px] md:h-[550px] lg:h-[650px] xl:h-[750px] 2xl:h-[850px] min-h-[400px]"
+    : "h-[350px] sm:h-[400px] md:h-[500px] lg:h-[550px] 2xl:h-[650px] min-h-[320px]";
 
   return (
     <section id="peta-section" className={`${compact ? 'mb-0' : 'mb-12'} scroll-mt-24`}>
@@ -127,6 +137,39 @@ export function PKPMapSection({
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Filter Tahun — Pills horizontal scrollable */}
+        <div className="px-3 sm:px-4 py-2 border-b border-border bg-background/50 flex items-center gap-2 overflow-x-auto scrollbar-thin">
+          <span className="text-xs text-muted-foreground whitespace-nowrap flex items-center gap-1.5 flex-shrink-0">
+            <CalendarDays className="w-3.5 h-3.5" />
+            Tahun:
+          </span>
+          {mapYears.map((year) => (
+            <button
+              key={year}
+              onClick={() => setMapYear(year.toString())}
+              className={`flex-shrink-0 px-2.5 py-1 text-xs font-semibold rounded-full border transition-all ${
+                mapYear === year.toString()
+                  ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                  : "bg-card text-foreground border-border hover:border-primary/50 hover:bg-primary/5"
+              }`}
+            >
+              {year}
+            </button>
+          ))}
+          {mapYears.length > 0 && (
+            <button
+              onClick={() => setMapYear("all")}
+              className={`flex-shrink-0 px-2.5 py-1 text-xs font-semibold rounded-full border transition-all ${
+                mapYear === "all"
+                  ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                  : "bg-card text-foreground border-border hover:border-primary/50 hover:bg-primary/5"
+              }`}
+            >
+              Semua
+            </button>
+          )}
         </div>
 
         {/* Search Bar (left) & Filter Toggle (right) */}

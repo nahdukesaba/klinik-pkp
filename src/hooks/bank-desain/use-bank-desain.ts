@@ -2,47 +2,48 @@
  * Hook: useBankDesain
  * Mengelola filter dan data desain untuk halaman Bank Desain.
  *
- * Saat API siap, ganti isi `designs` dan `categories` dengan response API
- * (misalnya via React Query) tanpa mengubah return type.
+ * Data diambil dari API backend via useBankDesainQuery (React Query).
+ * Filter categories dibuat dinamis berdasarkan data yang tersedia.
  */
 
 "use client";
 
-import { useMemo, useState, useCallback, useEffect } from "react";
+import { useMemo, useState, useCallback } from "react";
 
-import {
-  defaultFilterCategories,
-  designsList,
-  getDesignDownloadUrl,
-} from "@/data/bank-desain";
+import { useBankDesainQuery, type BankDesainData } from "@/hooks/bank-desain/use-bank-desain-query";
 import { useDebounce } from "@/hooks/use-debounce";
+import { usePagination } from "@/hooks/use-pagination";
 
 // ============================================
-// Constants
+// Konstanta
 // ============================================
 const DEFAULT_FILTER = "all";
-const ITEMS_PER_PAGE = 9;
+
+/**
+ * Generate URL unduhan untuk desain.
+ * Mengembalikan URL file desain utama atau thumbnail.
+ */
+function getDesignDownloadUrl(design: BankDesainData): string {
+  return design.designFileUrl || design.previewImages[0] || design.thumbnail;
+}
 
 // ============================================
-// Hook Implementation
+// Implementasi Hook
 // ============================================
 export function useBankDesain() {
-  // Data source (ganti dengan API call saat siap)
-  const designs = designsList;
-  const categories = defaultFilterCategories;
+  // Sumber data dari API (React Query)
+  const { data: designs, categories, isLoading, isError, error, refetch } = useBankDesainQuery();
 
-  // Filter states
+  // State filter
   const [typeFilter, setTypeFilter] = useState(DEFAULT_FILTER);
   const [bedroomFilter, setBedroomFilter] = useState(DEFAULT_FILTER);
   const [terasFilter, setTerasFilter] = useState(DEFAULT_FILTER);
   const [searchQuery, setSearchQuery] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
 
   // Debounce search untuk performa
   const debouncedSearch = useDebounce(searchQuery, 300);
-  const itemsPerPage = ITEMS_PER_PAGE;
 
-  // Check if any filter is active
+  // Cek apakah ada filter yang aktif
   const hasActiveFilters = useMemo(() => {
     return (
       typeFilter !== DEFAULT_FILTER ||
@@ -52,32 +53,24 @@ export function useBankDesain() {
     );
   }, [typeFilter, bedroomFilter, terasFilter, debouncedSearch]);
 
-  // Reset all filters
+  // Reset semua filter
   const resetFilters = useCallback(() => {
     setTypeFilter(DEFAULT_FILTER);
     setBedroomFilter(DEFAULT_FILTER);
     setTerasFilter(DEFAULT_FILTER);
     setSearchQuery("");
-    setCurrentPage(1);
   }, []);
 
-  // Filter designs based on all criteria
+  // Filter desain berdasarkan semua kriteria
   const filteredDesigns = useMemo(() => {
     const searchLower = debouncedSearch.toLowerCase().trim();
 
     return designs.filter((design) => {
-      // Filter by type
       const matchesType = typeFilter === DEFAULT_FILTER || design.type === typeFilter;
-      
-      // Filter by bedroom count
       const matchesBedroom = bedroomFilter === DEFAULT_FILTER || 
         design.bedrooms.toString() === bedroomFilter;
-      
-      // Filter by teras feature
       const matchesTeras = terasFilter === DEFAULT_FILTER || 
         design.terasFeature === terasFilter;
-      
-      // Filter by search query
       const matchesSearch = !searchLower || 
         design.title.toLowerCase().includes(searchLower) ||
         design.code.toLowerCase().includes(searchLower) ||
@@ -88,58 +81,42 @@ export function useBankDesain() {
     });
   }, [designs, typeFilter, bedroomFilter, terasFilter, debouncedSearch]);
 
-  // Calculate pagination
-  const totalPages = Math.max(1, Math.ceil(filteredDesigns.length / itemsPerPage));
-
-  // Get paginated designs
-  const paginatedDesigns = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return filteredDesigns.slice(startIndex, endIndex);
-  }, [filteredDesigns, currentPage, itemsPerPage]);
-
-  // Reset to page 1 when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [typeFilter, bedroomFilter, terasFilter, debouncedSearch]);
-
-  // Pagination navigation
-  const goToNextPage = useCallback(() => {
-    setCurrentPage((prev) => Math.min(prev + 1, totalPages));
-  }, [totalPages]);
-
-  const goToPrevPage = useCallback(() => {
-    setCurrentPage((prev) => Math.max(prev - 1, 1));
-  }, []);
+  // Pagination menggunakan reusable hook
+  const pagination = usePagination(filteredDesigns);
 
   return {
-    // Filter states
+    // State API
+    isLoading,
+    isError,
+    error,
+    refetch,
+    // State filter
     typeFilter,
     bedroomFilter,
     terasFilter,
     searchQuery,
-    // Filter setters
+    // Setter filter
     setTypeFilter,
     setBedroomFilter,
     setTerasFilter,
     setSearchQuery,
-    // Category lists (dinamis — API-ready)
+    // Daftar kategori (dinamis dari data API)
     typeCategories: categories.type,
     bedroomCategories: categories.bedroom,
     terasCategories: categories.teras,
-    // Computed values
+    // Nilai turunan
     filteredDesigns,
-    paginatedDesigns,
+    paginatedDesigns: pagination.paginatedItems,
     totalDesigns: designs.length,
     totalFilteredDesigns: filteredDesigns.length,
     hasActiveFilters,
     // Pagination
-    currentPage,
-    totalPages,
-    setCurrentPage,
-    goToNextPage,
-    goToPrevPage,
-    // Actions
+    currentPage: pagination.currentPage,
+    totalPages: pagination.totalPages,
+    setCurrentPage: pagination.setCurrentPage,
+    goToNextPage: pagination.goToNextPage,
+    goToPrevPage: pagination.goToPrevPage,
+    // Aksi
     resetFilters,
     getDesignDownloadUrl,
   };

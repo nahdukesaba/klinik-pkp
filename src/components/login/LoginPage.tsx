@@ -108,9 +108,12 @@ export default function LoginPage() {
         return;
       }
 
-      // Login berhasil — redirect ke halaman utama
-      toast({ title: "Login berhasil", description: `Selamat datang, ${data.user?.name ?? "User"}!` });
-      window.location.href = "/";
+      // Login berhasil — tampilkan alert (dashboard admin belum tersedia)
+      toast({ title: "Login berhasil!", description: `Selamat datang, ${data.user?.name ?? "User"}!` });
+      
+      // TODO: Redirect ke dashboard admin setelah tersedia
+      // window.location.href = "/dashboard";
+      alert(`✅ Login Berhasil!\n\nNama: ${data.user?.name ?? "User"}\nEmail: ${data.user?.email ?? email}\nRole: ${data.user?.role ?? "user"}\n\nDashboard admin belum tersedia.`);
     } catch {
       toast({
         title: "Terjadi kesalahan",

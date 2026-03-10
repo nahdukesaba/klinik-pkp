@@ -4,13 +4,22 @@ import { useState } from "react";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
+import { QUERY_CONFIG } from "@/lib/constants";
+
 export function QueryProvider({ children }: { children: React.ReactNode }) {
+  // Lazy state init: QueryClient hanya dibuat 1x per mount.
+  // Ref: vercel-react-best-practices/rerender-lazy-state-init
   const [queryClient] = useState(
     () =>
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 60 * 1000,
+            // Sinkronkan dengan QUERY_CONFIG agar konsisten.
+            // Ref: react-query-best-practices/cache-stale-time
+            staleTime: QUERY_CONFIG.staleTime,
+            gcTime: QUERY_CONFIG.gcTime,
+            retry: QUERY_CONFIG.retry,
+            refetchOnWindowFocus: QUERY_CONFIG.refetchOnWindowFocus,
           },
         },
       })

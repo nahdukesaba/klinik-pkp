@@ -102,6 +102,12 @@ export default function BeritaDetailView({
                 Kembali ke Sosialisasi
               </Link>
 
+              {/* Badge Tahun — terlihat jelas sebelum judul */}
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary text-xs font-semibold rounded-full border border-primary/20 mb-3">
+                <Calendar className="w-3.5 h-3.5" />
+                Tahun {new Date(berita.rawDate).getFullYear()}
+              </div>
+
               <h1 className="text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold text-foreground mb-3 md:mb-4 leading-tight">
                 {berita.title}
               </h1>

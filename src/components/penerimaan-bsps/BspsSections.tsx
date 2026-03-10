@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import type { ReactNode } from "react";
 
 import Link from "next/link";
@@ -16,7 +17,7 @@ import {
 } from "lucide-react";
 
 import { ProgressIndicator, StepArrow } from "@/components/landing";
-import type { BspsProcessStep } from "@/data/penerimaan-bsps";
+import type { BspsProcessStep } from "@/services/bsps.service";
 
 import type { LucideIcon } from "lucide-react";
 
@@ -143,7 +144,7 @@ interface ProcessStepCardProps {
   isAnyHovered: boolean;
 }
 
-function ProcessStepCard({ step, isHovered, isAnyHovered }: ProcessStepCardProps) {
+const ProcessStepCard = memo(function ProcessStepCard({ step, isHovered, isAnyHovered }: ProcessStepCardProps) {
   const IconComponent = stepIcons[step.step] || ClipboardList;
   const isLast = step.step === 6;
   const cardOpacity = isAnyHovered && !isHovered ? "opacity-50" : "opacity-100";
@@ -187,7 +188,7 @@ function ProcessStepCard({ step, isHovered, isAnyHovered }: ProcessStepCardProps
       </div>
     </div>
   );
-}
+});
 
 interface BspsProcessStepsProps {
   processSteps: BspsProcessStep[];

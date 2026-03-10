@@ -1,56 +1,61 @@
+"use client";
+
 /**
  * Hook: useKawasanKumuh
- * Mengelola data dan filter untuk halaman Kawasan Kumuh.
- * Menggunakan useCascadingFilter untuk filter lokasi cascading.
- *
- * Saat API siap, ganti isi `data` dengan response API
- * (misalnya via React Query) tanpa mengubah return type.
+ * Mengelola data dan filter. Tahun dikirim ke API (bukan client-side filter).
+ * Default: tahun sekarang. Daftar tahun dari useKumuhYearsQuery.
  */
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 
-import {
-  kawasanKumuhData,
-  type KawasanKumuh,
-} from "@/data/peta-kawasan-kumuh";
+import { useKawasanKumuhQuery, useKumuhYearsQuery } from "@/hooks/kawasan-kumuh/use-kawasan-kumuh-query";
 import { useCascadingFilter } from "@/hooks/use-cascading-filter";
 import { useDebounce } from "@/hooks/use-debounce";
+import { usePagination } from "@/hooks/use-pagination";
+import { CURRENT_YEAR } from "@/lib/constants";
+
+const SIDEBAR_PER_PAGE = 12;
+const CURRENT_YEAR_NUM = parseInt(CURRENT_YEAR, 10);
 
 export function useKawasanKumuh() {
-  // Data source (ganti dengan API call saat siap)
-  const data = kawasanKumuhData;
+  // Year state — dikirim ke query hook, default tahun sekarang
+  const [yearFilter, setYearFilter] = useState<string>(CURRENT_YEAR);
+  const yearParam = yearFilter === "all" ? undefined : (parseInt(yearFilter, 10) || CURRENT_YEAR_NUM);
+
+  // Data per-tahun dari API (undefined = semua tahun)
+  const { data, isLoading, isError, error, refetch } = useKawasanKumuhQuery(yearParam);
+
+  // Daftar tahun (dari semua data, cache lama)
+  const availableYears = useKumuhYearsQuery();
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [regionFilter, setRegionFilter] = useState("sumatera-utara");
   const [statusFilter, setStatusFilter] = useState("all");
-
   const debouncedSearch = useDebounce(searchQuery, 300);
 
-  // Use shared cascading filter for location filters
+  // Cascading location filter
   const cascading = useCascadingFilter(data);
 
-  // Filter items combining all criteria
+  // Filter: cascading + search + status (tahun sudah di-handle oleh query)
   const filteredKawasan = useMemo(() => {
-    const searchLower = debouncedSearch.toLowerCase();
+    const q = debouncedSearch.toLowerCase();
 
-    return cascading.filteredItems.filter((kawasan: KawasanKumuh) => {
-      const matchesRegion =
-        regionFilter === "sumatera-utara" ||
-        (regionFilter === "medan" && kawasan.kabupaten === "Medan");
-
+    return cascading.filteredItems.filter((kawasan) => {
       const matchesSearch =
         !debouncedSearch ||
-        kawasan.name.toLowerCase().includes(searchLower) ||
-        kawasan.kelurahan.toLowerCase().includes(searchLower) ||
-        kawasan.kecamatan.toLowerCase().includes(searchLower) ||
-        kawasan.kabupaten.toLowerCase().includes(searchLower);
+        kawasan.name.toLowerCase().includes(q) ||
+        kawasan.kelurahan.toLowerCase().includes(q) ||
+        kawasan.kecamatan.toLowerCase().includes(q) ||
+        kawasan.kabupaten.toLowerCase().includes(q);
 
-      const matchesStatus =
-        statusFilter === "all" || kawasan.status === statusFilter;
+      const matchesStatus = statusFilter === "all" || kawasan.status === statusFilter;
 
-      return matchesRegion && matchesSearch && matchesStatus;
+      return matchesSearch && matchesStatus;
     });
-  }, [debouncedSearch, regionFilter, statusFilter, cascading.filteredItems]);
+  }, [debouncedSearch, statusFilter, cascading.filteredItems]);
+
+  const pagination = usePagination(filteredKawasan, { perPage: SIDEBAR_PER_PAGE });
+
+  const resetYear = useCallback(() => setYearFilter(CURRENT_YEAR), []);
 
   return {
     filteredKawasan,
@@ -58,16 +63,23 @@ export function useKawasanKumuh() {
     kecamatanList: cascading.filterLists.kecamatanList,
     kelurahanList: cascading.filterLists.kelurahanList,
     searchQuery,
-    regionFilter,
+    yearFilter,
+    availableYears,
+    setYearFilter,
+    resetYear,
     kabupatenFilter: cascading.filterState.kabupatenFilter,
     kecamatanFilter: cascading.filterState.kecamatanFilter,
     kelurahanFilter: cascading.filterState.kelurahanFilter,
     statusFilter,
     setSearchQuery,
-    setRegionFilter,
     setKabupatenFilter: cascading.filterActions.setKabupatenFilter,
     setKecamatanFilter: cascading.filterActions.setKecamatanFilter,
     setKelurahanFilter: cascading.filterActions.setKelurahanFilter,
     setStatusFilter,
+    isLoading,
+    isError,
+    error,
+    refetch,
+    pagination,
   };
 }

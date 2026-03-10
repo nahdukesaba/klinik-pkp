@@ -238,5 +238,3 @@ export function stringsToOptions(strings: string[]): SearchableSelectOption[] {
       label: s,
     }));
 }
-
-export default SearchableSelect;

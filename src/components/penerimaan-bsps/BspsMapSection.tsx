@@ -16,6 +16,7 @@
 
 "use client";
 
+import { memo } from "react";
 import type { RefObject } from "react";
 
 import Link from "next/link";
@@ -37,7 +38,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { DesaPenerimaan } from "@/data/penerimaan-bsps";
+import type { BspsData } from "@/services/bsps.service";
 
 import { BspsSidebar } from "./BspsSidebar";
 
@@ -47,12 +48,13 @@ import { BspsSidebar } from "./BspsSidebar";
 
 interface FilterState {
   searchQuery: string;
-  regionFilter: string;
   kabupatenFilter: string;
   kecamatanFilter: string;
   kelurahanFilter: string;
   statusFilter: string;
   activeFilterCount: number;
+  yearFilter: string;
+  availableYears: number[];
 }
 
 interface StatusColors {
@@ -65,11 +67,11 @@ interface StatusLabels {
 
 interface FilterActions {
   setSearchQuery: (value: string) => void;
-  setRegionFilter: (value: string) => void;
   handleKabupatenChange: (value: string) => void;
   handleKecamatanChange: (value: string) => void;
   setKelurahanFilter: (value: string) => void;
   setStatusFilter: (value: string) => void;
+  setYearFilter: (value: string) => void;
   resetFilters: () => void;
 }
 
@@ -87,47 +89,43 @@ interface BspsMapSectionProps {
   statusColors: StatusColors;
   mapRef: RefObject<HTMLDivElement | null>;
   isMapReady: boolean;
-  filteredDesa: DesaPenerimaan[];
+  filteredDesa: BspsData[];
   sidebarOpen: boolean;
   onToggleSidebar: () => void;
   onCloseSidebar: () => void;
-  regionName: string;
-  regionOptions: { id: string; name: string }[];
 }
 
 // ============================================
 // BspsHeader — top bar dengan navigasi, search, dan statistik
 // ============================================
 
-function BspsHeader({
+const BspsHeader = memo(function BspsHeader({
   totalKawasan,
   totalAlokasiUnit,
   searchQuery,
-  regionFilter,
-  regionName,
-  regionOptions,
   statusFilter,
   statusLabels,
+  yearFilter,
+  availableYears,
   onSearchChange,
-  onRegionChange,
   onStatusChange,
+  onYearChange,
   onToggleSidebar,
 }: {
   totalKawasan: number;
   totalAlokasiUnit: number;
   searchQuery: string;
-  regionFilter: string;
-  regionName: string;
-  regionOptions: { id: string; name: string }[];
   statusFilter: string;
   statusLabels: StatusLabels;
+  yearFilter: string;
+  availableYears: number[];
   onSearchChange: (value: string) => void;
-  onRegionChange: (value: string) => void;
   onStatusChange: (value: string) => void;
+  onYearChange: (value: string) => void;
   onToggleSidebar: () => void;
 }) {
   return (
-    <div className="bg-card border-b border-border px-4 py-3 flex-shrink-0 relative z-10">
+    <div className="bg-card border-b border-border px-4 py-3 flex-shrink-0 relative">
       <div className="flex flex-col gap-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           {/* Title */}
@@ -141,7 +139,7 @@ function BspsHeader({
             </Link>
             <div>
               <p className="text-xs text-muted-foreground">Penerimaan BSPS</p>
-              <h1 className="text-lg font-bold text-foreground">{regionName}</h1>
+              <h1 className="text-lg font-bold text-foreground">Lokasi Penerima</h1>
             </div>
           </div>
 
@@ -159,18 +157,6 @@ function BspsHeader({
               />
             </div>
 
-            {/* Region */}
-            <Select value={regionFilter} onValueChange={onRegionChange}>
-              <SelectTrigger className="w-full sm:w-40 h-10 text-sm">
-                <SelectValue placeholder="Pilih Region" />
-              </SelectTrigger>
-              <SelectContent>
-                {regionOptions.map((opt) => (
-                  <SelectItem key={opt.id} value={opt.id}>{opt.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
             {/* Status (desktop only) */}
             <div className="hidden sm:block">
               <Select value={statusFilter} onValueChange={onStatusChange}>
@@ -185,6 +171,23 @@ function BspsHeader({
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Year Filter */}
+            {availableYears.length > 0 && (
+              <Select value={yearFilter} onValueChange={onYearChange}>
+                <SelectTrigger className="w-36 h-10 text-sm">
+                  <span className="truncate">
+                    Tahun: {yearFilter === "all" ? "Semua" : yearFilter}
+                  </span>
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-[9999]">
+                  <SelectItem value="all">Semua Tahun</SelectItem>
+                  {availableYears.map((y) => (
+                    <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
 
             {/* Stat Badges */}
             <div className="stat-badge">
@@ -210,7 +213,7 @@ function BspsHeader({
       </div>
     </div>
   );
-}
+});
 
 // ============================================
 // Main BspsMapSection
@@ -228,8 +231,6 @@ function BspsMapSection({
   sidebarOpen,
   onToggleSidebar,
   onCloseSidebar,
-  regionName,
-  regionOptions,
 }: BspsMapSectionProps) {
   /** Total kawasan (desa) setelah filter */
   const totalKawasan = filteredDesa.length;
@@ -246,14 +247,13 @@ function BspsMapSection({
         totalKawasan={totalKawasan}
         totalAlokasiUnit={totalAlokasiUnit}
         searchQuery={filterState.searchQuery}
-        regionFilter={filterState.regionFilter}
-        regionName={regionName}
-        regionOptions={regionOptions}
         statusFilter={filterState.statusFilter}
         statusLabels={statusLabels}
+        yearFilter={filterState.yearFilter}
+        availableYears={filterState.availableYears}
         onSearchChange={filterActions.setSearchQuery}
-        onRegionChange={filterActions.setRegionFilter}
         onStatusChange={filterActions.setStatusFilter}
+        onYearChange={filterActions.setYearFilter}
         onToggleSidebar={onToggleSidebar}
       />
 
@@ -302,7 +302,7 @@ function BspsMapSection({
           {!sidebarOpen && (
             <button
               onClick={onToggleSidebar}
-              className="lg:hidden absolute top-4 right-4 bg-card border border-border rounded-lg p-3 shadow-lg z-[1000] hover:bg-secondary transition-colors"
+              className="lg:hidden absolute top-4 right-4 bg-card border border-border rounded-lg p-3 shadow-lg z-20 hover:bg-secondary transition-colors"
               aria-label="Buka filter"
             >
               <MapPin className="w-5 h-5 text-foreground" />

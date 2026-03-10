@@ -24,8 +24,9 @@ import {
 } from "lucide-react";
 
 import { DateRangeFilterGroup } from "@/components/shared/DateRangeFilterGroup";
+import { GridPagination } from "@/components/shared/GridPagination";
 import { Input } from "@/components/ui/input";
-import { type BeritaSosialisasi } from "@/data/sosialisasi-klinik";
+import { type BeritaSosialisasi } from "@/services/sosialisasi.service";
 
 // ============================================
 // Types
@@ -44,6 +45,14 @@ interface PKPBeritaSectionProps {
   setBeritaSearch: (search: string) => void;
   beritaYears: number[];
   filteredBerita: BeritaSosialisasi[];
+  paginatedBerita: BeritaSosialisasi[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    setCurrentPage: (page: number) => void;
+    goToNextPage: () => void;
+    goToPrevPage: () => void;
+  };
   resetFilters: () => void;
   hasActiveFilters: boolean;
   onImageClick?: (images: string[], index: number, title: string) => void;
@@ -178,6 +187,8 @@ export function PKPBeritaSection({
   setBeritaSearch,
   beritaYears,
   filteredBerita,
+  paginatedBerita,
+  pagination,
   resetFilters,
   hasActiveFilters,
   onImageClick,
@@ -228,17 +239,26 @@ export function PKPBeritaSection({
 
       {/* Berita Grid */}
       {filteredBerita.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-          {filteredBerita.map((berita, index) => (
-            <BeritaCard
-              key={berita.id}
-              berita={berita}
-              index={index}
-              onImageClick={onImageClick}
-              onViewOnMap={onViewOnMap}
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6">
+            {paginatedBerita.map((berita, index) => (
+              <BeritaCard
+                key={berita.id}
+                berita={berita}
+                index={index}
+                onImageClick={onImageClick}
+                onViewOnMap={onViewOnMap}
+              />
+            ))}
+          </div>
+          <GridPagination
+            currentPage={pagination.currentPage}
+            totalPages={pagination.totalPages}
+            onPageChange={pagination.setCurrentPage}
+            onPrev={pagination.goToPrevPage}
+            onNext={pagination.goToNextPage}
+          />
+        </>
       ) : (
         <div className="text-center py-12 bg-card rounded-2xl border border-border">
           <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" />

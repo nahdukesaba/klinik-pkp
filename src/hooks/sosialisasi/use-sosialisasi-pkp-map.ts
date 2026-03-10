@@ -2,11 +2,12 @@
 
 import { useState, useRef, useMemo, useCallback, useEffect } from "react";
 
-import { type SosialisasiLocation } from "@/data/sosialisasi-klinik";
 import { useCascadingFilter } from "@/hooks/use-cascading-filter";
 import { useDebounce } from "@/hooks/use-debounce";
+import { CURRENT_YEAR } from "@/lib/constants";
 import { loadLeaflet, cleanupMapContainer, destroyMap, bindMarkerInteraction } from "@/lib/map-utils";
 import { escapeHtml, escapeAttr, sanitizeUrl } from "@/lib/security";
+import { type SosialisasiLocation } from "@/services/sosialisasi.service";
 
 import type * as Leaflet from "leaflet";
 
@@ -17,6 +18,9 @@ interface UseSosialisasiPKPMapReturn {
   mapReady: boolean;
   flyTo: (lat: number, lng: number, zoom?: number) => void;
   // Filter states
+  mapYear: string;
+  setMapYear: (year: string) => void;
+  mapYears: number[];
   mapKabupatenFilter: string;
   setMapKabupatenFilter: (value: string) => void;
   mapKecamatanFilter: string;
@@ -58,6 +62,8 @@ export function useSosialisasiPKPMap(
   const markersRef = useRef<Leaflet.Marker[]>([]);
 
   const [mapReady, setMapReady] = useState(false);
+  // Default: tahun sekarang agar peta langsung fokus ke data tahun ini
+  const [mapYear, setMapYear] = useState<string>(CURRENT_YEAR);
   const [mapStatusFilter, setMapStatusFilter] = useState<string>("all");
   const [mapSearchQuery, setMapSearchQuery] = useState<string>("");
   const [mapShowFilters, setMapShowFilters] = useState(true);
@@ -70,9 +76,22 @@ export function useSosialisasiPKPMap(
   // Use shared cascading filter for kabupaten/kecamatan/kelurahan
   const cascading = useCascadingFilter(allLocations);
 
-  // Combined filtering (cascading + status + search)
+  // Daftar tahun yang tersedia dari semua lokasi
+  const mapYears = useMemo(() => {
+    const years = [...new Set(allLocations.map((loc) => new Date(loc.date).getFullYear()))];
+    return years.sort((a, b) => b - a);
+  }, [allLocations]);
+
+  // Combined filtering (cascading + year + status + search)
   const filteredMapLocations = useMemo(() => {
     let result = cascading.filteredItems;
+
+    // Filter by year (default: tahun sekarang)
+    if (mapYear !== "all") {
+      result = result.filter(
+        (loc) => new Date(loc.date).getFullYear().toString() === mapYear
+      );
+    }
 
     // Filter by status
     if (mapStatusFilter !== "all") {
@@ -93,7 +112,7 @@ export function useSosialisasiPKPMap(
     }
 
     return result;
-  }, [cascading.filteredItems, mapStatusFilter, debouncedSearchQuery]);
+  }, [cascading.filteredItems, mapYear, mapStatusFilter, debouncedSearchQuery]);
 
   // Expose cascading filter lists with "all" prefix for backward compatibility
   const mapKabupatenList = useMemo(
@@ -423,7 +442,7 @@ export function useSosialisasiPKPMap(
       destroyMap(mapInstanceRef.current);
       mapInstanceRef.current = null;
       markersRef.current = [];
-      cleanupMapContainer(mapRef.current);
+      cleanupMapContainer(container);
       setMapReady(false);
     };
   }, [isEnabled]);
@@ -482,6 +501,9 @@ export function useSosialisasiPKPMap(
     mapRef,
     mapReady,
     flyTo,
+    mapYear,
+    setMapYear,
+    mapYears,
     mapKabupatenFilter: cascading.filterState.kabupatenFilter,
     setMapKabupatenFilter: cascading.filterActions.setKabupatenFilter,
     mapKecamatanFilter: cascading.filterState.kecamatanFilter,

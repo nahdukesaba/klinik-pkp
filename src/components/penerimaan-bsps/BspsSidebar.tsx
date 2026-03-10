@@ -13,13 +13,13 @@
 
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { memo, useMemo, useRef, useState } from "react";
 
 import { MapPin, X } from "lucide-react";
 
 import { SearchableFilterSelect } from "@/components/shared/SearchableFilterSelect";
 import { SidebarPagination } from "@/components/shared/SidebarPagination";
-import type { DesaPenerimaan } from "@/data/penerimaan-bsps";
+import type { BspsData } from "@/services/bsps.service";
 
 // ============================================
 // Constants
@@ -34,7 +34,6 @@ const ITEMS_PER_PAGE = 20;
 
 interface FilterState {
   searchQuery: string;
-  regionFilter: string;
   kabupatenFilter: string;
   kecamatanFilter: string;
   kelurahanFilter: string;
@@ -44,7 +43,6 @@ interface FilterState {
 
 interface FilterActions {
   setSearchQuery: (value: string) => void;
-  setRegionFilter: (value: string) => void;
   handleKabupatenChange: (value: string) => void;
   handleKecamatanChange: (value: string) => void;
   setKelurahanFilter: (value: string) => void;
@@ -70,12 +68,12 @@ interface StatusLabels {
 // Location Card — kartu info satu desa penerima
 // ============================================
 
-function BspsLocationCard({
+const BspsLocationCard = memo(function BspsLocationCard({
   desa,
   statusColors,
   statusLabels,
 }: {
-  desa: DesaPenerimaan;
+  desa: BspsData;
   statusColors: StatusColors;
   statusLabels: StatusLabels;
 }) {
@@ -113,7 +111,7 @@ function BspsLocationCard({
       </div>
     </div>
   );
-}
+});
 
 // ============================================
 // Sidebar Component
@@ -121,7 +119,7 @@ function BspsLocationCard({
 
 export interface BspsSidebarProps {
   isOpen: boolean;
-  filteredDesa: DesaPenerimaan[];
+  filteredDesa: BspsData[];
   filterState: FilterState;
   filterActions: FilterActions;
   filterLists: FilterLists;
@@ -142,11 +140,14 @@ export function BspsSidebar({
 }: BspsSidebarProps) {
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Reset halaman saat filter berubah
+  // Derive-state-during-render: reset halaman tanpa extra re-render.
+  // Ref: vercel-react-best-practices/rerender-derived-state-no-effect
   const filterKey = `${filterState.kabupatenFilter}-${filterState.kecamatanFilter}-${filterState.kelurahanFilter}-${filterState.statusFilter}-${filterState.searchQuery}`;
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [filterKey]);
+  const prevFilterKey = useRef(filterKey);
+  if (prevFilterKey.current !== filterKey) {
+    prevFilterKey.current = filterKey;
+    if (currentPage !== 1) setCurrentPage(1);
+  }
 
   const totalPages = Math.ceil(filteredDesa.length / ITEMS_PER_PAGE);
   const paginatedDesa = useMemo(() => {
@@ -192,7 +193,7 @@ export function BspsSidebar({
             searchPlaceholder="Cari kecamatan..."
             allLabel="Semua Kecamatan"
             options={filterLists.kecamatanList}
-            disabled={filterState.kabupatenFilter === "all" && filterLists.kecamatanList.length === 0}
+            disabled={filterState.kabupatenFilter === "all"}
           />
           <SearchableFilterSelect
             value={filterState.kelurahanFilter}
@@ -201,7 +202,7 @@ export function BspsSidebar({
             searchPlaceholder="Cari kelurahan..."
             allLabel="Semua Kelurahan"
             options={filterLists.kelurahanList}
-            disabled={filterState.kecamatanFilter === "all" && filterLists.kelurahanList.length === 0}
+            disabled={filterState.kecamatanFilter === "all"}
           />
           <button
             onClick={filterActions.resetFilters}

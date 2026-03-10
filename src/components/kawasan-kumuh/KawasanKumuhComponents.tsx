@@ -13,11 +13,13 @@
 
 "use client";
 
+import { memo } from "react";
+
 import Link from "next/link";
 
 import { ArrowLeft, Building2, Layers, MapPin, Search, Users, X } from "lucide-react";
 
-import { SearchableFilterSelect } from "@/components/shared";
+import { SearchableFilterSelect, SidebarPagination } from "@/components/shared";
 import {
   Select,
   SelectContent,
@@ -25,7 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { type KawasanKumuh } from "@/data/peta-kawasan-kumuh";
+import { type KawasanKumuhData } from "@/services/kawasan-kumuh.service";
 
 // ============================================
 // Types & Constants
@@ -53,13 +55,18 @@ interface StatusColor {
 }
 
 interface KawasanCardProps {
-  kawasan: KawasanKumuh;
+  kawasan: KawasanKumuhData;
   isSelected: boolean;
   statusColor: StatusColor;
   onClick: () => void;
 }
 
-export function KawasanCard({ kawasan, isSelected, statusColor, onClick }: KawasanCardProps) {
+/**
+ * KawasanCard — wrapped in React.memo agar tidak re-render saat
+ * item lain di list berubah (e.g. selection change).
+ * Ref: vercel-react-best-practices/rerender-memo
+ */
+export const KawasanCard = memo(function KawasanCard({ kawasan, isSelected, statusColor, onClick }: KawasanCardProps) {
   return (
     <div
       onClick={onClick}
@@ -84,11 +91,11 @@ export function KawasanCard({ kawasan, isSelected, statusColor, onClick }: Kawas
       </p>
       <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
         <span>{kawasan.luas} Ha</span>
-        <span>{kawasan.penduduk.toLocaleString("id-ID")} Penduduk</span>
+        <span>{kawasan.penduduk === 0 ? "-" : `${kawasan.penduduk.toLocaleString("id-ID")} Penduduk`}</span>
       </div>
     </div>
   );
-}
+});
 
 // ============================================
 // KawasanKumuhHeader Component
@@ -97,10 +104,9 @@ export function KawasanCard({ kawasan, isSelected, statusColor, onClick }: Kawas
 interface KawasanKumuhHeaderProps {
   searchQuery: string;
   onSearchChange: (value: string) => void;
-  regionFilter: string;
-  regionName: string;
-  regionOptions: { id: string; name: string }[];
-  onRegionChange: (value: string) => void;
+  yearFilter: string;
+  availableYears: number[];
+  onYearChange: (value: string) => void;
   statusFilter: string;
   onStatusChange: (value: string) => void;
   totalKawasan: number;
@@ -111,10 +117,9 @@ interface KawasanKumuhHeaderProps {
 export function KawasanKumuhHeader({
   searchQuery,
   onSearchChange,
-  regionFilter,
-  regionName,
-  regionOptions,
-  onRegionChange,
+  yearFilter,
+  availableYears,
+  onYearChange,
   statusFilter,
   onStatusChange,
   totalKawasan,
@@ -132,7 +137,7 @@ export function KawasanKumuhHeader({
             </Link>
             <div>
               <p className="text-xs text-muted-foreground">Kawasan Kumuh</p>
-              <h1 className="text-lg font-bold text-foreground">{regionName}</h1>
+              <h1 className="text-lg font-bold text-foreground">Sumatera Utara</h1>
             </div>
           </div>
 
@@ -150,16 +155,17 @@ export function KawasanKumuhHeader({
               />
             </div>
 
-            {/* Region Filter */}
-            <Select value={regionFilter} onValueChange={onRegionChange}>
+            {/* Year Filter */}
+            <Select value={yearFilter} onValueChange={onYearChange}>
               <SelectTrigger className="w-full sm:w-40 h-10 text-sm">
-                <SelectValue placeholder="Pilih Region" />
+                <span className="truncate">
+                  Tahun: {yearFilter === "all" ? "Semua" : yearFilter}
+                </span>
               </SelectTrigger>
               <SelectContent>
-                {regionOptions.map((option) => (
-                  <SelectItem key={option.id} value={option.id}>
-                    {option.name}
-                  </SelectItem>
+                <SelectItem value="all">Semua Tahun</SelectItem>
+                {availableYears.map((y) => (
+                  <SelectItem key={y} value={String(y)}>{y}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -189,7 +195,7 @@ export function KawasanKumuhHeader({
             </div>
             <div className="stat-badge hidden md:flex">
               <Users className="w-4 h-4" />
-              <span>{totalPenduduk.toLocaleString("id-ID")} Penduduk</span>
+              <span>{totalPenduduk === 0 ? "-" : totalPenduduk.toLocaleString("id-ID")} Penduduk</span>
             </div>
 
             {/* Mobile Sidebar Toggle */}
@@ -220,10 +226,14 @@ interface KawasanKumuhSidebarProps {
   kabupatenList: string[];
   kecamatanList: string[];
   kelurahanList: string[];
-  filteredKawasan: KawasanKumuh[];
+  paginatedKawasan: KawasanKumuhData[];
+  totalItems: number;
+  currentPage: number;
+  totalPages: number;
   selectedKawasanId: string | null;
-  onKawasanClick: (kawasan: KawasanKumuh) => void;
+  onKawasanClick: (kawasan: KawasanKumuhData) => void;
   onCloseSidebar?: () => void;
+  onPageChange: (page: number) => void;
 }
 
 export function KawasanKumuhSidebar({
@@ -239,10 +249,14 @@ export function KawasanKumuhSidebar({
   kabupatenList,
   kecamatanList,
   kelurahanList,
-  filteredKawasan,
+  paginatedKawasan,
+  totalItems,
+  currentPage,
+  totalPages,
   selectedKawasanId,
   onKawasanClick,
   onCloseSidebar,
+  onPageChange,
 }: KawasanKumuhSidebarProps) {
   return (
     <div
@@ -280,7 +294,7 @@ export function KawasanKumuhSidebar({
             searchPlaceholder="Cari kecamatan..."
             options={kecamatanList}
             allLabel="Semua Kecamatan"
-            disabled={kabupatenFilter === "all" && kecamatanList.length === 0}
+            disabled={kabupatenFilter === "all"}
           />
           <SearchableFilterSelect
             value={kelurahanFilter}
@@ -289,7 +303,7 @@ export function KawasanKumuhSidebar({
             searchPlaceholder="Cari kelurahan..."
             options={kelurahanList}
             allLabel="Semua Kelurahan"
-            disabled={kecamatanFilter === "all" && kelurahanList.length === 0}
+            disabled={kecamatanFilter === "all"}
           />
           <button
             onClick={onResetFilters}
@@ -302,12 +316,12 @@ export function KawasanKumuhSidebar({
 
       {/* Kawasan List - Scrollable */}
       <div className="flex-1 min-h-0 overflow-y-scroll p-3 sm:p-4 space-y-2 sm:space-y-3">
-        {filteredKawasan.length === 0 ? (
+        {paginatedKawasan.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground text-sm">
             Tidak ada kawasan ditemukan
           </div>
         ) : (
-          filteredKawasan.map((kawasan) => (
+          paginatedKawasan.map((kawasan) => (
             <KawasanCard
               key={kawasan.id}
               kawasan={kawasan}
@@ -318,6 +332,15 @@ export function KawasanKumuhSidebar({
           ))
         )}
       </div>
+
+      {/* Pagination */}
+      <SidebarPagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={totalItems}
+        onPageChange={onPageChange}
+        itemLabel="kawasan"
+      />
     </div>
   );
 }
@@ -332,7 +355,7 @@ interface KawasanKumuhLegendProps {
 
 export function KawasanKumuhLegend({ statusColors }: KawasanKumuhLegendProps) {
   return (
-    <div className="absolute bottom-4 right-4 bg-card/95 backdrop-blur-sm border border-border rounded-xl shadow-lg p-3 sm:p-4 z-[500] max-w-[180px] sm:max-w-[200px] pointer-events-auto">
+    <div className="absolute bottom-4 right-4 bg-card/95 backdrop-blur-sm border border-border rounded-xl shadow-lg p-3 sm:p-4 z-20 max-w-[180px] sm:max-w-[200px] pointer-events-auto">
       <span className="text-xs font-semibold text-foreground mb-2 sm:mb-3 flex items-center gap-2">
         <span className="w-2 h-2 bg-primary rounded-full" />
         Status Kawasan

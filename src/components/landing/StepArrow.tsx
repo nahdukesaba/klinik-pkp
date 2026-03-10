@@ -127,5 +127,3 @@ export function StepArrow({ direction, isActive, className = "" }: StepArrowProp
     </div>
   );
 }
-
-export default StepArrow;

@@ -1,23 +1,25 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 
 /**
  * useLazyMount Hook
- * 
+ *
  * Hook untuk lazy mounting komponen berdasarkan visibility.
  * Komponen akan dimount ketika masuk viewport dan tetap mounted setelahnya.
- * 
- * Berguna untuk performance optimization pada komponen berat seperti peta.
- * 
- * @param options Configuration options
- * @param options.rootMargin Margin around the root for intersection detection
- * @returns Object dengan ref untuk target element, status mounted, dan visibility
- * 
+ *
+ * Menggunakan **callback ref** sehingga observer otomatis di-setup
+ * ketika element masuk DOM — aman digunakan bersama conditional rendering
+ * (misalnya loading state yang men-delay render element).
+ *
+ * @param options Opsi konfigurasi
+ * @param options.rootMargin Margin di sekitar root untuk deteksi intersection
+ * @returns Object dengan ref callback untuk target element, status mounted, dan visibility
+ *
  * @example
  * ```tsx
  * const { ref, isMounted, isVisible } = useLazyMount();
- * 
+ *
  * return (
  *   <div ref={ref}>
  *     {isMounted && <HeavyComponent />}
@@ -27,34 +29,47 @@ import { useState, useEffect, useRef, useCallback } from "react";
  */
 export function useLazyMount(options: { rootMargin?: string } = {}) {
   const { rootMargin = "100px" } = options;
-  const ref = useRef<HTMLDivElement>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const elementRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => {
-    if (!ref.current) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-          setIsMounted(true);
-          // Once mounted, we can disconnect the observer
-          observer.disconnect();
-        }
-      },
-      {
-        rootMargin: rootMargin, // Start loading 100px before visible
-        threshold: 0.01, // Trigger when even 1% is visible
+  // Callback ref: dipanggil setiap kali element di-attach/detach dari DOM.
+  // Ini menyelesaikan masalah early-return conditional rendering:
+  // observer akan di-setup begitu element benar-benar ada di DOM.
+  const ref = useCallback(
+    (node: HTMLDivElement | null) => {
+      // Bersihkan observer lama
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+        observerRef.current = null;
       }
-    );
 
-    observer.observe(ref.current);
+      elementRef.current = node;
 
-    return () => {
-      observer.disconnect();
-    };
-  }, [rootMargin]);
+      // Kalau sudah mounted, tidak perlu observe lagi
+      if (isMounted || !node) return;
+
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) {
+            setIsVisible(true);
+            setIsMounted(true);
+            observer.disconnect();
+            observerRef.current = null;
+          }
+        },
+        {
+          rootMargin,
+          threshold: 0.01,
+        }
+      );
+
+      observer.observe(node);
+      observerRef.current = observer;
+    },
+    [rootMargin, isMounted]
+  );
 
   const reset = useCallback(() => {
     setIsMounted(false);
@@ -68,5 +83,3 @@ export function useLazyMount(options: { rootMargin?: string } = {}) {
     reset,
   };
 }
-
-export default useLazyMount;

@@ -33,7 +33,7 @@ export function MapLegend({
 }: MapLegendProps) {
   return (
     <div
-      className={`absolute bottom-4 right-4 bg-card/95 backdrop-blur-sm border border-border rounded-xl shadow-lg p-3 sm:p-4 z-[500] max-w-[180px] sm:max-w-[200px] pointer-events-auto ${className}`}
+      className={`absolute bottom-4 right-4 bg-card/95 backdrop-blur-sm border border-border rounded-xl shadow-lg p-3 sm:p-4 z-10 max-w-[180px] sm:max-w-[200px] pointer-events-auto ${className}`}
     >
       <span className="text-xs font-semibold text-foreground mb-2 sm:mb-3 flex items-center gap-2">
         <span className="w-2 h-2 bg-primary rounded-full" />

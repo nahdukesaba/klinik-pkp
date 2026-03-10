@@ -8,11 +8,11 @@ import { Clock, ExternalLink, Mail, MapPin, Phone } from "lucide-react";
 
 import { Footer, Navbar } from "@/components/layout";
 import { MapSkeleton } from "@/components/ui/skeleton";
-import { klinikData } from "@/data/lokasi-klinik";
-import useLazyMount from "@/hooks/use-lazy-mount";
-import useScrollAnimation from "@/hooks/use-scroll-animation";
-import { loadLeaflet, destroyMap, cleanupMapContainer } from "@/lib/map-utils";
-import { escapeHtml } from "@/lib/security";
+import { klinikData } from "@/content/lokasi-klinik";
+import { useLazyMount } from "@/hooks/use-lazy-mount";
+import { useScrollAnimation } from "@/hooks/use-scroll-animation";
+import { loadLeaflet, destroyMap, cleanupMapContainer, buildSafePopup } from "@/lib/map-utils";
+import { escapeAttr } from "@/lib/security";
 
 /**
  * Lokasi Klinik Page Component
@@ -42,6 +42,8 @@ export default function LokasiKlinikPage() {
 
     // Prevent re-initialization if already initialized
     cleanupMapContainer(mapRef.current);
+
+    let resizeObserver: ResizeObserver | undefined;
 
     loadLeaflet().then((L) => {
       if (!mapRef.current || mapInstanceRef.current) return;
@@ -80,29 +82,46 @@ export default function LokasiKlinikPage() {
         weight: 2,
       }).addTo(map);
 
-      // Popup on center
+      // Build XSS-safe popup with klinik image
+      const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${klinikData.coordinates[0]},${klinikData.coordinates[1]}`;
+      const popupContent = buildSafePopup({
+        title: klinikData.name,
+        headerColor: "hsl(191, 79%, 25%)",
+        imageUrl: "/klinik.jpeg",
+        imageAlt: "Gedung Klinik PKP BP3KP",
+        fields: [
+          { label: "Alamat", value: klinikData.address },
+          { label: "Telepon", value: klinikData.phone },
+        ],
+        extraHtml: `
+          <div style="margin-top: 8px;">
+            <a href="${escapeAttr(mapsUrl)}" target="_blank" rel="noopener noreferrer" 
+               style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; font-size: 12px; font-weight: 600; border-radius: 8px; background: hsl(191, 79%, 25%); color: #fff; text-decoration: none;">
+              Buka di Google Maps
+            </a>
+          </div>
+        `,
+      });
+
       L.popup()
         .setLatLng(klinikData.coordinates)
-        .setContent(
-          `
-        <div class="p-4 min-w-[280px]">
-          <h3 class="font-bold text-lg text-gray-900 mb-2">${escapeHtml(klinikData.name)}</h3>
-          <p class="text-sm text-gray-600 mb-3">${escapeHtml(klinikData.address)}</p>
-          <a href="https://www.google.com/maps/search/?api=1&query=${klinikData.coordinates[0]},${klinikData.coordinates[1]}" target="_blank" rel="noopener noreferrer" class="w-full px-4 py-2 text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2" style="background: hsl(191, 79%, 25%); color: #ffffff; text-decoration: none; display: inline-flex;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2">
-              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-              <polyline points="15 3 21 3 21 9"></polyline>
-              <line x1="10" y1="14" x2="21" y2="3"></line>
-            </svg>
-            Buka di Google Maps
-          </a>
-        </div>
-      `
-        )
+        .setContent(popupContent)
         .openOn(map);
+
+      // ResizeObserver to handle dynamic layout changes
+      resizeObserver = new ResizeObserver(() => {
+        map.invalidateSize();
+      });
+      resizeObserver.observe(mapRef.current!);
+
+      // Force invalidateSize after mount for lazy-loaded containers
+      setTimeout(() => map.invalidateSize(), 100);
+      setTimeout(() => map.invalidateSize(), 300);
+      setTimeout(() => map.invalidateSize(), 800);
     });
 
     return () => {
+      resizeObserver?.disconnect();
       destroyMap(mapInstanceRef.current);
       mapInstanceRef.current = null;
     };
@@ -141,10 +160,10 @@ export default function LokasiKlinikPage() {
               {mapLazy.isMounted ? (
                 <div
                   ref={mapRef}
-                  className="w-full h-[350px] rounded-2xl overflow-hidden shadow-2xl border border-border"
+                  className="w-full h-[350px] md:h-[400px] lg:h-[450px] 2xl:h-[500px] rounded-2xl overflow-hidden shadow-2xl border border-border"
                 />
               ) : (
-                <MapSkeleton className="w-full h-[350px]" />
+                <MapSkeleton className="w-full h-[350px] md:h-[400px] lg:h-[450px] 2xl:h-[500px]" />
               )}
 
               {/* Open in Maps Button */}

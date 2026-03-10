@@ -12,7 +12,7 @@ export default function Footer() {
     <footer className="bg-card border-t border-border">
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
-          {/* Brand Section */}
+          {/* Bagian Brand */}
           <div className="lg:col-span-1">
             <Link href="/" className="flex items-center gap-3 mb-4">
               <div className="w-12 h-12 rounded-full overflow-hidden flex items-center justify-center shadow-lg bg-white">
@@ -39,7 +39,7 @@ export default function Footer() {
             </p>
           </div>
 
-          {/* Quick Links */}
+          {/* Tautan Cepat */}
           <div>
             <h4 className="font-semibold text-foreground mb-4">Layanan</h4>
             <ul className="space-y-3">
@@ -56,7 +56,7 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Info Links */}
+          {/* Tautan Informasi */}
           <div>
             <h4 className="font-semibold text-foreground mb-4">Informasi</h4>
             <ul className="space-y-3">
@@ -85,7 +85,7 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Contact Info */}
+          {/* Info Kontak */}
           <div>
             <h4 className="font-semibold text-foreground mb-4">Kontak</h4>
             <ul className="space-y-3">
@@ -125,7 +125,7 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Bottom Bar */}
+        {/* Bar Bawah */}
         <div className="mt-12 pt-8 border-t border-border">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-muted-foreground text-center md:text-left">

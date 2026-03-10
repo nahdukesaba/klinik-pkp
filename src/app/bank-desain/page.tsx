@@ -1,21 +1,19 @@
 /**
- * Bank Desain Page Route
+ * Route: /bank-desain
  *
- * Halaman untuk menampilkan koleksi desain rumah dan rusun.
- *
- * Struktur:
- * - page.tsx (routing) → components/bank-desain/BankDesainPage.tsx (halaman utama)
- * - Data: src/data/bank-desain.ts
- * - Components: src/components/bank-desain/DesignPreviewDialog.tsx
- *
- * Fitur:
- * - Filter berdasarkan kategori (Tipe 36, 45, 54, Rusun)
- * - Pencarian berdasarkan judul
- * - Preview gambar dengan zoom in/out
- * - Download PDF desain
+ * Halaman Bank Desain — koleksi desain rumah dan rusun.
+ * Filter kategori, pencarian, preview gambar, dan download PDF.
  */
 
 import dynamic from "next/dynamic";
+
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Bank Desain — Klinik PKP",
+  description:
+    "Koleksi desain rumah tipe 36, 45, 54, dan rusun. Preview gambar dan download PDF desain.",
+};
 
 // Skeleton loading untuk BankDesainPage
 function BankDesainSkeleton() {

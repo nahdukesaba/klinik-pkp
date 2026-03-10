@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 
-import { type SosialisasiLocation } from "@/data/sosialisasi-klinik";
+import { type SosialisasiLocation } from "@/services/sosialisasi.service";
 
 /**
  * Hook untuk mengelola filtering & pagination jadwal kegiatan.
@@ -17,6 +17,7 @@ export function useSosialisasiPKPJadwal(
   upcomingLocations: SosialisasiLocation[],
   kabupatenOptions: string[]
 ) {
+  // Default: semua tahun agar jadwal langsung terlihat saat halaman dimuat
   const [jadwalYear, setJadwalYear] = useState<string>("all");
   const [jadwalMonth, setJadwalMonth] = useState<string>("all");
   const [jadwalStartDate, setJadwalStartDate] = useState<string>("");
@@ -89,14 +90,16 @@ export function useSosialisasiPKPJadwal(
     jadwalSearch,
   ]);
 
-  const resetFilters = () => {
+  // Wrap resetFilters in useCallback for stable reference.
+  // Ref: vercel-react-best-practices/rerender-functional-setstate
+  const resetFilters = useCallback(() => {
     setJadwalYear("all");
     setJadwalMonth("all");
     setJadwalStartDate("");
     setJadwalEndDate("");
     setJadwalSearch("");
     setJadwalKabupatenFilter("all");
-  };
+  }, []);
 
   const hasActiveFilters =
     jadwalYear !== "all" ||

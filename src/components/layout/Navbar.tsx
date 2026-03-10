@@ -9,6 +9,7 @@ import { usePathname } from "next/navigation";
 import {
   BookOpen,
   ChevronDown,
+  ExternalLink,
   Gift,
   Home,
   Info,
@@ -21,6 +22,11 @@ import {
 
 import ThemeToggle from "@/components/shared/ThemeToggle";
 import { cn } from "@/lib/utils";
+
+/** Cek apakah URL merupakan link eksternal */
+function isExternalUrl(href: string): boolean {
+  return href.startsWith("http://") || href.startsWith("https://");
+}
 
 interface SubMenuItem {
   label: string;
@@ -75,6 +81,7 @@ const menuItems: MenuItem[] = [
       { label: "Bahan Bangunan", href: "/informasi/bahan-bangunan" },
       { label: "Perizinan", href: "/informasi/perizinan" },
       { label: "Peraturan", href: "/informasi/peraturan" },
+      { label: "Buku Saku FLPP", href: "https://djvend02-ops.github.io/buku-saku-flpp/" },
     ],
   },
 ];
@@ -155,12 +162,24 @@ function DropdownMenu({
                 }
               >
                 {subItem.href ? (
-                  <Link
-                    href={subItem.href}
-                    className="flex items-center justify-between px-4 py-2.5 text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
-                  >
-                    <span>{subItem.label}</span>
-                  </Link>
+                  isExternalUrl(subItem.href) ? (
+                    <a
+                      href={subItem.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-between px-4 py-2.5 text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                    >
+                      <span>{subItem.label}</span>
+                      <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
+                    </a>
+                  ) : (
+                    <Link
+                      href={subItem.href}
+                      className="flex items-center justify-between px-4 py-2.5 text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                    >
+                      <span>{subItem.label}</span>
+                    </Link>
+                  )
                 ) : (
                   <div className="flex items-center justify-between px-4 py-2.5 text-sm hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors">
                     <span>{subItem.label}</span>
@@ -245,14 +264,28 @@ function MobileMenuItem({ item, onClose, isActive }: MobileMenuItemProps) {
         <div className="pl-6 space-y-1">
           {item.subItems.map((subItem, idx) =>
             subItem.href ? (
-              <Link
-                key={idx}
-                href={subItem.href}
-                onClick={onClose}
-                className="block px-4 py-2.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
-              >
-                {subItem.label}
-              </Link>
+              isExternalUrl(subItem.href) ? (
+                <a
+                  key={idx}
+                  href={subItem.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={onClose}
+                  className="flex items-center justify-between px-4 py-2.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
+                >
+                  <span>{subItem.label}</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              ) : (
+                <Link
+                  key={idx}
+                  href={subItem.href}
+                  onClick={onClose}
+                  className="block px-4 py-2.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
+                >
+                  {subItem.label}
+                </Link>
+              )
             ) : (
               <MobileSubMenuItem
                 key={idx}
@@ -316,7 +349,7 @@ export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
 
-  // Check if a menu item or any of its subitems is active
+  // Cek apakah menu item atau sub-item-nya aktif
   const isMenuActive = (item: MenuItem): boolean => {
     if (item.href) {
       return pathname === item.href || pathname.startsWith(item.href + "/");
@@ -363,7 +396,7 @@ export default function Navbar() {
             </div>
           </Link>
 
-          {/* Desktop Menu */}
+          {/* Menu Desktop */}
           <div className="hidden lg:flex items-center gap-1 pl-8">
             {menuItems.map((item) => (
               <DropdownMenu
@@ -377,7 +410,7 @@ export default function Navbar() {
             ))}
           </div>
 
-          {/* CTA Buttons */}
+          {/* Tombol CTA */}
           <div className="hidden lg:flex items-center gap-2">
             <ThemeToggle />
             <Link
@@ -395,7 +428,7 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* Mobile Menu Button */}
+          {/* Tombol Menu Mobile */}
           <div className="flex lg:hidden items-center gap-2">
             <ThemeToggle />
             <button
@@ -412,7 +445,7 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Menu Mobile */}
       {isMobileMenuOpen && (
         <div className="lg:hidden absolute top-full left-0 right-0 bg-card border-b border-border shadow-xl animate-slide-up">
           <div className="container mx-auto px-4 py-4 space-y-2">

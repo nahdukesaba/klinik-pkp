@@ -12,6 +12,7 @@
 import { useParams } from "next/navigation";
 
 import BeritaDetailView from "@/components/berita/BeritaDetailView";
+import { ApiLoadingState, ApiErrorState } from "@/components/shared";
 import { useBeritaDetail } from "@/hooks/berita/use-berita-detail";
 
 export default function BeritaDetailPage() {
@@ -30,7 +31,24 @@ export default function BeritaDetailPage() {
     goToPrevImage,
     goToNextImage,
     carousel,
+    isLoading,
+    isError,
+    error,
+    refetch,
   } = useBeritaDetail(id);
+
+  // Tampilkan loading state saat data sedang dimuat dari API
+  if (isLoading) {
+    return <ApiLoadingState message="Memuat detail berita..." />;
+  }
+
+  // Tampilkan error state jika gagal mengambil data
+  if (isError) {
+    return <ApiErrorState error={error} onRetry={refetch} />;
+  }
+
+  // Jika berita tidak ditemukan, notFound() sudah dipanggil di hook
+  if (!berita) return null;
 
   return (
     <BeritaDetailView

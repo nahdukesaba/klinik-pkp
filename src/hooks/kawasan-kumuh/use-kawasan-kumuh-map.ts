@@ -5,17 +5,16 @@
 
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import "leaflet/dist/leaflet.css";
 
-import {
-  kawasanRegionCenters,
-  kawasanStatusColors,
-  type KawasanKumuh,
-} from "@/data/peta-kawasan-kumuh";
 import { loadLeaflet, cleanupMapContainer, destroyMap, bindMarkerInteraction, buildSafePopup } from "@/lib/map-utils";
 import { escapeAttr } from "@/lib/security";
+import {
+  kawasanStatusColors,
+  type KawasanKumuhData,
+} from "@/services/kawasan-kumuh.service";
 
 import type * as L from "leaflet";
 
@@ -40,8 +39,8 @@ interface UseKawasanKumuhMapReturn {
 }
 
 export function useKawasanKumuhMap(
-  filteredKawasan: KawasanKumuh[],
-  onKawasanSelect: (kawasan: KawasanKumuh) => void,
+  filteredKawasan: KawasanKumuhData[],
+  onKawasanSelect: (kawasan: KawasanKumuhData) => void,
   isEnabled: boolean = true
 ): UseKawasanKumuhMapReturn {
   const mapRef = useRef<HTMLDivElement>(null);
@@ -52,12 +51,14 @@ export function useKawasanKumuhMap(
     if (!isEnabled) return;
     if (typeof window === "undefined" || !mapRef.current || mapInstanceRef.current) return;
 
+    let resizeObserver: ResizeObserver | undefined;
+
     loadLeaflet().then((L) => {
       if (!mapRef.current || mapInstanceRef.current) return;
 
       cleanupMapContainer(mapRef.current);
 
-      const regionData = kawasanRegionCenters["sumatera-utara"];
+      const regionData = { lat: 3.3, lng: 99.0, zoom: 8 };
 
       const map = L.map(mapRef.current, {
         dragging: true,
@@ -77,6 +78,14 @@ export function useKawasanKumuhMap(
       setTimeout(() => map.invalidateSize(), 100);
       setTimeout(() => map.invalidateSize(), 500);
 
+      // ResizeObserver to handle dynamic layout changes
+      if (mapRef.current) {
+        resizeObserver = new ResizeObserver(() => {
+          map.invalidateSize();
+        });
+        resizeObserver.observe(mapRef.current);
+      }
+
       map.on("click", (e) => {
         e.originalEvent?.stopPropagation();
       });
@@ -86,6 +95,7 @@ export function useKawasanKumuhMap(
     });
 
     return () => {
+      resizeObserver?.disconnect();
       destroyMap(mapInstanceRef.current);
       mapInstanceRef.current = null;
     };
@@ -152,8 +162,7 @@ export function useKawasanKumuhMap(
               ],
               gridFields: [
                 { label: "Luas", value: `${kawasan.luas} Ha` },
-                { label: "Penduduk", value: `${kawasan.penduduk.toLocaleString("id-ID")} jiwa` },
-                { label: "Tahun", value: kawasan.tahun },
+                { label: "Penduduk", value: kawasan.penduduk === 0 ? "-" : `${kawasan.penduduk.toLocaleString("id-ID")} jiwa` },
                 { label: "Legalitas", value: kawasan.legalitasLahan },
               ],
               statusBadge: {
@@ -185,7 +194,7 @@ export function useKawasanKumuhMap(
     });
   }, [filteredKawasan, isMapReady, onKawasanSelect, isEnabled]);
 
-  const flyTo = (lat: number, lng: number, zoom = 15) => {
+  const flyTo = useCallback((lat: number, lng: number, zoom = 15) => {
     if (mapInstanceRef.current) {
       mapInstanceRef.current.flyTo([lat, lng], zoom, {
         animate: true,
@@ -193,7 +202,7 @@ export function useKawasanKumuhMap(
         easeLinearity: 0.25,
       });
     }
-  };
+  }, []);
 
   return {
     mapRef,

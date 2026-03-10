@@ -22,8 +22,6 @@ import Image from "next/image";
 import {
   Bath,
   BedDouble,
-  ChevronLeft,
-  ChevronRight,
   Download,
   Eye,
   FileText,
@@ -39,18 +37,19 @@ import {
 
 import { DesignPreviewDialog } from "@/components/bank-desain/DesignPreviewDialog";
 import { Footer, Navbar } from "@/components/layout";
-import type { Design } from "@/data/bank-desain";
+import { ApiErrorState } from "@/components/shared";
+import { GridPagination } from "@/components/shared/GridPagination";
 import { useBankDesainPage } from "@/hooks/bank-desain/use-bank-desain-page";
-
+import type { BankDesainData } from "@/hooks/bank-desain/use-bank-desain-query";
 // ============================================
 // Design Card Component
 // ============================================
 
 interface DesignCardProps {
-  design: Design;
+  design: BankDesainData;
   index: number;
-  onPreview: (design: Design) => void;
-  getDownloadUrl: (design: Design) => string;
+  onPreview: (design: BankDesainData) => void;
+  getDownloadUrl: (design: BankDesainData) => string;
 }
 
 const DesignCard = memo(function DesignCard({ 
@@ -184,88 +183,6 @@ function EmptyState({ onReset }: { onReset: () => void }) {
 // Pagination Component
 // ============================================
 
-interface PaginationProps {
-  currentPage: number;
-  totalPages: number;
-  onPageChange: (page: number) => void;
-  onPrev: () => void;
-  onNext: () => void;
-}
-
-function getPageNumbers(currentPage: number, totalPages: number): (number | string)[] {
-  const pages: (number | string)[] = [];
-  const maxVisible = 5;
-  
-  if (totalPages <= maxVisible) {
-    return Array.from({ length: totalPages }, (_, i) => i + 1);
-  }
-
-  pages.push(1);
-
-  const startPage = Math.max(2, currentPage - 1);
-  const endPage = Math.min(totalPages - 1, currentPage + 1);
-
-  if (startPage > 2) pages.push("...");
-  
-  for (let i = startPage; i <= endPage; i++) {
-    pages.push(i);
-  }
-
-  if (endPage < totalPages - 1) pages.push("...");
-  
-  pages.push(totalPages);
-
-  return pages;
-}
-
-function Pagination({ currentPage, totalPages, onPageChange, onPrev, onNext }: PaginationProps) {
-  if (totalPages <= 1) return null;
-
-  const pageNumbers = getPageNumbers(currentPage, totalPages);
-
-  return (
-    <div className="flex items-center justify-center gap-2 mt-8">
-      <button
-        onClick={onPrev}
-        disabled={currentPage === 1}
-        className="p-2 rounded-lg bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        aria-label="Halaman sebelumnya"
-      >
-        <ChevronLeft className="w-5 h-5" />
-      </button>
-      
-      <div className="flex items-center gap-1">
-        {pageNumbers.map((page, idx) => (
-          typeof page === "number" ? (
-            <button
-              key={idx}
-              onClick={() => onPageChange(page)}
-              className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors ${
-                page === currentPage
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-              }`}
-            >
-              {page}
-            </button>
-          ) : (
-            <span key={idx} className="px-2 text-muted-foreground">...</span>
-          )
-        ))}
-      </div>
-      
-      <button
-        onClick={onNext}
-        disabled={currentPage === totalPages}
-        className="p-2 rounded-lg bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        aria-label="Halaman berikutnya"
-      >
-        <ChevronRight className="w-5 h-5" />
-      </button>
-    </div>
-  );
-}
-
 // ============================================
 // Filter Chip (inline — no separate component needed)
 // ============================================
@@ -292,6 +209,10 @@ function FilterChip({ label, isActive, onClick }: { label: string; isActive: boo
 export default function BankDesainPage() {
   const {
     ref,
+    isLoading,
+    isError,
+    error,
+    refetch,
     typeFilter,
     bedroomFilter,
     terasFilter,
@@ -318,6 +239,11 @@ export default function BankDesainPage() {
     handleClosePreview,
     getDesignDownloadUrl,
   } = useBankDesainPage();
+
+  // Error state tetap full-page (tidak ada data sama sekali)
+  if (isError) {
+    return <ApiErrorState error={error} onRetry={refetch} />;
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -403,9 +329,14 @@ export default function BankDesainPage() {
           </div>
 
           {/* Design Grid */}
-          {paginatedDesigns.length > 0 ? (
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-20">
+              <div className="w-10 h-10 border-3 border-primary border-t-transparent rounded-full animate-spin mb-4" />
+              <p className="text-muted-foreground text-sm">Memuat data desain rumah...</p>
+            </div>
+          ) : paginatedDesigns.length > 0 ? (
             <>
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
                 {paginatedDesigns.map((design, index) => (
                   <DesignCard
                     key={design.id}
@@ -416,7 +347,7 @@ export default function BankDesainPage() {
                   />
                 ))}
               </div>
-              <Pagination
+              <GridPagination
                 currentPage={currentPage}
                 totalPages={totalPages}
                 onPageChange={setCurrentPage}

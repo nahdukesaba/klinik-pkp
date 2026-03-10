@@ -14,6 +14,7 @@ import {
   MobileSidebarToggle,
 } from "@/components/kawasan-kumuh/KawasanKumuhComponents";
 import { Navbar } from "@/components/layout";
+import { ApiLoadingState, ApiErrorState } from "@/components/shared";
 import { MapSkeleton } from "@/components/ui/skeleton";
 import { useKawasanKumuhPage } from "@/hooks/kawasan-kumuh/use-kawasan-kumuh-page";
 
@@ -32,9 +33,8 @@ export default function KawasanKumuhPage() {
     kecamatanList,
     kelurahanList,
     searchQuery,
-    regionFilter,
-    regionName,
-    regionOptions,
+    yearFilter,
+    availableYears,
     kabupatenFilter,
     kecamatanFilter,
     kelurahanFilter,
@@ -44,7 +44,7 @@ export default function KawasanKumuhPage() {
     selectedKawasan,
     sidebarOpen,
     setSearchQuery,
-    setRegionFilter,
+    setYearFilter,
     setKabupatenFilter,
     setKecamatanFilter,
     setKelurahanFilter,
@@ -55,7 +55,22 @@ export default function KawasanKumuhPage() {
     setSidebarOpen,
     mapRef,
     mapLazy,
+    pagination,
+    isLoading,
+    isError,
+    error,
+    refetch,
   } = useKawasanKumuhPage();
+
+  // Tampilkan loading state saat data sedang dimuat dari API
+  if (isLoading) {
+    return <ApiLoadingState message="Memuat data kawasan kumuh..." />;
+  }
+
+  // Tampilkan error state jika gagal mengambil data
+  if (isError) {
+    return <ApiErrorState error={error} onRetry={refetch} />;
+  }
 
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden">
@@ -65,10 +80,9 @@ export default function KawasanKumuhPage() {
         <KawasanKumuhHeader
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
-          regionFilter={regionFilter}
-          regionName={regionName}
-          regionOptions={regionOptions}
-          onRegionChange={setRegionFilter}
+          yearFilter={yearFilter}
+          availableYears={availableYears}
+          onYearChange={setYearFilter}
           statusFilter={statusFilter}
           onStatusChange={setStatusFilter}
           totalKawasan={filteredKawasan.length}
@@ -98,10 +112,14 @@ export default function KawasanKumuhPage() {
             kabupatenList={kabupatenList}
             kecamatanList={kecamatanList}
             kelurahanList={kelurahanList}
-            filteredKawasan={filteredKawasan}
+            paginatedKawasan={pagination.paginatedItems}
+            totalItems={pagination.totalItems}
+            currentPage={pagination.currentPage}
+            totalPages={pagination.totalPages}
             selectedKawasanId={selectedKawasan?.id ?? null}
             onKawasanClick={handleKawasanClick}
             onCloseSidebar={() => setSidebarOpen(false)}
+            onPageChange={pagination.setCurrentPage}
           />
 
           <div className="flex-1 relative overflow-hidden">

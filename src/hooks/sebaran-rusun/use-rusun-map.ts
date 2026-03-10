@@ -1,40 +1,27 @@
 /**
- * Hook: useRusunMap
- * Mengelola inisialisasi peta dan marker untuk halaman Sebaran Rusun.
+ * useRusunMap — Inisialisasi peta Leaflet dan manajemen marker untuk Sebaran Rusun.
  */
 
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import type { RusunData } from "@/data/peta-sebaran-rusun";
-import { loadLeaflet, destroyMap, cleanupMapContainer, bindMarkerInteraction, buildSafePopup } from "@/lib/map-utils";
+import type { RusunData } from "@/hooks/sebaran-rusun/use-rusun-query";
+import {
+  loadLeaflet,
+  destroyMap,
+  cleanupMapContainer,
+  bindMarkerInteraction,
+  buildSafePopup,
+} from "@/lib/map-utils";
 import { sanitizeUrl } from "@/lib/security";
 
 import type * as L from "leaflet";
 
 import "leaflet/dist/leaflet.css";
 
-// ============================================
-// Types
-// ============================================
-interface UseRusunMapReturn {
-  mapRef: React.RefObject<HTMLDivElement | null>;
-  mapReady: boolean;
-  flyToLocation: (lat: number, lng: number, zoom?: number) => void;
-  flyToRegion: (lat: number, lng: number, zoom: number) => void;
-}
+// --- Konstanta ---
 
-interface RusunRegionCenter {
-  lat: number;
-  lng: number;
-  zoom: number;
-  name: string;
-}
-
-// ============================================
-// Constants
-// ============================================
 const DEFAULT_CENTER: [number, number] = [3.5952, 98.6722];
 const DEFAULT_ZOOM = 12;
 
@@ -45,21 +32,16 @@ const MARKER_ICON_SVG = `
         <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.3"/>
       </filter>
     </defs>
-    <path d="M20 2 C 11 2, 4 9, 4 18 C 4 28, 20 46, 20 46 C 20 46, 36 28, 36 18 C 36 9, 29 2, 20 2 Z" 
-          fill="hsl(191, 79%, 35%)" 
-          stroke="white" 
-          stroke-width="2.5" 
-          filter="url(#shadow)"/>
+    <path d="M20 2 C 11 2, 4 9, 4 18 C 4 28, 20 46, 20 46 C 20 46, 36 28, 36 18 C 36 9, 29 2, 20 2 Z"
+          fill="hsl(191, 79%, 35%)" stroke="white" stroke-width="2.5" filter="url(#shadow)"/>
     <circle cx="20" cy="18" r="7" fill="white"/>
-    <path d="M17 18l9-7 9 7v11a2 2 0 0 1-2 2H19a2 2 0 0 1-2-2z" 
-          transform="translate(-6, 11) scale(0.5)" 
-          fill="hsl(191, 79%, 35%)"/>
+    <path d="M17 18l9-7 9 7v11a2 2 0 0 1-2 2H19a2 2 0 0 1-2-2z"
+          transform="translate(-6, 11) scale(0.5)" fill="hsl(191, 79%, 35%)"/>
   </svg>
 `;
 
-// ============================================
-// Popup Content Generator (Sanitized)
-// ============================================
+// --- Pembangun popup ---
+
 function createPopupContent(rusun: RusunData): string {
   return buildSafePopup({
     title: rusun.name,
@@ -83,38 +65,39 @@ function createPopupContent(rusun: RusunData): string {
   });
 }
 
-// ============================================
-// Hook Implementation
-// ============================================
+// --- Hook ---
+
+interface UseRusunMapReturn {
+  mapRef: React.RefObject<HTMLDivElement | null>;
+  mapReady: boolean;
+  flyToLocation: (lat: number, lng: number, zoom?: number) => void;
+}
+
 export function useRusunMap(
   filteredRusun: RusunData[],
   onRusunClick?: (rusun: RusunData) => void,
-  isEnabled: boolean = true,
-  regionData?: RusunRegionCenter,
-  sidebarOpen?: boolean
+  isEnabled = true,
+  sidebarOpen?: boolean,
 ): UseRusunMapReturn {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
-  // Capture initial region data for map initialization only
-  const initialRegionRef = useRef(regionData);
+  const resizeObserverRef = useRef<ResizeObserver | null>(null);
 
   const [mapReady, setMapReady] = useState(false);
 
   useEffect(() => {
-    if (!isEnabled) return;
-    if (typeof window === "undefined" || !mapRef.current || mapInstanceRef.current) return;
+    if (!isEnabled || typeof window === "undefined" || !mapRef.current || mapInstanceRef.current)
+      return;
 
-    const initRegion = initialRegionRef.current;
+    const container = mapRef.current;
+
     loadLeaflet().then((L) => {
-      if (!mapRef.current || mapInstanceRef.current) return;
+      if (!container || mapInstanceRef.current) return;
 
-      cleanupMapContainer(mapRef.current);
+      cleanupMapContainer(container);
 
-      const initialCenter: [number, number] = initRegion ? [initRegion.lat, initRegion.lng] : DEFAULT_CENTER;
-      const initialZoom = initRegion ? initRegion.zoom : DEFAULT_ZOOM;
-
-      const map = L.map(mapRef.current, {
+      const map = L.map(container, {
         dragging: true,
         touchZoom: true,
         scrollWheelZoom: true,
@@ -127,14 +110,14 @@ export function useRusunMap(
         fadeAnimation: true,
         inertia: true,
         inertiaDeceleration: 3000,
-        // balanced fractional zoom for smoothness without stutter
         zoomSnap: 0.5,
         zoomDelta: 0.5,
         wheelPxPerZoomLevel: 120,
-      }).setView(initialCenter, initialZoom);
+      }).setView(DEFAULT_CENTER, DEFAULT_ZOOM);
 
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
         keepBuffer: 6,
         updateWhenZooming: true,
         updateWhenIdle: false,
@@ -145,15 +128,22 @@ export function useRusunMap(
       setTimeout(() => map.invalidateSize(), 100);
       setTimeout(() => map.invalidateSize(), 500);
 
-      map.on("click", (e) => {
-        e.originalEvent?.stopPropagation();
+      // ResizeObserver — guard dengan ref agar aman saat map sudah di-destroy
+      const ro = new ResizeObserver(() => {
+        mapInstanceRef.current?.invalidateSize();
       });
+      ro.observe(container);
+      resizeObserverRef.current = ro;
+
+      map.on("click", (e) => e.originalEvent?.stopPropagation());
 
       mapInstanceRef.current = map;
       setMapReady(true);
     });
 
     return () => {
+      resizeObserverRef.current?.disconnect();
+      resizeObserverRef.current = null;
       destroyMap(mapInstanceRef.current);
       mapInstanceRef.current = null;
       markersLayerRef.current = null;
@@ -161,35 +151,21 @@ export function useRusunMap(
     };
   }, [isEnabled]);
 
+  // Sesuaikan ukuran peta saat sidebar buka/tutup
   useEffect(() => {
     if (!isEnabled || !mapReady || !mapInstanceRef.current) return;
-
-    // Invalidate size after sidebar toggle animation completes
-    const timer = setTimeout(() => {
-      mapInstanceRef.current?.invalidateSize();
-    }, 350);
-
+    const timer = setTimeout(() => mapInstanceRef.current?.invalidateSize(), 350);
     return () => clearTimeout(timer);
   }, [sidebarOpen, mapReady, isEnabled]);
 
-  useEffect(() => {
-    if (!isEnabled || !mapReady || !mapInstanceRef.current || !regionData) return;
-    mapInstanceRef.current.flyTo([regionData.lat, regionData.lng], regionData.zoom, {
-      animate: true,
-      duration: 1.5,
-      easeLinearity: 0.25,
-    });
-  }, [regionData, mapReady, isEnabled]);
-
+  // Perbarui marker di peta
   useEffect(() => {
     if (!isEnabled || !mapReady || !mapInstanceRef.current || !markersLayerRef.current) return;
 
     loadLeaflet().then((L) => {
       if (!mapInstanceRef.current || !markersLayerRef.current) return;
 
-      const markersLayer = markersLayerRef.current;
-
-      markersLayer.clearLayers();
+      markersLayerRef.current.clearLayers();
 
       filteredRusun.forEach((rusun) => {
         if (!mapInstanceRef.current) return;
@@ -201,32 +177,19 @@ export function useRusunMap(
             iconSize: [48, 60],
             iconAnchor: [24, 60],
             popupAnchor: [0, -60],
-          })
+          }),
         });
 
         marker.bindPopup(createPopupContent(rusun), { maxWidth: 350 });
-        bindMarkerInteraction(marker, {
-          onClick: () => onRusunClick?.(rusun),
-        });
-
-        markersLayer.addLayer(marker);
+        bindMarkerInteraction(marker, { onClick: () => onRusunClick?.(rusun) });
+        markersLayerRef.current!.addLayer(marker);
       });
 
+      // Sesuaikan view setelah marker ditempatkan
       if (filteredRusun.length > 0) {
         mapInstanceRef.current.invalidateSize();
         setTimeout(() => {
           if (!mapInstanceRef.current) return;
-
-          // If a region center is provided and its zoom is for a wide-area (province),
-          // prefer flying to the region center instead of fitting bounds to markers.
-          if (regionData && regionData.zoom <= 10) {
-            mapInstanceRef.current.flyTo([regionData.lat, regionData.lng], regionData.zoom, {
-              animate: true,
-              duration: 1.5,
-              easeLinearity: 0.25,
-            });
-            return;
-          }
 
           const bounds = L.latLngBounds(filteredRusun.map((r) => [r.lat, r.lng]));
           mapInstanceRef.current.fitBounds(bounds, {
@@ -236,19 +199,11 @@ export function useRusunMap(
             maxZoom: 15,
           });
         }, 300);
-      } else if (regionData) {
-        // No markers to show, but have region center: fly to it.
-        mapInstanceRef.current.flyTo([regionData.lat, regionData.lng], regionData.zoom, {
-          animate: true,
-          duration: 1.5,
-          easeLinearity: 0.25,
-        });
       }
     });
-  }, [filteredRusun, mapReady, onRusunClick, isEnabled, regionData]);
+  }, [filteredRusun, mapReady, onRusunClick, isEnabled]);
 
   const flyToLocation = useCallback((lat: number, lng: number, zoom = 14) => {
-    // stop any ongoing motion then smoothly fly
     mapInstanceRef.current?.stop();
     mapInstanceRef.current?.flyTo([lat, lng], zoom, {
       animate: true,
@@ -257,19 +212,5 @@ export function useRusunMap(
     });
   }, []);
 
-  const flyToRegion = useCallback((lat: number, lng: number, zoom: number) => {
-    mapInstanceRef.current?.stop();
-    mapInstanceRef.current?.flyTo([lat, lng], zoom, {
-      animate: true,
-      duration: 1.5,
-      easeLinearity: 0.12,
-    });
-  }, []);
-
-  return {
-    mapRef,
-    mapReady,
-    flyToLocation,
-    flyToRegion,
-  };
+  return { mapRef, mapReady, flyToLocation };
 }

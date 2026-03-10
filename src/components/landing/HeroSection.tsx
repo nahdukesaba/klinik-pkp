@@ -1,4 +1,8 @@
-"use client";
+/**
+ * HeroSection — Server Component
+ * Banner utama landing page. Tidak menggunakan hooks React,
+ * sehingga bisa di-render di server untuk performa lebih baik.
+ */
 
 import Image from "next/image";
 import Link from "next/link";
@@ -58,10 +62,10 @@ export default function HeroSection() {
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-radial from-primary/5 to-transparent rounded-full" />
 
       <div className="container mx-auto px-4 relative z-10">
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 2xl:gap-28 items-center">
           {/* Left Content */}
           <div className="space-y-8">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight animate-slide-up">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl 2xl:text-7xl font-bold text-foreground leading-tight animate-slide-up">
               Klinik Perumahan &
               <span className="text-primary block mt-2">Kawasan Permukiman</span>
               <span className="text-lg md:text-xl lg:text-2xl font-medium text-muted-foreground block mt-4">

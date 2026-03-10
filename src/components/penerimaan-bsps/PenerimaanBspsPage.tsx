@@ -26,6 +26,7 @@ import {
   BspsProcessSteps,
   BspsRequirements,
 } from "@/components/penerimaan-bsps/BspsSections";
+import { ApiErrorState } from "@/components/shared";
 import { MapSkeleton } from "@/components/ui/skeleton";
 import { usePenerimaanBspsPage } from "@/hooks/penerimaan-bsps/use-penerimaan-bsps-page";
 
@@ -45,8 +46,9 @@ export default function PenerimaanBspsPage() {
     statusColors,
     mapRef,
     isMapReady,
-    regionName,
-    regionOptions,
+    isError,
+    error,
+    refetch,
   } = usePenerimaanBspsPage();
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -65,6 +67,11 @@ export default function PenerimaanBspsPage() {
 
     return () => clearTimeout(timer);
   }, []);
+
+  // Tampilkan error state jika gagal mengambil data
+  if (isError) {
+    return <ApiErrorState error={error} onRetry={refetch} />;
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -96,7 +103,7 @@ export default function PenerimaanBspsPage() {
       </section>
 
       {/* Full-screen Map Section (like Kawasan Kumuh) */}
-      <section id="peta-bsps" ref={mapLazy.ref} className="h-screen flex flex-col scroll-mt-0">
+      <section id="peta-bsps" ref={mapLazy.ref} className="h-screen flex flex-col scroll-mt-16 lg:scroll-mt-20 isolate">
         {mapLazy.isMounted ? (
           <BspsMapSection
             filterState={filterState}
@@ -110,8 +117,6 @@ export default function PenerimaanBspsPage() {
             sidebarOpen={sidebarOpen}
             onToggleSidebar={toggleSidebar}
             onCloseSidebar={closeSidebar}
-            regionName={regionName}
-            regionOptions={regionOptions}
           />
         ) : (
           <MapSkeleton className="h-screen" />

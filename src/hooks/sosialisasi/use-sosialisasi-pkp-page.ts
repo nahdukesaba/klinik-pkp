@@ -18,17 +18,17 @@
 
 import { useCallback } from "react";
 
-import { useSosialisasiData } from "@/hooks/sosialisasi/use-sosialisasi-data";
 import { useSosialisasiPKPBerita } from "@/hooks/sosialisasi/use-sosialisasi-pkp-berita";
 import { useSosialisasiPKPJadwal } from "@/hooks/sosialisasi/use-sosialisasi-pkp-jadwal";
 import { useSosialisasiPKPMap } from "@/hooks/sosialisasi/use-sosialisasi-pkp-map";
+import { useSosialisasiQuery } from "@/hooks/sosialisasi/use-sosialisasi-query";
 import { useLazyMount } from "@/hooks/use-lazy-mount";
 
 export function useSosialisasiPKPPage(
   onImageClick?: (images: string[], index: number, title: string) => void
 ) {
   // Variabel A: 1x load semua data mentah
-  const rawData = useSosialisasiData();
+  const rawData = useSosialisasiQuery();
 
   // Variabel B: masing-masing hook filter dari data mentah
   const jadwal = useSosialisasiPKPJadwal(rawData.upcomingLocations, rawData.kabupatenList);
@@ -48,5 +48,9 @@ export function useSosialisasiPKPPage(
     map,
     mapLazy,
     flyToLocation,
+    isLoading: rawData.isLoading,
+    isError: rawData.isError,
+    error: rawData.error,
+    refetch: rawData.refetch,
   };
 }

@@ -1,5 +1,5 @@
 /**
- * JWT Token & Auth Utilities (Server-side)
+ * Utilitas JWT Token & Autentikasi (Server-side)
  *
  * Handle JWT token secara AMAN menggunakan httpOnly cookies.
  * JANGAN PERNAH simpan token di localStorage/sessionStorage.
@@ -17,7 +17,7 @@
 import { SignJWT, jwtVerify, type JWTPayload } from "jose";
 
 // ============================================
-// Configuration
+// Konfigurasi
 // ============================================
 
 /**
@@ -35,6 +35,12 @@ function getJwtSecret(): Uint8Array {
         "Please set it in .env.local with a minimum of 32 characters."
     );
   }
+  if (secret.length < 32) {
+    throw new Error(
+      "JWT_SECRET terlalu pendek. Minimal 32 karakter untuk keamanan yang memadai. " +
+        "Gunakan: node -e \"console.log(require('crypto').randomBytes(64).toString('hex'))\""
+    );
+  }
   return new TextEncoder().encode(secret);
 }
 
@@ -47,7 +53,7 @@ export const AUTH_COOKIE_NAME = "klinik-pkp-token";
 export const REFRESH_COOKIE_NAME = "klinik-pkp-refresh";
 
 // ============================================
-// Token Types
+// Tipe Token
 // ============================================
 
 export interface AuthUser {
@@ -68,12 +74,12 @@ export interface TokenPayload extends JWTPayload {
 }
 
 // ============================================
-// JWT Operations
+// Operasi JWT
 // ============================================
 
 /**
- * Create JWT access token.
- * Short-lived (15 menit) — harus di-refresh secara berkala.
+ * Buat JWT access token.
+ * Masa hidup pendek (15 menit) — harus di-refresh secara berkala.
  */
 export async function createAccessToken(user: AuthUser): Promise<string> {
   const secret = getJwtSecret();
@@ -95,8 +101,8 @@ export async function createAccessToken(user: AuthUser): Promise<string> {
 }
 
 /**
- * Create JWT refresh token.
- * Long-lived (7 hari) — digunakan untuk mendapatkan access token baru.
+ * Buat JWT refresh token.
+ * Masa hidup panjang (7 hari) — digunakan untuk mendapatkan access token baru.
  */
 export async function createRefreshToken(user: AuthUser): Promise<string> {
   const secret = getJwtSecret();
@@ -138,7 +144,7 @@ export async function verifyToken(token: string): Promise<TokenPayload | null> {
 }
 
 // ============================================
-// Cookie Configuration
+// Konfigurasi Cookie
 // ============================================
 
 /**

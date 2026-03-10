@@ -1,5 +1,5 @@
 /**
- * Date formatting helpers (Indonesian locale)
+ * Fungsi pemformat tanggal (locale Indonesia)
  */
 
 const defaultDateOptions: Intl.DateTimeFormatOptions = {

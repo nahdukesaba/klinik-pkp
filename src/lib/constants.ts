@@ -12,34 +12,54 @@
 // ============================================
 
 /**
- * Base URL untuk API eksternal.
- * Gunakan NEXT_PUBLIC_API_URL untuk override (misalnya untuk ngrok).
- * Default: gunakan API route internal Next.js (/api)
- *
- * Contoh penggunaan dengan ngrok:
- * 1. Jalankan ngrok: ngrok http 3000
- * 2. Copy URL ngrok (misal: https://abc123.ngrok.io)
- * 3. Set di .env.local: NEXT_PUBLIC_API_URL=https://abc123.ngrok.io/api
- * 4. Atau set saat development: NEXT_PUBLIC_API_URL=http://localhost:8000/api
+ * Konfigurasi default React Query untuk semua data hooks.
+ * Digunakan sebagai spread di useQuery() agar konsisten.
  */
-export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? 
-  (typeof window !== "undefined" ? `${window.location.origin}/api` : "/api");
+export const QUERY_CONFIG = {
+  staleTime: 5 * 60 * 1000,       // Data fresh selama 5 menit
+  gcTime: 10 * 60 * 1000,         // Cache disimpan 10 menit
+  retry: 2,                       // Retry 2x jika gagal
+  refetchOnWindowFocus: false,     // Jangan refetch saat tab aktif
+} as const;
 
 /**
- * Helper function untuk membuat full API URL
+ * Base URL untuk API request dari client-side.
+ *
+ * Semua request API dari browser melewati Next.js rewrites di /api/ext
+ * agar tetap same-origin dan menghindari CORS.
+ * Konfigurasi rewrite ada di next.config.mjs.
+ *
+ * Alur request:
+ *   Browser → /api/ext/rusun → Next.js Rewrite → Backend API/rusun
+ *
+ * Konfigurasi backend URL (set di .env.local):
+ *   API_URL=http://localhost:8000/api/v1
+ *
+ * PENTING: Jangan gunakan NEXT_PUBLIC_ prefix untuk URL backend!
+ * Prefix tersebut akan mengexpose URL ke client-side JavaScript.
+ */
+export const API_BASE_URL = "/api/ext";
+
+/**
+ * Helper function untuk membuat full API URL (melalui rewrite).
+ * Contoh: getApiUrl("rusun") → "/api/ext/rusun"
  */
 export function getApiUrl(endpoint: string): string {
   // Hapus leading slash jika ada
   const cleanEndpoint = endpoint.startsWith("/") ? endpoint.slice(1) : endpoint;
-  // Hapus trailing slash dari base URL jika ada
-  const cleanBaseUrl = API_BASE_URL.endsWith("/") ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
-  return `${cleanBaseUrl}/${cleanEndpoint}`;
+  return `${API_BASE_URL}/${cleanEndpoint}`;
 }
+
+// ============================================
+// React Query Configuration
+// ============================================
 
 // ============================================
 // Date & Time Constants
 // ============================================
+
+/** Tahun sekarang sebagai string — dipakai sebagai default filter di semua halaman */
+export const CURRENT_YEAR = new Date().getFullYear().toString();
 
 /** Daftar bulan dalam Bahasa Indonesia untuk filter tanggal */
 export const MONTHS_LIST = [

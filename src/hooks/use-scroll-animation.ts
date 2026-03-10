@@ -28,5 +28,3 @@ export const useScrollAnimation = () => {
 
   return ref;
 };
-
-export default useScrollAnimation;

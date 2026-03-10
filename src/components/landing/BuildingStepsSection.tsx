@@ -3,8 +3,8 @@
 import { useState } from "react";
 
 import { SectionHeader } from "@/components/shared";
-import { useBuildingSteps } from "@/hooks/use-building-steps";
-import useScrollAnimation from "@/hooks/use-scroll-animation";
+import { buildingStepsData } from "@/content/building-steps";
+import { useScrollAnimation } from "@/hooks/use-scroll-animation";
 
 import { ProgressIndicator } from "./ProgressIndicator";
 import { StepArrow } from "./StepArrow";
@@ -12,7 +12,7 @@ import { StepArrow } from "./StepArrow";
 import type { LucideIcon } from "lucide-react";
 
 // ============================================
-// Types & Interfaces
+// Tipe & Interface
 // ============================================
 interface Step {
   id: string;
@@ -84,11 +84,11 @@ function StepCard({ item, isHovered, isAnyHovered }: StepCardProps) {
 }
 
 // ============================================
-// Main Component
+// Komponen Utama
 // ============================================
 export default function BuildingStepsSection() {
   const ref = useScrollAnimation();
-  const steps = useBuildingSteps();
+  const steps = buildingStepsData;
   const [hoveredStep, setHoveredStep] = useState<number | null>(null);
 
   if (steps.length === 0) {
@@ -232,7 +232,7 @@ export default function BuildingStepsSection() {
             <div className="bg-card rounded-2xl overflow-hidden border border-border shadow-lg">
               <iframe
                 src="https://www.instagram.com/bp3kp_sumatera2/embed"
-                className="w-full h-[600px] md:h-[700px] border-0"
+                className="w-full h-[600px] md:h-[700px] lg:h-[750px] xl:h-[800px] 2xl:h-[850px] border-0"
                 loading="lazy"
                 title="Instagram BP3KP Sumatera II"
                 sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms allow-top-navigation-by-user-activation"

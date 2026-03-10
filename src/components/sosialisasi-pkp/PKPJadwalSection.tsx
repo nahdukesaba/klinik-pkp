@@ -26,7 +26,7 @@ import {
 import { DateRangeFilterGroup } from "@/components/shared/DateRangeFilterGroup";
 import { Input } from "@/components/ui/input";
 import { SearchableSelect, stringsToOptions } from "@/components/ui/searchable-select";
-import { type SosialisasiLocation } from "@/data/sosialisasi-klinik";
+import { type SosialisasiLocation } from "@/services/sosialisasi.service";
 
 // ============================================
 // Types
@@ -250,7 +250,7 @@ export function PKPJadwalSection({
 
         {/* Jadwal List */}
         {filteredJadwal.length > 0 ? (
-          <div className="space-y-3 max-h-[650px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent hover:scrollbar-thumb-primary/40">
+          <div className="space-y-3 max-h-[500px] lg:max-h-[600px] xl:max-h-[700px] 2xl:max-h-[800px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent hover:scrollbar-thumb-primary/40">
             {filteredJadwal.map((jadwal, index) => (
               <JadwalCard
                 key={jadwal.id}

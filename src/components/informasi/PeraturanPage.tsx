@@ -19,7 +19,7 @@ import {
   regulations,
   regulationCategories,
   relatedLinks,
-} from "@/data/informasi";
+} from "@/content/informasi";
 import { useScrollAnimation } from "@/hooks/use-scroll-animation";
 
 import type { LucideIcon } from "lucide-react";

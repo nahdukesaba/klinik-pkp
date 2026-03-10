@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * Hook: usePenerimaanMap
  * Mengelola peta Leaflet untuk halaman Penerimaan BSPS.
@@ -7,13 +9,13 @@ import { useEffect, useRef, useState } from "react";
 
 import "leaflet/dist/leaflet.css";
 
-import {
-  penerimaanStatusColors,
-  penerimaanStatusLabels,
-  type DesaPenerimaan,
-} from "@/data/penerimaan-bsps";
 import { loadLeaflet, cleanupMapContainer, destroyMap, bindMarkerInteraction, buildSafePopup } from "@/lib/map-utils";
 import { escapeAttr, escapeHtml } from "@/lib/security";
+import {
+  bspsStatusColors,
+  bspsStatusLabels,
+  type BspsData,
+} from "@/services/bsps.service";
 
 import type * as L from "leaflet";
 
@@ -68,8 +70,8 @@ function createRecipientMarkerSvg(desaId: number): string {
   `;
 }
 
-function createDesaPopupContent(desa: DesaPenerimaan, statusColor: string): string {
-  const statusLabel = penerimaanStatusLabels[desa.status];
+function createDesaPopupContent(desa: BspsData, statusColor: string): string {
+  const statusLabel = bspsStatusLabels[desa.status];
 
   return buildSafePopup({
     title: desa.nama,
@@ -96,7 +98,7 @@ function createDesaPopupContent(desa: DesaPenerimaan, statusColor: string): stri
 }
 
 export function usePenerimaanMap(
-  filteredDesa: DesaPenerimaan[],
+  filteredDesa: BspsData[],
   isEnabled: boolean = true
 ): UsePenerimaanMapReturn {
   const mapRef = useRef<HTMLDivElement>(null);
@@ -177,7 +179,7 @@ export function usePenerimaanMap(
       }
 
       filteredDesa.forEach((desa) => {
-        const colors = penerimaanStatusColors[desa.status];
+        const colors = bspsStatusColors[desa.status];
 
         const circle = L.circle(desa.coordinates, {
           radius: 800,

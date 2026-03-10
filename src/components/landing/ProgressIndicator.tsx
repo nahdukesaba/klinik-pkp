@@ -47,5 +47,3 @@ export function ProgressIndicator({ totalSteps, hoveredStep }: ProgressIndicator
     </div>
   );
 }
-
-export default ProgressIndicator;

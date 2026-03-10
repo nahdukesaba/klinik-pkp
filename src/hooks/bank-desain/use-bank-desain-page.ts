@@ -11,12 +11,12 @@
 
 import { useCallback, useState } from "react";
 
-import type { Design } from "@/data/bank-desain";
 import { useBankDesain } from "@/hooks/bank-desain/use-bank-desain";
+import type { BankDesainData } from "@/hooks/bank-desain/use-bank-desain-query";
 import { useScrollAnimation } from "@/hooks/use-scroll-animation";
 
 // ============================================
-// Types
+// Tipe Data
 // ============================================
 
 export function useBankDesainPage() {
@@ -24,11 +24,11 @@ export function useBankDesainPage() {
   const bankDesain = useBankDesain();
   
   // Preview state (simplified - tidak perlu hook terpisah lagi)
-  const [previewDesign, setPreviewDesign] = useState<Design | null>(null);
+  const [previewDesign, setPreviewDesign] = useState<BankDesainData | null>(null);
   const isPreviewOpen = previewDesign !== null;
 
   // Handler untuk membuka preview
-  const handleOpenPreview = useCallback((design: Design) => {
+  const handleOpenPreview = useCallback((design: BankDesainData) => {
     if (design.previewImages.length === 0) return;
     setPreviewDesign(design);
   }, []);
@@ -39,16 +39,16 @@ export function useBankDesainPage() {
   }, []);
 
   return {
-    // Scroll animation ref
+    // Ref animasi scroll
     ref,
     
-    // Preview state & handlers
+    // State & handler preview
     previewDesign,
     isPreviewOpen,
     handleOpenPreview,
     handleClosePreview,
     
-    // Spread all from useBankDesain
+    // Semua dari useBankDesain
     ...bankDesain,
   };
 }

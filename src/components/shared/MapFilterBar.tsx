@@ -177,7 +177,7 @@ export function MapFilterBar({
             allOptionLabel="Semua Kecamatan"
             emptyText="Kecamatan tidak ditemukan"
             className="bg-card"
-            disabled={kabupatenFilter === "all" && kecamatanList.length === 0}
+            disabled={kabupatenFilter === "all"}
           />
 
           {/* Kelurahan Filter - Searchable */}
@@ -190,7 +190,7 @@ export function MapFilterBar({
             allOptionLabel="Semua Kel/Desa"
             emptyText="Kelurahan tidak ditemukan"
             className="bg-card"
-            disabled={kecamatanFilter === "all" && kelurahanList.length === 0}
+            disabled={kecamatanFilter === "all"}
           />
 
           {/* Status Filter - Regular Select (fewer options) */}
@@ -212,5 +212,3 @@ export function MapFilterBar({
     </div>
   );
 }
-
-export default MapFilterBar;

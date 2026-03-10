@@ -11,6 +11,21 @@
 // 1. Input Sanitization (Anti SQL Injection & XSS)
 // ============================================
 
+// Hoist RegExp ke module-level agar tidak di-recreate setiap pemanggilan fungsi.
+// Ref: vercel-react-best-practices/js-hoist-regexp
+const RE_SQL_CHARS = /['";\\]/g;
+const RE_SQL_COMMENT_DASH = /--/g;
+const RE_SQL_COMMENT_OPEN = /\/\*/g;
+const RE_SQL_COMMENT_CLOSE = /\*\//g;
+const RE_HTML_TAGS = /<[^>]*>/g;
+const RE_EVENT_HANDLERS = /on\w+\s*=/gi;
+const RE_JAVASCRIPT_PROTO = /javascript:/gi;
+const RE_DATA_PROTO = /data:/gi;
+const RE_VBSCRIPT_PROTO = /vbscript:/gi;
+const RE_EMAIL_CHARS = /[^a-zA-Z0-9@._+\-]/g;
+const RE_NIP_CHARS = /[^0-9\s]/g;
+const RE_HTML_ESCAPE = /[&<>"'/`]/g;
+
 /**
  * Menghapus karakter berbahaya yang biasa digunakan dalam SQL injection.
  * PENTING: Ini adalah lapisan pertahanan tambahan di frontend.
@@ -26,21 +41,21 @@ export function sanitizeInput(input: string): string {
   return (
     input
       // Hapus SQL injection patterns
-      .replace(/['";\\]/g, "")
+      .replace(RE_SQL_CHARS, "")
       // Hapus SQL comment patterns
-      .replace(/--/g, "")
-      .replace(/\/\*/g, "")
-      .replace(/\*\//g, "")
+      .replace(RE_SQL_COMMENT_DASH, "")
+      .replace(RE_SQL_COMMENT_OPEN, "")
+      .replace(RE_SQL_COMMENT_CLOSE, "")
       // Hapus HTML/Script tags (anti-XSS)
-      .replace(/<[^>]*>/g, "")
+      .replace(RE_HTML_TAGS, "")
       // Hapus event handlers inline
-      .replace(/on\w+\s*=/gi, "")
+      .replace(RE_EVENT_HANDLERS, "")
       // Hapus javascript: protocol
-      .replace(/javascript:/gi, "")
+      .replace(RE_JAVASCRIPT_PROTO, "")
       // Hapus data: protocol (anti-XSS)
-      .replace(/data:/gi, "")
+      .replace(RE_DATA_PROTO, "")
       // Hapus vbscript: protocol
-      .replace(/vbscript:/gi, "")
+      .replace(RE_VBSCRIPT_PROTO, "")
       // Trim whitespace
       .trim()
   );
@@ -56,7 +71,7 @@ export function sanitizeInput(input: string): string {
 export function sanitizeEmail(input: string): string {
   if (!input || typeof input !== "string") return "";
   // Hanya izinkan karakter yang valid untuk email
-  return input.replace(/[^a-zA-Z0-9@._+\-]/g, "").trim();
+  return input.replace(RE_EMAIL_CHARS, "").trim();
 }
 
 /**
@@ -68,7 +83,7 @@ export function sanitizeEmail(input: string): string {
  */
 export function sanitizeNip(input: string): string {
   if (!input || typeof input !== "string") return "";
-  return input.replace(/[^0-9\s]/g, "").trim();
+  return input.replace(RE_NIP_CHARS, "").trim();
 }
 
 // ============================================
@@ -96,7 +111,7 @@ export function escapeHtml(str: string): string {
     "`": "&#96;",
   };
 
-  return str.replace(/[&<>"'/`]/g, (char) => htmlEscapeMap[char] ?? char);
+  return str.replace(RE_HTML_ESCAPE, (char) => htmlEscapeMap[char] ?? char);
 }
 
 /**

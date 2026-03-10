@@ -39,6 +39,10 @@ const rateLimitStore = new Map<
 const RATE_LIMIT_MAX = 60; // max requests
 const RATE_LIMIT_WINDOW = 60_000; // per 1 menit
 
+// Hoist RegExp ke module-level.
+// Ref: vercel-react-best-practices/js-hoist-regexp
+const RE_WHITESPACE_COLLAPSE = /\s{2,}/g;
+
 /**
  * Bersihkan entry rate limit yang sudah expired
  * untuk mencegah memory leak pada long-running server.
@@ -78,13 +82,34 @@ function isRateLimited(ip: string): boolean {
 }
 
 // ============================================
-// Middleware Handler
+// Proxy Handler
 // ============================================
 
-export function middleware(request: NextRequest) {
+/**
+ * Daftar path API backend yang diizinkan.
+ * Request ke path di luar daftar ini akan ditolak (403).
+ * Tambahkan path baru di sini saat endpoint backend bertambah.
+ */
+const ALLOWED_API_PATHS = [
+  "/api/ext/rusun",
+  "/api/ext/uploads/",
+  "/api/ext/sosialisasi",
+  "/api/ext/bank-desain",
+  "/api/ext/kumuh",
+  "/api/ext/bsps",
+];
+
+/** Cek apakah path API diizinkan berdasarkan allowlist */
+function isAllowedApiPath(pathname: string): boolean {
+  return ALLOWED_API_PATHS.some(
+    (allowed) => pathname === allowed || pathname.startsWith(allowed)
+  );
+}
+
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // ---- Rate Limiting ----
+  // ---- Rate Limiting (berlaku untuk SEMUA request termasuk /api/ext/) ----
   const ip =
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
     request.headers.get("x-real-ip") ??
@@ -92,6 +117,19 @@ export function middleware(request: NextRequest) {
 
   if (isRateLimited(ip)) {
     return new NextResponse("Too Many Requests", { status: 429 });
+  }
+
+  // ---- API Proxy: validasi path + tambah ngrok header ----
+  // Request /api/ext/* di-rewrite ke backend oleh next.config.mjs.
+  // Hanya path yang ada di ALLOWED_API_PATHS yang diizinkan.
+  if (pathname.startsWith("/api/ext/")) {
+    if (!isAllowedApiPath(pathname)) {
+      return new NextResponse("Forbidden", { status: 403 });
+    }
+
+    const headers = new Headers(request.headers);
+    headers.set("ngrok-skip-browser-warning", "true");
+    return NextResponse.next({ request: { headers } });
   }
 
   // ---- Generate Nonce for CSP ----
@@ -108,6 +146,10 @@ export function middleware(request: NextRequest) {
   // CATATAN: 'strict-dynamic' TIDAK digunakan karena akan men-disable 'self'
   // sehingga Next.js script chunks dari origin sendiri akan diblokir browser.
   // Nonce tetap digunakan untuk inline scripts (mis. next-themes).
+  //
+  // API calls melewati /api/ext rewrite (same-origin), jadi tidak perlu
+  // whitelist domain external di connect-src.
+
   const cspHeader = `
     default-src 'self';
     script-src 'self' 'nonce-${nonce}'${isDev ? " 'unsafe-eval'" : ""} https://www.instagram.com https://*.cdninstagram.com https://*.facebook.com https://*.fbcdn.net;
@@ -127,7 +169,7 @@ export function middleware(request: NextRequest) {
 
   // Bersihkan whitespace berlebih
   const contentSecurityPolicyHeaderValue = cspHeader
-    .replace(/\s{2,}/g, " ")
+    .replace(RE_WHITESPACE_COLLAPSE, " ")
     .trim();
 
   // ---- Set Request Headers ----
@@ -198,7 +240,7 @@ export function middleware(request: NextRequest) {
     "camera=(), microphone=(), geolocation=(self), payment=(), usb=()"
   );
 
-  // Remove X-Powered-By header (information disclosure)
+  // Hapus header X-Powered-By (mencegah kebocoran informasi server)
   response.headers.delete("X-Powered-By");
 
   return response;
@@ -213,12 +255,13 @@ export function middleware(request: NextRequest) {
  * - _next/static (static files)
  * - _next/image (image optimization)
  * - favicon.ico (favicon)
+ * - Static image files (BUKAN /api/ext/ — itu harus lewat middleware)
  * - Prefetch requests
  */
 export const config = {
   matcher: [
     {
-      source: "/((?!_next/static|_next/image|favicon\\.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+      source: "/((?!_next/static|_next/image|favicon\\.ico).*)",
       missing: [
         { type: "header", key: "next-router-prefetch" },
         { type: "header", key: "purpose", value: "prefetch" },

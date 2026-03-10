@@ -276,5 +276,3 @@ export function ImageZoomDialog({
     </Dialog>
   );
 }
-
-export default ImageZoomDialog;

@@ -1,37 +1,22 @@
 /**
  * Data Layer - Central Export
  * 
- * Semua data dummy dikumpulkan di folder ini.
- * Ketika API sudah siap, cukup ubah hook/function di folder hooks
- * untuk fetch dari API, tanpa perlu mengubah komponen UI.
+ * File data statis untuk konten yang TIDAK memiliki API endpoint.
+ * Data dinamis (Bank Desain, BSPS, Kawasan Kumuh, Sosialisasi, Rusun)
+ * sudah dipindahkan ke folder services/ dan diakses melalui API.
  */
 
-// Housing Indicators Data (Landing Page)
-export * from "./housing-indicators";
+// Housing Indicators Data (Landing Page — tidak ada API)
+export * from "../content/housing-indicators";
 
-// Building Steps Data (Landing Page)
-export * from "./building-steps";
+// Building Steps Data (Landing Page — tidak ada API)
+export * from "../content/building-steps";
 
-// Bank Desain Data
-export * from "./bank-desain";
+// Informasi Data (Bahan Bangunan, FAQ, Peraturan, Perizinan — tidak ada API)
+export * from "../content/informasi";
 
-// Informasi Data (Bahan Bangunan, FAQ, Peraturan, Perizinan)
-export * from "./informasi";
+// Lokasi Klinik Data (tidak ada API)
+export * from "../content/lokasi-klinik";
 
-// Lokasi Klinik Data
-export * from "./lokasi-klinik";
-
-// Peta - Kawasan Kumuh Data
-export * from "./peta-kawasan-kumuh";
-
-// Peta - Sebaran Rusun Data
-export * from "./peta-sebaran-rusun";
-
-// Penerimaan BSPS Data (includes map data)
-export * from "./penerimaan-bsps";
-
-// Sosialisasi Klinik PKP Data
-export * from "./sosialisasi-klinik";
-
-// Tentang Data (About BP3KP)
-export * from "./tentang";
+// Tentang Data (About BP3KP — tidak ada API)
+export * from "../content/tentang";

@@ -14,7 +14,7 @@ import {
 
 import { Footer, Navbar } from "@/components/layout";
 import { Input } from "@/components/ui/input";
-import { faqCategories, faqList } from "@/data/informasi";
+import { faqCategories, faqList } from "@/content/informasi";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useScrollAnimation } from "@/hooks/use-scroll-animation";
 

@@ -67,5 +67,3 @@ export function RelatedNewsCard({
     </Link>
   );
 }
-
-export default RelatedNewsCard;

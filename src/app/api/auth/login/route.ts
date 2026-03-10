@@ -1,14 +1,13 @@
 /**
  * Login API Route
  *
- * Contoh implementasi login endpoint yang aman.
+ * Forward login request ke backend API eksternal.
  *
- * Keamanan yang diterapkan:
- * 1. Input validation dengan Zod (anti SQL injection)
+ * Keamanan:
+ * 1. Input validation dengan Zod
  * 2. Rate limiting per IP
- * 3. JWT token di httpOnly cookie (bukan localStorage!)
- * 4. Tidak mengekspos detail error ke client
- * 5. CSRF protection via SameSite cookie
+ * 3. CSRF protection
+ * 4. JWT token di httpOnly cookie
  *
  * POST /api/auth/login
  */
@@ -118,58 +117,51 @@ export async function POST(request: NextRequest) {
     const sanitizedData = validation.data as { email: string; nip: string; password: string };
     const { email, nip, password } = sanitizedData;
 
-    // 5. Autentikasi ke backend/database
-    //
-    // IMPLEMENTASI PRODUCTION:
-    // Ganti blok di bawah dengan query ke database Anda.
-    // Gunakan PARAMETERIZED QUERIES dan bcrypt.compare().
-    //
-    // Contoh:
-    //   const user = await db.query(
-    //     "SELECT * FROM users WHERE email = $1 AND nip = $2",
-    //     [email, nip]
-    //   );
-    //   if (!user) return NextResponse.json({ error: "Kredensial salah." }, { status: 401 });
-    //   const passwordValid = await bcrypt.compare(password, user.password_hash);
-    //   if (!passwordValid) return NextResponse.json({ error: "Kredensial salah." }, { status: 401 });
+    // 5. Autentikasi ke backend API eksternal
+    const BACKEND_AUTH_URL = process.env.API_URL
+      ? `${process.env.API_URL}/authentications`
+      : "http://localhost:8000/api/v1/authentications";
 
-    // --- Demo mode: validasi sederhana ---
-    // Hapus blok ini dan ganti dengan database query saat production.
-    //
-    // KEAMANAN: Credentials HARUS di set via environment variables.
-    // TIDAK ada fallback hardcoded — jika env var kosong, login selalu gagal.
-    const DEMO_EMAIL = process.env.DEMO_USER_EMAIL ?? "";
-    const DEMO_NIP = process.env.DEMO_USER_NIP ?? "";
-    const DEMO_PASSWORD = process.env.DEMO_USER_PASSWORD ?? "";
-
-    // Jika env vars belum dikonfigurasi, tolak semua login
-    if (!DEMO_EMAIL || !DEMO_NIP || !DEMO_PASSWORD) {
-      console.error(
-        "[AUTH] DEMO_USER_EMAIL, DEMO_USER_NIP, dan DEMO_USER_PASSWORD " +
-        "harus di-set di environment variables."
-      );
+    let backendRes: Response;
+    try {
+      backendRes = await fetch(BACKEND_AUTH_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",
+        },
+        body: JSON.stringify({ email, nip, password }),
+        signal: AbortSignal.timeout(15_000), // 15 detik timeout
+      });
+    } catch {
       return NextResponse.json(
-        { error: "Sistem autentikasi belum dikonfigurasi." },
-        { status: 503 }
+        { error: "Tidak dapat terhubung ke server autentikasi." },
+        { status: 502 }
       );
     }
 
-    if (email !== DEMO_EMAIL || nip !== DEMO_NIP || password !== DEMO_PASSWORD) {
-      // Jangan beri tahu field mana yang salah (anti-enumeration)
+    const backendData = await backendRes.json().catch(() => null);
+
+    if (!backendRes.ok) {
+      const errorMsg = backendData?.message
+        ?? backendData?.error
+        ?? "Email, NIP, atau password salah.";
       return NextResponse.json(
-        { error: "Email, NIP, atau password salah." },
-        { status: 401 }
+        { error: errorMsg },
+        { status: backendRes.status }
       );
     }
 
+    // 6. Ambil data user dari response backend
+    // Sesuaikan mapping dari response backend ke AuthUser
+    const backendUser = backendData?.data?.user ?? backendData?.user ?? backendData?.data ?? {};
     const authenticatedUser: AuthUser = {
-      id: "usr_001",
+      id: backendUser.id ?? "usr_001",
       email: email,
       nip: nip,
-      role: "user",
-      name: "Admin PKP",
+      role: backendUser.role ?? "user",
+      name: backendUser.name ?? backendUser.full_name ?? "Admin PKP",
     };
-    // --- Akhir demo mode ---
 
     // 6. Generate JWT tokens
     const [accessToken, refreshToken] = await Promise.all([

@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 
 import { Footer, Navbar } from "@/components/layout";
-import { materialCategories, materialTips } from "@/data/informasi";
+import { materialCategories, materialTips } from "@/content/informasi";
 import { useScrollAnimation } from "@/hooks/use-scroll-animation";
 
 import type { LucideIcon } from "lucide-react";

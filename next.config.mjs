@@ -1,14 +1,4 @@
-/**
- * Next.js Configuration
- *
- * CSP (Content Security Policy) ditangani sepenuhnya oleh proxy.ts
- * dengan nonce-based policy yang lebih aman.
- *
- * Rewrites digunakan untuk mem-proxy request API dari browser ke backend
- * sehingga menghindari masalah CORS (same-origin).
- *
- * @type {import('next').NextConfig}
- */
+/** @type {import('next').NextConfig} */
 
 // URL backend API (server-side only, TIDAK terexpose ke browser).
 // Rewrites meneruskan /api/ext/* → BACKEND_API_URL/*
@@ -55,9 +45,7 @@ const nextConfig = {
     ],
   },
 
-  // ============================================
-  // API Proxy via Rewrites (menghindari CORS)
-  // ============================================
+  // --- API Proxy via Rewrites (menghindari CORS) ---
   // Browser request: /api/ext/rusun → Backend: BACKEND_API_URL/rusun
   // Ini terjadi di level server sehingga tidak ada CORS issue.
   rewrites: async () => [

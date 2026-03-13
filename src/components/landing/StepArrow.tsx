@@ -1,9 +1,7 @@
-// ============================================
-// StepArrow Component
+// --- StepArrow Component ---
 // Garis lurus dengan tanda panah di ujungnya
 // Digunakan untuk menghubungkan step di BuildingStepsSection
 // Responsive untuk semua device
-// ============================================
 
 interface StepArrowProps {
   direction: "right" | "down" | "left";

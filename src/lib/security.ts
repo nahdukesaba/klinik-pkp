@@ -1,22 +1,8 @@
-/**
- * Security Utilities
- *
- * Modul keamanan komprehensif untuk aplikasi Klinik PKP.
- * Melindungi dari: SQL Injection, XSS, CSRF, dan input berbahaya lainnya.
- *
- * @module security
- */
+/** Security Utilities — sanitization, escaping, rate limiting, CSRF, password strength. */
 
-// ============================================
-// 1. Input Sanitization (Anti SQL Injection & XSS)
-// ============================================
+// --- 1. Input Sanitization ---
 
-// Hoist RegExp ke module-level agar tidak di-recreate setiap pemanggilan fungsi.
-// Ref: vercel-react-best-practices/js-hoist-regexp
-const RE_SQL_CHARS = /['";\\]/g;
-const RE_SQL_COMMENT_DASH = /--/g;
-const RE_SQL_COMMENT_OPEN = /\/\*/g;
-const RE_SQL_COMMENT_CLOSE = /\*\//g;
+// Hoist RegExp ke module-level
 const RE_HTML_TAGS = /<[^>]*>/g;
 const RE_EVENT_HANDLERS = /on\w+\s*=/gi;
 const RE_JAVASCRIPT_PROTO = /javascript:/gi;
@@ -27,77 +13,36 @@ const RE_NIP_CHARS = /[^0-9\s]/g;
 const RE_HTML_ESCAPE = /[&<>"'/`]/g;
 
 /**
- * Menghapus karakter berbahaya yang biasa digunakan dalam SQL injection.
- * PENTING: Ini adalah lapisan pertahanan tambahan di frontend.
- * Backend WAJIB menggunakan parameterized queries / prepared statements.
- *
- * @example
- * sanitizeInput("admin' OR 1=1 --") // "admin OR 11 "
- * sanitizeInput("Robert'); DROP TABLE users;--") // "Robert DROP TABLE users"
+ * Sanitasi input umum — hapus tag HTML, event handler, dan protocol berbahaya.
+ * Dipakai di semua search input sebelum diproses.
  */
 export function sanitizeInput(input: string): string {
   if (!input || typeof input !== "string") return "";
 
-  return (
-    input
-      // Hapus SQL injection patterns
-      .replace(RE_SQL_CHARS, "")
-      // Hapus SQL comment patterns
-      .replace(RE_SQL_COMMENT_DASH, "")
-      .replace(RE_SQL_COMMENT_OPEN, "")
-      .replace(RE_SQL_COMMENT_CLOSE, "")
-      // Hapus HTML/Script tags (anti-XSS)
-      .replace(RE_HTML_TAGS, "")
-      // Hapus event handlers inline
-      .replace(RE_EVENT_HANDLERS, "")
-      // Hapus javascript: protocol
-      .replace(RE_JAVASCRIPT_PROTO, "")
-      // Hapus data: protocol (anti-XSS)
-      .replace(RE_DATA_PROTO, "")
-      // Hapus vbscript: protocol
-      .replace(RE_VBSCRIPT_PROTO, "")
-      // Trim whitespace
-      .trim()
-  );
+  return input
+    .replace(RE_HTML_TAGS, "")
+    .replace(RE_EVENT_HANDLERS, "")
+    .replace(RE_JAVASCRIPT_PROTO, "")
+    .replace(RE_DATA_PROTO, "")
+    .replace(RE_VBSCRIPT_PROTO, "")
+    .trim();
 }
 
-/**
- * Sanitize email input — hanya izinkan karakter email yang valid.
- *
- * @example
- * sanitizeEmail("user@example.com") // "user@example.com"
- * sanitizeEmail("user'@example.com OR 1=1") // "user@example.comOR11"
- */
+/** Sanitize email — hanya izinkan karakter email yang valid. */
 export function sanitizeEmail(input: string): string {
   if (!input || typeof input !== "string") return "";
-  // Hanya izinkan karakter yang valid untuk email
   return input.replace(RE_EMAIL_CHARS, "").trim();
 }
 
-/**
- * Sanitize NIP — hanya izinkan angka dan spasi.
- *
- * @example
- * sanitizeNip("1234 5678 9012") // "1234 5678 9012"
- * sanitizeNip("1234'; DROP TABLE--") // "1234  "
- */
+/** Sanitize NIP — hanya izinkan angka dan spasi. */
 export function sanitizeNip(input: string): string {
   if (!input || typeof input !== "string") return "";
   return input.replace(RE_NIP_CHARS, "").trim();
 }
 
-// ============================================
-// 2. HTML Sanitization (untuk Map Popups & innerHTML)
-// ============================================
+// --- 2. HTML Sanitization ---
 
-/**
- * Escape HTML entities untuk mencegah XSS saat memasukkan data ke HTML string.
- * Gunakan ini untuk semua data yang diinterpolasi ke popup Leaflet.
- *
- * @example
- * escapeHtml('<script>alert("xss")</script>') // "&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;"
- * escapeHtml('Kel. "Test" & Sons') // "Kel. &quot;Test&quot; &amp; Sons"
- */
+/** Escape HTML entities untuk mencegah XSS di popup Leaflet dll. */
 export function escapeHtml(str: string): string {
   if (!str || typeof str !== "string") return "";
 
@@ -114,13 +59,7 @@ export function escapeHtml(str: string): string {
   return str.replace(RE_HTML_ESCAPE, (char) => htmlEscapeMap[char] ?? char);
 }
 
-/**
- * Escape value untuk digunakan di dalam HTML attribute.
- * Lebih strict dari escapeHtml untuk mencegah attribute injection.
- *
- * @example
- * escapeAttr('image.jpg" onload="alert(1)') // 'image.jpg&quot; onload=&quot;alert(1)'
- */
+/** Escape value untuk HTML attribute (lebih strict dari escapeHtml). */
 export function escapeAttr(str: string): string {
   if (!str || typeof str !== "string") return "";
   return str
@@ -131,10 +70,7 @@ export function escapeAttr(str: string): string {
     .replace(/>/g, "&gt;");
 }
 
-/**
- * Sanitize URL — hanya izinkan http:, https:, dan path relatif.
- * Blokir javascript:, data:, vbscript: protocols.
- */
+/** Sanitize URL — hanya izinkan http:, https:, dan relative path. */
 export function sanitizeUrl(url: string): string {
   if (!url || typeof url !== "string") return "";
 
@@ -154,14 +90,9 @@ export function sanitizeUrl(url: string): string {
   return "";
 }
 
-// ============================================
-// 3. Rate Limiting (Client-side)
-// ============================================
+// --- 3. Rate Limiting (Client-side) ---
 
-/**
- * Simple client-side rate limiter menggunakan Map.
- * Mencegah spam submit form dan brute force di client.
- */
+/** Simple client-side rate limiter menggunakan Map. */
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 
 export function checkRateLimit(
@@ -193,41 +124,21 @@ export function checkRateLimit(
   };
 }
 
-// ============================================
-// 4. CSRF Token (Client-side generation)
-// ============================================
+// --- 4. CSRF Token ---
 
-/**
- * Generate CSRF token menggunakan crypto.randomUUID.
- * Simpan di sessionStorage (BUKAN localStorage — lebih aman).
- */
-/**
- * Generate CSRF token menggunakan double-submit cookie pattern.
- *
- * 1. Generate random token
- * 2. Simpan di cookie (accessible oleh server)
- * 3. Return token untuk dikirim di header (X-CSRF-Token)
- * 4. Server memverifikasi header === cookie
- *
- * Ini aman karena:
- * - Attacker dari domain lain TIDAK bisa membaca cookie kita (SameSite + same-origin policy)
- * - Attacker TIDAK bisa mengetahui nilai token untuk dikirim di header
- * - Server memastikan kedua nilai cocok
- */
+/** Generate CSRF token (double-submit cookie pattern). */
 export function generateCsrfToken(): string {
   if (typeof window === "undefined") return "";
 
   const token = crypto.randomUUID();
 
-  // Set cookie dengan SameSite=Strict agar tidak dikirim dari cross-origin
+  // Set cookie SameSite=Strict agar tidak dikirim cross-origin
   document.cookie = `csrf-token=${token}; path=/; SameSite=Strict; max-age=600`;
 
   return token;
 }
 
-// ============================================
-// 5. Password Strength Validation
-// ============================================
+// --- 5. Password Strength ---
 
 export interface PasswordStrength {
   score: number; // 0-4
@@ -235,9 +146,7 @@ export interface PasswordStrength {
   suggestions: string[];
 }
 
-/**
- * Evaluasi kekuatan password.
- */
+/** Evaluasi kekuatan password (score 0-4). */
 export function evaluatePasswordStrength(password: string): PasswordStrength {
   const suggestions: string[] = [];
   let score = 0;

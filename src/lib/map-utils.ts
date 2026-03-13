@@ -1,22 +1,10 @@
-/**
- * Map Utilities
- *
- * Shared utilities untuk inisialisasi dan manajemen peta Leaflet.
- * Termasuk: dynamic loading, cleanup, marker interaction, dan popup builder.
- *
- * Fitur keamanan:
- * - Semua konten popup di-escape via escapeHtml/escapeAttr (anti-XSS)
- * - URL di-sanitize via sanitizeUrl sebelum dirender ke HTML
- *
- * @module map-utils
- */
+/** Map Utilities — Leaflet dynamic loading, cleanup, marker interaction, popup builder. */
 
 import { escapeHtml, escapeAttr, sanitizeUrl } from "@/lib/security";
 
 import type * as L from "leaflet";
 
-// Hoist RegExp ke module-level untuk popup HTML sanitization.
-// Ref: vercel-react-best-practices/js-hoist-regexp
+// Hoist RegExp ke module-level untuk popup HTML sanitization
 const RE_SCRIPT_TAGS = /<script[^>]*>[\s\S]*?<\/script>/gi;
 const RE_SELF_CLOSING_SCRIPT = /<script[^>]*\/>/gi;
 const RE_EVENT_ATTR_QUOTED = /on\w+\s*=\s*["'][^"']*["']/gi;
@@ -24,36 +12,14 @@ const RE_EVENT_ATTR_UNQUOTED = /on\w+\s*=\s*\S+/gi;
 const RE_JAVASCRIPT_URI = /javascript\s*:/gi;
 const RE_DATA_TEXT_HTML = /data\s*:\s*text\/html/gi;
 
-export interface MapInitOptions {
-  center: [number, number];
-  zoom: number;
-  zoomControl?: boolean;
-  dragging?: boolean;
-  touchZoom?: boolean;
-  scrollWheelZoom?: boolean;
-  doubleClickZoom?: boolean;
-}
-
-const DEFAULT_MAP_OPTIONS: Partial<MapInitOptions> = {
-  zoomControl: true,
-  dragging: true,
-  touchZoom: true,
-  scrollWheelZoom: true,
-  doubleClickZoom: true,
-};
-
-/**
- * Muat modul Leaflet secara dinamis
- */
+/** Muat modul Leaflet secara dinamis. */
 export async function loadLeaflet(): Promise<typeof L> {
   const mod = await import("leaflet");
   const Lmod = mod as typeof import("leaflet") & { default?: typeof import("leaflet") };
   return (Lmod.default ?? Lmod) as typeof import("leaflet");
 }
 
-/**
- * Bersihkan kontainer Leaflet untuk mencegah masalah re-inisialisasi
- */
+/** Bersihkan kontainer untuk mencegah masalah re-inisialisasi. */
 export function cleanupMapContainer(container: HTMLElement | null): void {
   if (!container) return;
 
@@ -66,51 +32,7 @@ export function cleanupMapContainer(container: HTMLElement | null): void {
   }
 }
 
-/**
- * Cek apakah kontainer sudah diinisialisasi Leaflet
- */
-export function isMapInitialized(container: HTMLElement | null): boolean {
-  if (!container) return false;
-  type LeafletContainer = HTMLElement & { _leaflet_id?: number };
-  return !!(container as LeafletContainer)._leaflet_id;
-}
-
-/**
- * Buat instance peta Leaflet
- */
-export function createMap(
-  L: typeof import("leaflet"),
-  container: HTMLElement,
-  options: MapInitOptions
-): L.Map {
-  const mergedOptions = { ...DEFAULT_MAP_OPTIONS, ...options };
-
-  const map = L.map(container, {
-    center: mergedOptions.center,
-    zoom: mergedOptions.zoom,
-    zoomControl: mergedOptions.zoomControl,
-    dragging: mergedOptions.dragging,
-    touchZoom: mergedOptions.touchZoom,
-    scrollWheelZoom: mergedOptions.scrollWheelZoom,
-    doubleClickZoom: mergedOptions.doubleClickZoom,
-  });
-
-  // Tambahkan tile layer OpenStreetMap
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-    maxZoom: 19,
-  }).addTo(map);
-
-  // Sesuaikan ukuran setelah mount
-  setTimeout(() => map.invalidateSize(), 100);
-  setTimeout(() => map.invalidateSize(), 500);
-
-  return map;
-}
-
-/**
- * Hapus instance peta Leaflet dengan aman
- */
+/** Hapus instance peta Leaflet dengan aman. */
 export function destroyMap(map: L.Map | null): void {
   if (!map) return;
   try {
@@ -121,13 +43,8 @@ export function destroyMap(map: L.Map | null): void {
 }
 
 /**
- * Bind interaksi hover+klik ke layer Leaflet (marker, circle, polygon).
- * - Desktop: hover menampilkan popup, mouse keluar menyembunyikan
- * - Klik: popup tetap terbuka (mouseout tidak menutup)
- * - Mobile: tap membuka popup dan tetap terbuka
- *
- * UX yang baik untuk pengguna desktop dan mobile,
- * terutama untuk pengguna yang butuh waktu lebih lama membaca popup.
+ * Bind interaksi hover+klik ke layer Leaflet.
+ * Desktop: hover buka popup, klik pin popup. Mobile: tap buka popup.
  */
 export function bindMarkerInteraction(
   layer: L.Layer,
@@ -156,43 +73,9 @@ export function bindMarkerInteraction(
   });
 }
 
-/**
- * Template ikon SVG marker standar
- */
-export function createMarkerSvg(color: string, id: string | number): string {
-  return `
-    <svg width="40" height="50" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <filter id="shadow-${escapeAttr(String(id))}" x="-50%" y="-50%" width="200%" height="200%">
-          <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.3"/>
-        </filter>
-      </defs>
-      <path d="M20 2 C 11 2, 4 9, 4 18 C 4 28, 20 46, 20 46 C 20 46, 36 28, 36 18 C 36 9, 29 2, 20 2 Z" 
-            fill="${escapeAttr(color)}" 
-            filter="url(#shadow-${escapeAttr(String(id))})"
-            stroke="white" 
-            stroke-width="2"/>
-      <circle cx="20" cy="18" r="8" fill="white" fill-opacity="0.9"/>
-    </svg>
-  `;
-}
+// --- Popup Builder ---
 
-// ============================================
-// Pembangun HTML aman untuk popup peta
-// ============================================
-
-/**
- * Buat safe popup HTML. Semua data di-escape untuk mencegah XSS.
- * Gunakan fungsi ini di semua map hooks alih-alih template literal langsung.
- *
- * @example
- * marker.bindPopup(buildSafePopup({
- *   title: kawasan.name,
- *   fields: [
- *     { label: "Lokasi", value: kawasan.kelurahan },
- *   ],
- * }));
- */
+/** Buat safe popup HTML. Semua data di-escape untuk mencegah XSS. */
 export interface PopupField {
   label: string;
   value: string | number;
@@ -209,9 +92,8 @@ export interface SafePopupOptions {
   /** Render gridFields sebelum fields (default: false — fields dulu) */
   gridFirst?: boolean;
   /**
-   * HTML tambahan untuk popup. PERINGATAN: Konten ini di-sanitize
-   * dengan menghapus semua <script> tags dan event handlers.
-   * Untuk keamanan maksimal, gunakan `extraFields` sebagai gantinya.
+   * HTML tambahan (di-sanitize: script tags & event handlers dihapus).
+   * Untuk keamanan maksimal, gunakan extraFields.
    */
   extraHtml?: string;
   /** Fields tambahan yang di-render dengan auto-escaping (lebih aman dari extraHtml) */
@@ -315,5 +197,4 @@ export function buildSafePopup(options: SafePopupOptions): string {
   `;
 }
 
-// Re-export security helpers for map hooks convenience
-export { escapeHtml, escapeAttr, sanitizeUrl } from "@/lib/security";
+

@@ -136,6 +136,10 @@ Ini menghindari CORS dan menyembunyikan URL backend dari client.
 
 Dokumentasi lengkap endpoint API ada di [docs/API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md).
 
+### Dokumentasi Teknis
+
+Dokumentasi teknis lengkap (arsitektur, konvensi, panduan fitur baru) ada di [docs/DOKUMENTASI-PROYEK.md](docs/DOKUMENTASI-PROYEK.md).
+
 ## Arsitektur
 
 ### Prinsip Utama

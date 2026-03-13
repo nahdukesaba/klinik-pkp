@@ -41,9 +41,7 @@ import { ApiErrorState } from "@/components/shared";
 import { GridPagination } from "@/components/shared/GridPagination";
 import { useBankDesainPage } from "@/hooks/bank-desain/use-bank-desain-page";
 import type { BankDesainData } from "@/hooks/bank-desain/use-bank-desain-query";
-// ============================================
-// Design Card Component
-// ============================================
+// --- Design Card Component ---
 
 interface DesignCardProps {
   design: BankDesainData;
@@ -104,7 +102,7 @@ const DesignCard = memo(function DesignCard({
           <button
             onClick={() => onPreview(design)}
             disabled={!hasPreviewImages}
-            className="w-full px-4 py-2.5 bg-secondary text-secondary-foreground rounded-lg text-sm font-medium flex items-center justify-center gap-2 hover:bg-secondary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full px-4 py-3 bg-secondary text-secondary-foreground rounded-lg text-sm font-medium flex items-center justify-center gap-2 hover:bg-secondary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Eye className="w-4 h-4" />
             Lihat Preview
@@ -115,7 +113,7 @@ const DesignCard = memo(function DesignCard({
               href={getDownloadUrl(design)}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 px-3 py-2.5 bg-accent text-accent-foreground rounded-lg text-sm font-medium flex items-center justify-center gap-2 hover:bg-accent/80 transition-colors"
+              className="flex-1 px-3 py-3 bg-accent text-accent-foreground rounded-lg text-sm font-medium flex items-center justify-center gap-2 hover:bg-accent/80 transition-colors"
             >
               <FileText className="w-4 h-4" />
               Unduh Desain
@@ -124,7 +122,7 @@ const DesignCard = memo(function DesignCard({
               href={design.rabPdfUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 px-3 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors"
+              className="flex-1 px-3 py-3 bg-primary text-primary-foreground rounded-lg text-sm font-medium flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors"
             >
               <Download className="w-4 h-4" />
               Unduh RAB
@@ -136,9 +134,7 @@ const DesignCard = memo(function DesignCard({
   );
 });
 
-// ============================================
-// Spec Item Component
-// ============================================
+// --- Spec Item Component ---
 
 interface SpecItemProps {
   icon: React.ElementType;
@@ -154,9 +150,7 @@ function SpecItem({ icon: Icon, label }: SpecItemProps) {
   );
 }
 
-// ============================================
-// Empty State Component
-// ============================================
+// --- Empty State Component ---
 
 function EmptyState({ onReset }: { onReset: () => void }) {
   return (
@@ -179,19 +173,15 @@ function EmptyState({ onReset }: { onReset: () => void }) {
   );
 }
 
-// ============================================
-// Pagination Component
-// ============================================
+// --- Pagination Component ---
 
-// ============================================
-// Filter Chip (inline — no separate component needed)
-// ============================================
+// --- Filter Chip (inline — no separate component needed) ---
 
 function FilterChip({ label, isActive, onClick }: { label: string; isActive: boolean; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 border whitespace-nowrap ${
+      className={`px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 border whitespace-nowrap min-h-[36px] ${
         isActive
           ? "bg-primary text-primary-foreground border-primary shadow-sm"
           : "bg-secondary/50 text-muted-foreground border-border hover:bg-secondary hover:text-foreground"
@@ -202,9 +192,7 @@ function FilterChip({ label, isActive, onClick }: { label: string; isActive: boo
   );
 }
 
-// ============================================
-// Main Component
-// ============================================
+// --- Main Component ---
 
 export default function BankDesainPage() {
   const {

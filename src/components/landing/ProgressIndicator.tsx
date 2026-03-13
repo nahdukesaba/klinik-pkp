@@ -1,10 +1,8 @@
 "use client";
 
-// ============================================
-// ProgressIndicator Component
+// --- ProgressIndicator Component ---
 // Menampilkan indikator progress untuk step-step
 // Hanya menyala pada step yang sedang di-hover
-// ============================================
 
 interface ProgressIndicatorProps {
   totalSteps: number;

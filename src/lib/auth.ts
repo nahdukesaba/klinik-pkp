@@ -1,32 +1,10 @@
-/**
- * Utilitas JWT Token & Autentikasi (Server-side)
- *
- * Handle JWT token secara AMAN menggunakan httpOnly cookies.
- * JANGAN PERNAH simpan token di localStorage/sessionStorage.
- *
- * Best Practices yang diterapkan:
- * 1. JWT disimpan di httpOnly cookie (tidak bisa diakses JavaScript)
- * 2. Cookie diset dengan Secure flag (HTTPS only)
- * 3. SameSite=Lax (anti-CSRF)
- * 4. Token memiliki expiration time
- * 5. Menggunakan `jose` library (compatible dengan Edge Runtime)
- *
- * @module auth
- */
+/** JWT Token & Authentication (Server-side) — httpOnly cookies, jose library. */
 
 import { SignJWT, jwtVerify, type JWTPayload } from "jose";
 
-// ============================================
-// Konfigurasi
-// ============================================
+// --- Konfigurasi ---
 
-/**
- * PENTING: Di production, simpan JWT_SECRET di environment variable.
- * JANGAN PERNAH hardcode secret di source code.
- *
- * Contoh .env.local:
- * JWT_SECRET=your-super-secret-key-min-32-chars-long
- */
+/** JWT Secret harus di-set di .env.local, minimal 32 karakter. */
 function getJwtSecret(): Uint8Array {
   const secret = process.env.JWT_SECRET;
   if (!secret) {
@@ -52,9 +30,7 @@ const REFRESH_TOKEN_EXPIRY = "7d"; // 7 hari
 export const AUTH_COOKIE_NAME = "klinik-pkp-token";
 export const REFRESH_COOKIE_NAME = "klinik-pkp-refresh";
 
-// ============================================
-// Tipe Token
-// ============================================
+// --- Tipe Token ---
 
 export interface AuthUser {
   id: string;
@@ -73,14 +49,9 @@ export interface TokenPayload extends JWTPayload {
   type: "access" | "refresh";
 }
 
-// ============================================
-// Operasi JWT
-// ============================================
+// --- Operasi JWT ---
 
-/**
- * Buat JWT access token.
- * Masa hidup pendek (15 menit) — harus di-refresh secara berkala.
- */
+/** Buat JWT access token (15 menit). */
 export async function createAccessToken(user: AuthUser): Promise<string> {
   const secret = getJwtSecret();
 
@@ -100,10 +71,7 @@ export async function createAccessToken(user: AuthUser): Promise<string> {
     .sign(secret);
 }
 
-/**
- * Buat JWT refresh token.
- * Masa hidup panjang (7 hari) — digunakan untuk mendapatkan access token baru.
- */
+/** Buat JWT refresh token (7 hari). */
 export async function createRefreshToken(user: AuthUser): Promise<string> {
   const secret = getJwtSecret();
 
@@ -123,10 +91,7 @@ export async function createRefreshToken(user: AuthUser): Promise<string> {
     .sign(secret);
 }
 
-/**
- * Verify dan decode JWT token.
- * Mengembalikan null jika token invalid atau expired.
- */
+/** Verify dan decode JWT token. Null jika invalid/expired. */
 export async function verifyToken(token: string): Promise<TokenPayload | null> {
   try {
     const secret = getJwtSecret();
@@ -143,17 +108,9 @@ export async function verifyToken(token: string): Promise<TokenPayload | null> {
   }
 }
 
-// ============================================
-// Konfigurasi Cookie
-// ============================================
+// --- Konfigurasi Cookie ---
 
-/**
- * Generate cookie options yang aman untuk access token.
- * httpOnly: true — JavaScript TIDAK bisa akses cookie ini
- * secure: true — Hanya dikirim via HTTPS
- * sameSite: lax — Mencegah CSRF attacks
- * path: / — Berlaku untuk seluruh aplikasi
- */
+/** Cookie options untuk access token (httpOnly, secure, sameSite:lax). */
 export function getAccessTokenCookieOptions() {
   const isProduction = process.env.NODE_ENV === "production";
 
@@ -167,10 +124,7 @@ export function getAccessTokenCookieOptions() {
   };
 }
 
-/**
- * Generate cookie options untuk refresh token.
- * Disimpan di path /api/auth/refresh saja untuk keamanan tambahan.
- */
+/** Cookie options untuk refresh token (hanya di path /api/auth). */
 export function getRefreshTokenCookieOptions() {
   const isProduction = process.env.NODE_ENV === "production";
 

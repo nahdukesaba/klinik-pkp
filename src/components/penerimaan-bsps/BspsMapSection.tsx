@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 
 import { MapLegend } from "@/components/shared/MapLegend";
+import { YearFilterSelect } from "@/components/shared/YearFilterSelect";
 import {
   Select,
   SelectContent,
@@ -42,9 +43,7 @@ import type { BspsData } from "@/services/bsps.service";
 
 import { BspsSidebar } from "./BspsSidebar";
 
-// ============================================
-// Types
-// ============================================
+// --- Types ---
 
 interface FilterState {
   searchQuery: string;
@@ -95,9 +94,7 @@ interface BspsMapSectionProps {
   onCloseSidebar: () => void;
 }
 
-// ============================================
-// BspsHeader — top bar dengan navigasi, search, dan statistik
-// ============================================
+// --- BspsHeader — top bar dengan navigasi, search, dan statistik ---
 
 const BspsHeader = memo(function BspsHeader({
   totalKawasan,
@@ -160,7 +157,7 @@ const BspsHeader = memo(function BspsHeader({
             {/* Status (desktop only) */}
             <div className="hidden sm:block">
               <Select value={statusFilter} onValueChange={onStatusChange}>
-                <SelectTrigger className="w-40 h-10 text-sm">
+                <SelectTrigger className="w-auto min-w-[10rem] h-10 text-sm">
                   <SelectValue placeholder="Semua Status" />
                 </SelectTrigger>
                 <SelectContent className="bg-popover z-[9999]">
@@ -172,21 +169,13 @@ const BspsHeader = memo(function BspsHeader({
               </Select>
             </div>
 
-            {/* Year Filter */}
+            {/* Year Filter — Reusable dropdown */}
             {availableYears.length > 0 && (
-              <Select value={yearFilter} onValueChange={onYearChange}>
-                <SelectTrigger className="w-36 h-10 text-sm">
-                  <span className="truncate">
-                    Tahun: {yearFilter === "all" ? "Semua" : yearFilter}
-                  </span>
-                </SelectTrigger>
-                <SelectContent className="bg-popover z-[9999]">
-                  <SelectItem value="all">Semua Tahun</SelectItem>
-                  {availableYears.map((y) => (
-                    <SelectItem key={y} value={String(y)}>{y}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <YearFilterSelect
+                years={availableYears}
+                selectedYear={yearFilter}
+                onYearChange={onYearChange}
+              />
             )}
 
             {/* Stat Badges */}
@@ -215,9 +204,7 @@ const BspsHeader = memo(function BspsHeader({
   );
 });
 
-// ============================================
-// Main BspsMapSection
-// ============================================
+// --- Main BspsMapSection ---
 
 function BspsMapSection({
   filterState,

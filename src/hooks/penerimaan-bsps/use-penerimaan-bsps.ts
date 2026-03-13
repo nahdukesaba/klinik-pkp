@@ -12,6 +12,7 @@ import { useBspsQuery, useBspsYearsQuery } from "@/hooks/penerimaan-bsps/use-bsp
 import { useCascadingFilter } from "@/hooks/use-cascading-filter";
 import { useDebounce } from "@/hooks/use-debounce";
 import { CURRENT_YEAR } from "@/lib/constants";
+import { sanitizeInput } from "@/lib/security";
 
 const CURRENT_YEAR_NUM = parseInt(CURRENT_YEAR, 10);
 
@@ -34,16 +35,20 @@ export function usePenerimaanBsps() {
 
   const cascading = useCascadingFilter(desaWithKelurahan);
 
-  // Filter: cascading + search + status (tahun sudah di-handle oleh query)
+  // Filter: year (client-side safety net) + cascading + search + status
   const filteredDesa = useMemo(() => {
-    const q = debouncedSearch.toLowerCase();
+    const q = sanitizeInput(debouncedSearch).toLowerCase();
 
     return cascading.filteredItems.filter((p) => {
+      // Client-side year filter — safety net jika API tidak filter
+      const matchesYear =
+        yearFilter === "all" || p.yearGiven === yearParam;
+
       const matchesSearch = !debouncedSearch || p.nama.toLowerCase().includes(q);
       const matchesStatus = statusFilter === "all" || p.status === statusFilter;
-      return matchesSearch && matchesStatus;
+      return matchesYear && matchesSearch && matchesStatus;
     });
-  }, [debouncedSearch, statusFilter, cascading.filteredItems]);
+  }, [yearFilter, yearParam, debouncedSearch, statusFilter, cascading.filteredItems]);
 
   const activeFilterCount = useMemo(() => {
     let count = 0;

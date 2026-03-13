@@ -237,7 +237,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={togglePassword}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 p-2 min-w-[36px] min-h-[36px] flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors rounded-md"
                 >
                   {showPassword ? (
                     <EyeOff className="w-4 h-4" />

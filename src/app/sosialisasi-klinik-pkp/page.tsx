@@ -16,9 +16,6 @@ export const metadata: Metadata = {
     "Informasi sosialisasi dan edukasi perumahan dan kawasan permukiman. Peta lokasi, jadwal kegiatan, dan berita terkini.",
 };
 
-/** Next.js route segment config */
-export const dynamic = "force-dynamic";
-
 export default function Page() {
   return <SosialisasiLoader />;
 }

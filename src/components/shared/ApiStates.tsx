@@ -1,17 +1,4 @@
-/**
- * ApiErrorState & ApiLoadingState
- *
- * Komponen bersama untuk menampilkan state loading, error, dan empty
- * saat mengambil data dari API backend. Digunakan di semua halaman
- * yang memuat data dinamis.
- *
- * Fitur:
- * - Loading: spinner animasi + pesan informatif
- * - Error: menampilkan pesan berbeda berdasarkan HTTP status code
- * - Empty: tampilan data kosong yang ramah
- *
- * @module components/shared/ApiStates
- */
+/** Komponen shared untuk state loading dan error saat fetch API. */
 
 "use client";
 
@@ -23,15 +10,12 @@ import {
   ShieldOff,
   WifiOff,
   Clock,
-  Inbox,
 } from "lucide-react";
 
 import { Footer, Navbar } from "@/components/layout";
 import { ApiError } from "@/lib/api-client";
 
-// ============================================
-// Loading State
-// ============================================
+// --- Loading State ---
 
 interface ApiLoadingStateProps {
   /** Pesan loading yang ditampilkan */
@@ -79,9 +63,7 @@ export function ApiLoadingState({
   );
 }
 
-// ============================================
-// Error State — status-aware
-// ============================================
+// --- Error State — status-aware ---
 
 /**
  * Konfigurasi tampilan error berdasarkan tipe error.
@@ -251,41 +233,6 @@ export function ApiErrorState({
         {content}
       </main>
       <Footer />
-    </div>
-  );
-}
-
-// ============================================
-// Empty State
-// ============================================
-
-interface ApiEmptyStateProps {
-  /** Pesan utama */
-  title?: string;
-  /** Detail pesan */
-  message?: string;
-  /** Kelas CSS tambahan */
-  className?: string;
-}
-
-/**
- * Tampilan saat data kosong dari API.
- * Menampilkan ikon dan pesan informatif.
- */
-export function ApiEmptyState({
-  title = "Data Tidak Ditemukan",
-  message = "Belum ada data yang tersedia untuk ditampilkan.",
-  className = "",
-}: ApiEmptyStateProps) {
-  return (
-    <div className={`flex flex-col items-center justify-center gap-4 py-16 ${className}`}>
-      <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
-        <Inbox className="w-8 h-8 text-muted-foreground" />
-      </div>
-      <div className="text-center max-w-md">
-        <h3 className="text-lg font-semibold text-foreground mb-1">{title}</h3>
-        <p className="text-muted-foreground text-sm leading-relaxed">{message}</p>
-      </div>
     </div>
   );
 }

@@ -28,9 +28,7 @@ import { GridPagination } from "@/components/shared/GridPagination";
 import { Input } from "@/components/ui/input";
 import { type BeritaSosialisasi } from "@/services/sosialisasi.service";
 
-// ============================================
-// Types
-// ============================================
+// --- Types ---
 
 interface PKPBeritaSectionProps {
   beritaYear: string;
@@ -59,9 +57,7 @@ interface PKPBeritaSectionProps {
   onViewOnMap?: (coordinates: [number, number]) => void;
 }
 
-// ============================================
-// BeritaCard — Kartu berita individual
-// ============================================
+// --- BeritaCard — Kartu berita individual ---
 
 function BeritaCard({
   berita,
@@ -103,6 +99,7 @@ function BeritaCard({
           src={berita.image}
           alt={berita.title}
           fill
+          sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
           className="object-cover group-hover:scale-105 transition-transform duration-500"
         />
         <div className="absolute top-2 sm:top-3 left-2 sm:left-3 z-10">
@@ -170,9 +167,7 @@ function BeritaCard({
   );
 }
 
-// ============================================
-// Main Section
-// ============================================
+// --- Main Section ---
 
 export function PKPBeritaSection({
   beritaYear,

@@ -13,6 +13,7 @@ import { useCascadingFilter } from "@/hooks/use-cascading-filter";
 import { useDebounce } from "@/hooks/use-debounce";
 import { usePagination } from "@/hooks/use-pagination";
 import { CURRENT_YEAR } from "@/lib/constants";
+import { sanitizeInput } from "@/lib/security";
 
 const SIDEBAR_PER_PAGE = 12;
 const CURRENT_YEAR_NUM = parseInt(CURRENT_YEAR, 10);
@@ -35,11 +36,15 @@ export function useKawasanKumuh() {
   // Cascading location filter
   const cascading = useCascadingFilter(data);
 
-  // Filter: cascading + search + status (tahun sudah di-handle oleh query)
+  // Filter: year (client-side safety net) + cascading + search + status
   const filteredKawasan = useMemo(() => {
-    const q = debouncedSearch.toLowerCase();
+    const q = sanitizeInput(debouncedSearch).toLowerCase();
 
     return cascading.filteredItems.filter((kawasan) => {
+      // Client-side year filter — safety net jika API tidak filter
+      const matchesYear =
+        yearFilter === "all" || kawasan.yearInspected === yearParam;
+
       const matchesSearch =
         !debouncedSearch ||
         kawasan.name.toLowerCase().includes(q) ||
@@ -49,9 +54,9 @@ export function useKawasanKumuh() {
 
       const matchesStatus = statusFilter === "all" || kawasan.status === statusFilter;
 
-      return matchesSearch && matchesStatus;
+      return matchesYear && matchesSearch && matchesStatus;
     });
-  }, [debouncedSearch, statusFilter, cascading.filteredItems]);
+  }, [yearFilter, yearParam, debouncedSearch, statusFilter, cascading.filteredItems]);
 
   const pagination = usePagination(filteredKawasan, { perPage: SIDEBAR_PER_PAGE });
 

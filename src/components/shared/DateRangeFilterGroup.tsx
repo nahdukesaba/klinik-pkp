@@ -43,9 +43,7 @@ import {
 } from "@/components/ui/select";
 import { MONTHS_LIST } from "@/lib/constants";
 
-// ============================================
-// Types
-// ============================================
+// --- Types ---
 
 interface DateRangeFilterGroupProps {
   /** Tahun yang dipilih ("all" untuk semua) */
@@ -78,9 +76,7 @@ interface DateRangeFilterGroupProps {
   compact?: boolean;
 }
 
-// ============================================
-// Komponen Utama
-// ============================================
+// --- Komponen Utama ---
 
 export function DateRangeFilterGroup({
   year,

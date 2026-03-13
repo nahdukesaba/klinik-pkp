@@ -1,8 +1,7 @@
-// Components barrel export for sebaran-rusun
 export {
   RusunHeader,
-  RusunSidebar,
   RusunMapContainer,
+  RusunCard,
+  RusunSidebar,
 } from "./RusunComponents";
-
 export { default as SebaranRusunPage } from "./SebaranRusunPage";

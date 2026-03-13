@@ -1,14 +1,4 @@
-/**
- * BSPS API Service
- *
- * Modul ini menangani semua komunikasi dengan backend API untuk data BSPS
- * (Bantuan Stimulan Perumahan Swadaya).
- *
- * Data BSPS berisi lokasi penerima bantuan per desa/kelurahan,
- * jumlah unit alokasi, dan status penyaluran.
- *
- * @module services/bsps
- */
+/** Service API untuk data BSPS (Bantuan Stimulan Perumahan Swadaya). */
 
 import { apiClient } from "@/lib/api-client";
 import type {
@@ -17,14 +7,12 @@ import type {
   VillageApi,
   DistrictApi,
   RegionApi,
-} from "@/services/api-types";
-import { extractVillageName, extractDistrictName, extractRegionName } from "@/services/api-types";
+} from "@/types/api";
+import { extractVillageName, extractDistrictName, extractRegionName } from "@/types/api";
 
-// ============================================
-// Tipe Data API (sesuai response backend Go)
-// ============================================
+// --- Tipe API ---
 
-/** Struktur data BSPS dari API (snake_case sesuai backend Go) */
+/** Struktur data BSPS dari API (snake_case) */
 export interface BspsApiItem {
   id: string;
   village_id: string;
@@ -39,18 +27,16 @@ export interface BspsApiItem {
   region?: RegionApi;
 }
 
-// ============================================
-// Tipe Data Frontend (camelCase untuk UI)
-// ============================================
+// --- Tipe Frontend ---
 
-/** Penerima BSPS individual (saat ini tidak ada di API, disiapkan untuk masa depan) */
+/** Penerima BSPS individual (disiapkan untuk API masa depan) */
 export interface PenerimaBsps {
   nama: string;
   alamat: string;
   coordinates: [number, number];
 }
 
-/** Data desa penerima BSPS yang sudah ditransformasi untuk UI */
+/** Data desa penerima BSPS untuk UI (camelCase) */
 export interface BspsData {
   id: number;
   nama: string;
@@ -66,25 +52,22 @@ export interface BspsData {
   penerimaList: PenerimaBsps[];
 }
 
-// ============================================
-// Konstanta UI (tetap di frontend — tidak dari API)
-// ============================================
+// --- Konstanta UI ---
 
-/** Warna status penerima BSPS untuk peta dan UI */
 export const bspsStatusColors: Record<string, { fill: string; stroke: string }> = {
   selesai: { fill: "#22c55e", stroke: "#16a34a" },
   proses: { fill: "#eab308", stroke: "#ca8a04" },
   rencana: { fill: "#3b82f6", stroke: "#2563eb" },
 };
 
-/** Label status untuk ditampilkan di UI */
+/** Label status untuk UI */
 export const bspsStatusLabels: Record<string, string> = {
   selesai: "Selesai",
   proses: "Dalam Proses",
   rencana: "Rencana",
 };
 
-/** Persyaratan BSPS (konten statis — tidak dari API) */
+/** Persyaratan BSPS (konten statis) */
 export const bspsRequirements: string[] = [
   "Warga Negara Indonesia (WNI)",
   "Sudah berkeluarga atau berusia minimal 21 tahun",
@@ -100,7 +83,7 @@ export interface BspsProcessStep {
   description: string;
 }
 
-/** Langkah-langkah proses BSPS (konten statis — tidak dari API) */
+/** Langkah proses BSPS (konten statis) */
 export const bspsProcessSteps: BspsProcessStep[] = [
   { step: 1, title: "Pendaftaran", description: "Mengisi formulir pendaftaran di kantor desa atau kelurahan" },
   { step: 2, title: "Verifikasi", description: "Tim melakukan verifikasi data dan survei lapangan" },
@@ -110,39 +93,31 @@ export const bspsProcessSteps: BspsProcessStep[] = [
   { step: 6, title: "Serah Terima", description: "Verifikasi akhir dan serah terima rumah" },
 ];
 
-/** Kriteria utama penerima BSPS (konten statis) */
+/** Kriteria utama penerima BSPS */
 export const bspsKriteriaUtama: string[] = [
   "Masyarakat Berpenghasilan Rendah (MBR)",
   "Memiliki rumah tidak layak huni",
   "Terdaftar dalam Data Terpadu Kesejahteraan Sosial (DTKS)",
 ];
 
-/** Prioritas penerima BSPS (konten statis) */
+/** Prioritas penerima */
 export const bspsPrioritasPenerima: string[] = [
   "Lansia, janda, dan penyandang disabilitas",
   "Keluarga miskin dengan anak balita",
   "Korban bencana alam",
 ];
 
-// ============================================
-// Mapping Status API → Frontend
-// ============================================
+// --- Mapping status ---
 
-/** Mapping status dari API (Capitalized) ke frontend (lowercase) */
 const STATUS_MAP: Record<string, "selesai" | "proses" | "rencana"> = {
   "Selesai": "selesai",
   "Dalam Proses": "proses",
   "Rencana": "rencana",
 };
 
-// ============================================
-// Fungsi Transformasi Data
-// ============================================
+// --- Transformasi ---
 
-/**
- * Transformasi data API (snake_case) ke format frontend (camelCase).
- * Mengekstrak nama lokasi dari nested objects dan memetakan status.
- */
+/** Transform data API → format frontend */
 export function transformBspsItem(item: BspsApiItem): BspsData {
   return {
     id: parseInt(item.id, 10) || 0,
@@ -161,16 +136,9 @@ export function transformBspsItem(item: BspsApiItem): BspsData {
   };
 }
 
-// ============================================
-// Fungsi API (pemanggilan backend)
-// ============================================
+// --- API ---
 
-/**
- * Ambil data BSPS dari API, opsional filter berdasarkan tahun.
- * Data di-cache oleh React Query di hook pemanggil.
- *
- * Endpoint: GET /api/ext/bsps?year=2024 atau GET /api/ext/bsps (semua)
- */
+/** GET /api/ext/bsps — ambil data BSPS, opsional filter tahun */
 export async function fetchBspsList(year?: number): Promise<BspsData[]> {
   const endpoint = year != null ? `/bsps?year=${year}` : "/bsps";
   const res = await apiClient.get<ApiResponse<BspsApiItem[]>>(endpoint);

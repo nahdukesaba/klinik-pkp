@@ -1,11 +1,11 @@
-/* Leaflet & custom map overrides for Sosialisasi Klinik PKP page */
-.custom-marker {
+/* Scoped Leaflet overrides for Sosialisasi Klinik PKP page */
+.sosialisasi-map .custom-marker {
   background: transparent;
   border: none;
 }
 
-/* Popup styling - elegant and modern */
-.leaflet-popup-content-wrapper {
+/* Popup styling — overrides globals.css defaults for this page */
+.sosialisasi-map .leaflet-popup-content-wrapper {
   padding: 0;
   overflow: hidden;
   border-radius: 16px;
@@ -13,19 +13,12 @@
   border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-.leaflet-popup-content {
-  margin: 0 !important;
-  padding: 0 !important;
-  min-width: 280px !important;
-  line-height: 1.5;
-}
-
-.leaflet-popup-tip {
+.sosialisasi-map .leaflet-popup-tip {
   background: #fff;
   box-shadow: 0 3px 14px rgba(0, 0, 0, 0.1);
 }
 
-.leaflet-popup-close-button {
+.sosialisasi-map .leaflet-popup-close-button {
   top: 8px !important;
   right: 8px !important;
   width: 24px !important;
@@ -40,64 +33,19 @@
   transition: all 0.2s ease !important;
 }
 
-.leaflet-popup-close-button:hover {
+.sosialisasi-map .leaflet-popup-close-button:hover {
   color: #111827 !important;
   background: #f3f4f6 !important;
 }
 
-.leaflet-container {
+.sosialisasi-map .leaflet-container {
   font-family: system-ui, -apple-system, sans-serif;
   border-radius: 16px;
   box-shadow: 0 2px 16px 0 rgba(0, 0, 0, 0.08);
 }
 
-/* Show Leaflet attribution/watermark */
-.leaflet-control-attribution {
-  display: block !important;
-  background: rgba(255, 255, 255, 0.95) !important;
-  padding: 3px 8px !important;
-  font-size: 10px !important;
-  color: #4b5563 !important;
-  border-radius: 6px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
-  margin: 8px !important;
-}
-
-.leaflet-control-attribution a {
-  color: #0E5B73 !important;
-  text-decoration: none !important;
-  font-weight: 500;
-}
-
-.leaflet-control-attribution a:hover {
-  text-decoration: underline !important;
-}
-
-/* Map Legend Styles - clean minimal */
-.map-legend {
+/* Map Legend */
+.sosialisasi-map .map-legend {
   font-family: system-ui, -apple-system, sans-serif !important;
   z-index: 1000 !important;
-}
-
-/* Ensure map is interactive */
-.leaflet-container .leaflet-interactive {
-  cursor: grab;
-}
-
-.leaflet-container .leaflet-interactive:active {
-  cursor: grabbing;
-}
-
-/* Fix for mobile touch interactions */
-.leaflet-touch .leaflet-control-layers,
-.leaflet-touch .leaflet-bar {
-  border: 1px solid rgba(0, 0, 0, 0.15);
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.leaflet-touch .leaflet-control-layers-toggle,
-.leaflet-touch .leaflet-bar a {
-  background-color: white;
-  color: #333;
 }

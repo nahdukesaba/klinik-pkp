@@ -148,24 +148,25 @@ klinik-pkp/
 │   │       ├── page.tsx     # Server Component (metadata SEO)
 │   │       └── loader.tsx   # Client wrapper (dynamic import)
 │   │
+│   ├── types/               # Tipe data shared
+│   │   └── api.ts           # Tipe API (Province, Region, ApiResponse, dll.)
+│   │
 │   ├── services/            # ⭐ Komunikasi dengan API Backend
-│   │   ├── api-types.ts     # Tipe data shared (Province, Region, dll.)
 │   │   ├── rusun.service.ts
 │   │   ├── bank-desain.service.ts
 │   │   ├── bsps.service.ts
 │   │   ├── kawasan-kumuh.service.ts
-│   │   ├── sosialisasi.service.ts
-│   │   └── index.ts         # Barrel export
+│   │   └── sosialisasi.service.ts
 │   │
 │   ├── hooks/               # ⭐ React Hooks (logic bisnis)
 │   │   ├── [fitur]/         # Folder per fitur
 │   │   │   ├── use-*-query.ts   # Query hook (React Query)
 │   │   │   ├── use-*.ts         # Hook spesifik
-│   │   │   └── use-*-page.ts    # Orkestrasi hook untuk halaman
+│   │   │   ├── use-*-page.ts    # Orkestrasi hook untuk halaman
+│   │   │   └── index.ts         # Barrel export per subfolder
 │   │   ├── use-cascading-filter.ts  # Filter bertingkat (kabupaten→kecamatan→kelurahan)
 │   │   ├── use-scroll-animation.ts
-│   │   ├── use-debounce.ts
-│   │   └── index.ts
+│   │   └── use-debounce.ts
 │   │
 │   ├── components/          # ⭐ Komponen React (UI)
 │   │   ├── [fitur]/         # Folder per fitur
@@ -175,20 +176,19 @@ klinik-pkp/
 │   │   ├── ui/              # Komponen primitif (button, card, skeleton)
 │   │   └── providers/       # React context providers
 │   │
-│   ├── data/                # Data statis (konten tanpa API endpoint)
+│   ├── content/              # Data statis (konten tanpa API endpoint)
 │   │   ├── building-steps.ts
 │   │   ├── housing-indicators.ts
 │   │   ├── informasi.ts
 │   │   ├── lokasi-klinik.ts
-│   │   ├── tentang.ts
-│   │   └── index.ts
+│   │   └── tentang.ts
 │   │
 │   ├── lib/                 # Utility & konfigurasi
 │   │   ├── api-client.ts    # HTTP client untuk API
 │   │   ├── auth.ts          # JWT helper (create/verify token)
 │   │   ├── constants.ts     # Konstanta aplikasi (URLs, navigasi)
 │   │   ├── map-utils.ts     # Utility peta Leaflet
-│   │   ├── security.ts      # escapeHtml, escapeAttr, sanitizeUrl
+│   │   │   ├── security.ts      # escapeHtml, escapeAttr, sanitizeUrl, rate limiter
 │   │   ├── date.ts          # Format tanggal Indonesia
 │   │   ├── utils.ts         # cn() utility (className merger)
 │   │   └── validations.ts   # Skema validasi Zod
@@ -313,14 +313,15 @@ app/sebaran-rusun/
 ### Lokasi File
 
 ```
+src/types/
+└── api.ts                    # Tipe API shared (ApiResponse, Province, Region, dll.)
+
 src/services/
-├── api-types.ts              # Tipe data shared (Province, Region, dll.)
 ├── rusun.service.ts          # Sebaran Rusun
 ├── bank-desain.service.ts    # Bank Desain
 ├── bsps.service.ts           # Penerimaan BSPS
 ├── kawasan-kumuh.service.ts  # Kawasan Kumuh
-├── sosialisasi.service.ts    # Sosialisasi (paling kompleks)
-└── index.ts                  # Barrel export
+└── sosialisasi.service.ts    # Sosialisasi (paling kompleks)
 ```
 
 ### Pola Umum Setiap Service
@@ -398,7 +399,7 @@ export async function fetchXxxList(): Promise<XxxData[]> {
 - **Transform**: Parsing tanggal RFC3339 → format Indonesia, menghitung status ("selesai"/"mendatang")
 - **Ekstra**: `computeStatus()`, `extractTimeRange()` dari timestamp
 
-### Shared Types (`api-types.ts`)
+### Shared Types (`src/types/api.ts`)
 
 ```typescript
 // Hierarki wilayah Indonesia (dari backend)
@@ -458,9 +459,10 @@ src/hooks/
 ├── use-scroll-animation.ts
 ├── use-debounce.ts
 ├── use-lazy-mount.ts
-├── use-toast.ts
-└── index.ts
+└── use-toast.ts
 ```
+
+> **Catatan:** Setiap subfolder fitur memiliki `index.ts` barrel export.
 
 ### Pola Hook per Fitur
 
@@ -543,7 +545,7 @@ src/components/
 │   └── DesignPreviewDialog.tsx   # Dialog preview gambar
 ├── sebaran-rusun/
 │   ├── SebaranRusunPage.tsx
-│   └── SebaranRusunComponents.tsx
+│   └── RusunComponents.tsx
 ├── kawasan-kumuh/
 │   ├── KawasanKumuhPage.tsx
 │   └── KawasanKumuhComponents.tsx
@@ -932,7 +934,7 @@ export default function Page() {
 
 #### Langkah 5: Update Barrel Exports
 
-Tambahkan ke `src/services/index.ts` dan `src/hooks/index.ts`.
+Tambahkan barrel export (`index.ts`) di folder hooks dan components baru.
 
 #### Langkah 6: Tambahkan ke Allowlist Middleware
 
@@ -1023,7 +1025,24 @@ npm run build
 - Jika backend menambah endpoint baru, ikuti pola service → query hook → komponen
 - Data statis di `src/content/` hanya untuk konten yang **benar-benar tidak ada API-nya**
 
+### Catatan Penamaan
+
+> **Sosialisasi** menggunakan nama berbeda di tiap layer:
+> - Route: `sosialisasi-klinik-pkp/` (URL publik, tidak boleh diubah)
+> - Components: `sosialisasi-pkp/`
+> - Hooks: `sosialisasi/`
+> - Service: `sosialisasi.service.ts`
+>
+> Ini adalah *known inconsistency* yang tidak di-refactor karena mengubah route akan memecah URL yang sudah dishare.
+
+### Dokumentasi Lainnya
+
+| File | Isi |
+|---|---|
+| `docs/API_DOCUMENTATION.md` | Referensi lengkap semua endpoint REST API backend |
+| `README.md` | Gambaran singkat proyek + quick start |
+
 ---
 
-*Dokumentasi ini terakhir diperbarui: Februari 2026*
+*Dokumentasi ini terakhir diperbarui: Juli 2025*
 *Dibuat untuk proyek Klinik PKP — BP3KP Sumatera II*

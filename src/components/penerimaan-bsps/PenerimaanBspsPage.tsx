@@ -12,7 +12,7 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 
 import { Building2 } from "lucide-react";
 
@@ -54,19 +54,6 @@ export default function PenerimaanBspsPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const toggleSidebar = useCallback(() => setSidebarOpen((prev) => !prev), []);
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
-
-  // Auto-scroll to map on first visit
-  useEffect(() => {
-    const alreadyScrolled = sessionStorage.getItem('bsps-scrolled') === 'true';
-    if (alreadyScrolled) return;
-
-    const timer = setTimeout(() => {
-      document.getElementById("peta-bsps")?.scrollIntoView({ behavior: "smooth" });
-      sessionStorage.setItem('bsps-scrolled', 'true');
-    }, 100);
-
-    return () => clearTimeout(timer);
-  }, []);
 
   // Tampilkan error state jika gagal mengambil data
   if (isError) {
@@ -125,8 +112,6 @@ export default function PenerimaanBspsPage() {
 
       {/* Information Sections */}
       <main ref={ref} className="py-16">
-        <BspsBackgroundPattern />
-
         <div className="container mx-auto px-4">
           <BspsInfoCards />
 

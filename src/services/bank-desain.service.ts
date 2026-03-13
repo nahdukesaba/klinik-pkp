@@ -1,24 +1,12 @@
-/**
- * Bank Desain API Service
- *
- * Modul ini menangani semua komunikasi dengan backend API untuk data Bank Desain.
- * Mengikuti pola yang sama dengan rusun.service.ts:
- * - Tipe API (snake_case) → Tipe Frontend (camelCase)
- * - Transform function untuk konversi data
- * - Fetch function untuk pemanggilan API
- *
- * @module services/bank-desain
- */
+/** Service API untuk data Bank Desain. Transform snake_case → camelCase. */
 
 import { apiClient } from "@/lib/api-client";
-import type { ApiResponse } from "@/services/api-types";
 import { buildImageUrl } from "@/services/rusun.service";
+import type { ApiResponse } from "@/types/api";
 
-// ============================================
-// Tipe Data API (sesuai response backend Go)
-// ============================================
+// --- Tipe API ---
 
-/** Struktur data bank desain dari API (snake_case sesuai backend Go) */
+/** Struktur data bank desain dari API (snake_case) */
 export interface BankDesainApiItem {
   id: string;
   name: string;
@@ -31,11 +19,9 @@ export interface BankDesainApiItem {
   file_urls: string[] | null;
 }
 
-// ============================================
-// Tipe Data Frontend (camelCase untuk UI)
-// ============================================
+// --- Tipe Frontend ---
 
-/** Data bank desain yang sudah ditransformasi untuk UI */
+/** Data bank desain untuk UI (camelCase) */
 export interface BankDesainData {
   id: number;
   /** Kode desain (dari ID API) */
@@ -74,11 +60,8 @@ export interface FilterCategories {
   teras: FilterCategory[];
 }
 
-// ============================================
-// Mapping Tipe API → Tipe Filter Frontend
-// ============================================
+// --- Mapping tipe ---
 
-/** Mapping tipe rumah dari API ke kode filter frontend */
 const TYPE_MAP: Record<string, string> = {
   "Tipe 36": "T36",
   "Tipe 45": "T45",
@@ -86,7 +69,7 @@ const TYPE_MAP: Record<string, string> = {
   "Rusun": "Rusun",
 };
 
-/** Label tipe rumah untuk tampilan filter */
+/** Label tipe untuk tampilan filter */
 const TYPE_LABELS: Record<string, string> = {
   "T36": "Tipe 36 (36 m²)",
   "T45": "Tipe 45 (45 m²)",
@@ -94,14 +77,9 @@ const TYPE_LABELS: Record<string, string> = {
   "Rusun": "Rusun",
 };
 
-// ============================================
-// Fungsi Transformasi Data
-// ============================================
+// --- Transformasi ---
 
-/**
- * Transformasi data API (snake_case) ke format frontend (camelCase).
- * Memetakan field API ke struktur yang dibutuhkan komponen UI.
- */
+/** Transform data API → format frontend */
 export function transformBankDesainItem(item: BankDesainApiItem): BankDesainData {
   const imageUrls = item.image_urls?.map(buildImageUrl) ?? [];
   const fileUrls = item.file_urls?.map(buildImageUrl) ?? [];
@@ -123,11 +101,7 @@ export function transformBankDesainItem(item: BankDesainApiItem): BankDesainData
   };
 }
 
-/**
- * Bangun kategori filter dinamis dari data API.
- * Membuat daftar filter berdasarkan tipe, jumlah kamar, dan fitur teras
- * yang tersedia dalam data.
- */
+/** Bangun kategori filter dinamis dari data yang tersedia */
 export function deriveFilterCategories(items: BankDesainData[]): FilterCategories {
   // Kumpulkan tipe unik
   const uniqueTypes = [...new Set(items.map((d) => d.type))].sort();
@@ -163,17 +137,9 @@ export function deriveFilterCategories(items: BankDesainData[]): FilterCategorie
   };
 }
 
-// ============================================
-// Fungsi API (pemanggilan backend)
-// ============================================
+// --- API ---
 
-/**
- * Ambil semua data bank desain dari API backend.
- * Data di-cache oleh React Query di hook pemanggil.
- *
- * Endpoint: GET /api/ext/bank-desain → backend GET /api/v1/bank-desain
- * @throws Error jika API mengembalikan response tidak valid
- */
+/** GET /api/ext/bank-desain — ambil semua data bank desain */
 export async function fetchBankDesainList(): Promise<BankDesainData[]> {
   const res = await apiClient.get<ApiResponse<BankDesainApiItem[]>>("/bank-desain");
 

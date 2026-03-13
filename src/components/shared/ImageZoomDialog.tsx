@@ -35,9 +35,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-// ============================================
-// Types & Interfaces
-// ============================================
+// --- Types & Interfaces ---
 
 export interface ImageZoomDialogProps {
   /** Array gambar yang akan ditampilkan */
@@ -56,9 +54,7 @@ export interface ImageZoomDialogProps {
   showThumbnails?: boolean;
 }
 
-// ============================================
-// Zoom Controls Component
-// ============================================
+// --- Zoom Controls Component ---
 
 function ZoomControls() {
   const { zoomIn, zoomOut, resetTransform } = useControls();
@@ -93,9 +89,7 @@ function ZoomControls() {
   );
 }
 
-// ============================================
-// Main Component
-// ============================================
+// --- Main Component ---
 
 export function ImageZoomDialog({
   images,

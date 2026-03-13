@@ -2,9 +2,10 @@
 
 import { RefObject, useMemo } from "react";
 
-import { CalendarDays, MapPin } from "lucide-react";
+import { MapPin } from "lucide-react";
 
 import { MapFilterBar } from "@/components/shared/MapFilterBar";
+import { YearFilterSelect } from "@/components/shared/YearFilterSelect";
 
 interface PKPMapSectionProps {
   mapRef: RefObject<HTMLDivElement | null>;
@@ -64,25 +65,26 @@ export function PKPMapSection({
 }: PKPMapSectionProps) {
   // Map is now initialized automatically in the hook
   const currentYear = new Date().getFullYear().toString();
+  const DEFAULT_STATUS = "mendatang";
 
-  // Check if any filter is active
+  // Check if any filter is active (exclude defaults)
   const activeFilterCount = useMemo(() => {
     let count = 0;
     if (mapYear !== "all" && mapYear !== currentYear) count++;
     if (kabupatenFilter !== "all") count++;
     if (kecamatanFilter !== "all") count++;
     if (kelurahanFilter !== "all") count++;
-    if (statusFilter !== "all") count++;
+    if (statusFilter !== "all" && statusFilter !== DEFAULT_STATUS) count++;
     return count;
   }, [mapYear, kabupatenFilter, kecamatanFilter, kelurahanFilter, statusFilter, currentYear]);
 
-  // Reset filters (termasuk tahun kembali ke tahun sekarang)
+  // Reset filters (tahun → sekarang, status → mendatang)
   const resetFilters = () => {
     setMapYear(currentYear);
     setKabupatenFilter("all");
     setKecamatanFilter("all");
     setKelurahanFilter("all");
-    setStatusFilter("all");
+    setStatusFilter(DEFAULT_STATUS);
   };
 
   // Status options for filter
@@ -139,37 +141,13 @@ export function PKPMapSection({
           </div>
         </div>
 
-        {/* Filter Tahun — Pills horizontal scrollable */}
-        <div className="px-3 sm:px-4 py-2 border-b border-border bg-background/50 flex items-center gap-2 overflow-x-auto scrollbar-thin">
-          <span className="text-xs text-muted-foreground whitespace-nowrap flex items-center gap-1.5 flex-shrink-0">
-            <CalendarDays className="w-3.5 h-3.5" />
-            Tahun:
-          </span>
-          {mapYears.map((year) => (
-            <button
-              key={year}
-              onClick={() => setMapYear(year.toString())}
-              className={`flex-shrink-0 px-2.5 py-1 text-xs font-semibold rounded-full border transition-all ${
-                mapYear === year.toString()
-                  ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                  : "bg-card text-foreground border-border hover:border-primary/50 hover:bg-primary/5"
-              }`}
-            >
-              {year}
-            </button>
-          ))}
-          {mapYears.length > 0 && (
-            <button
-              onClick={() => setMapYear("all")}
-              className={`flex-shrink-0 px-2.5 py-1 text-xs font-semibold rounded-full border transition-all ${
-                mapYear === "all"
-                  ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                  : "bg-card text-foreground border-border hover:border-primary/50 hover:bg-primary/5"
-              }`}
-            >
-              Semua
-            </button>
-          )}
+        {/* Filter Tahun — Reusable dropdown */}
+        <div className="px-3 sm:px-4 py-2 border-b border-border bg-background/50">
+          <YearFilterSelect
+            years={mapYears}
+            selectedYear={mapYear}
+            onYearChange={setMapYear}
+          />
         </div>
 
         {/* Search Bar (left) & Filter Toggle (right) */}

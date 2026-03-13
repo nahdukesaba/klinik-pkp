@@ -15,9 +15,7 @@ import { useBankDesain } from "@/hooks/bank-desain/use-bank-desain";
 import type { BankDesainData } from "@/hooks/bank-desain/use-bank-desain-query";
 import { useScrollAnimation } from "@/hooks/use-scroll-animation";
 
-// ============================================
-// Tipe Data
-// ============================================
+// --- Tipe Data ---
 
 export function useBankDesainPage() {
   const ref = useScrollAnimation();

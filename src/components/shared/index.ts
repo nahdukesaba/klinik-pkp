@@ -14,4 +14,5 @@ export { SidebarPagination } from "./SidebarPagination";
 export { GridPagination } from "./GridPagination";
 export { MapLegend } from "./MapLegend";
 export { DateRangeFilterGroup } from "./DateRangeFilterGroup";
-export { ApiLoadingState, ApiErrorState, ApiEmptyState } from "./ApiStates";
+export { ApiLoadingState, ApiErrorState } from "./ApiStates";
+export { YearFilterSelect } from "./YearFilterSelect";

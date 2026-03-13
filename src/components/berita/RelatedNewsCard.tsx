@@ -7,9 +7,7 @@ import { Calendar, MapPin } from "lucide-react";
 
 import { formatDateId } from "@/lib/date";
 
-// ============================================
-// Types
-// ============================================
+// --- Types ---
 interface RelatedNewsCardProps {
   id: number;
   title: string;
@@ -18,10 +16,7 @@ interface RelatedNewsCardProps {
   kabupaten: string;
 }
 
-// ============================================
-// RelatedNewsCard Component
-// Displays related news in a clean card format
-// ============================================
+// --- RelatedNewsCard Component ---
 export function RelatedNewsCard({
   id,
   title,

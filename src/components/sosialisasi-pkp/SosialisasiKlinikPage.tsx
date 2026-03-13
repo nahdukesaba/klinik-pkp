@@ -2,8 +2,6 @@
 
 import { useCallback, useState } from "react";
 
-
-
 import { ArrowDown, BookOpen, Newspaper } from "lucide-react";
 
 import "./sosialisasi.css";
@@ -17,9 +15,7 @@ import { MapSkeleton } from "@/components/ui/skeleton";
 import { useSosialisasiPKPPage } from "@/hooks/sosialisasi/use-sosialisasi-pkp-page";
 import { useScrollAnimation } from "@/hooks/use-scroll-animation";
 
-// ============================================
-// Navigation Button Component (Reusable)
-// ============================================
+// --- Navigation Button Component (Reusable) ---
 interface NavButtonProps {
   targetId: string;
   icon: React.ReactNode;
@@ -36,7 +32,7 @@ function NavButton({ targetId, icon, label, sublabel, variant = "secondary" }: N
     }
   };
 
-  const baseClasses = "group flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 border";
+  const baseClasses = "group flex items-center gap-2 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 border";
   const variantClasses = variant === "primary"
     ? "bg-primary text-primary-foreground border-primary hover:bg-primary/90 shadow-lg hover:shadow-xl"
     : "bg-card text-foreground border-border hover:border-primary/50 hover:bg-primary/5";
@@ -126,7 +122,7 @@ function SosialisasiKlinikPKPContent() {
           {/* Map + Jadwal Side by Side on Desktop */}
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-12">
             {/* Map Section - Larger (3/5) */}
-            <div ref={pageLogic.mapLazy.ref} className="lg:col-span-3 lg:sticky lg:top-24 lg:self-start">
+            <div ref={pageLogic.mapLazy.ref} className="lg:col-span-3 lg:sticky lg:top-24 lg:self-start sosialisasi-map">
               {pageLogic.mapLazy.isMounted ? (
                 <PKPMapSection
                   mapRef={pageLogic.map.mapRef}

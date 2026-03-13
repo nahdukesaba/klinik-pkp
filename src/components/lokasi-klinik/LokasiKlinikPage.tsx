@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useCallback } from "react";
 
+import "leaflet/dist/leaflet.css";
+
 import Image from "next/image";
 
 import { Clock, ExternalLink, Mail, MapPin, Phone } from "lucide-react";
@@ -182,6 +184,7 @@ export default function LokasiKlinikPage() {
                     src="/klinik.jpeg"
                     alt="Gedung Balai BP3KP Tampak Depan"
                     fill
+                    sizes="(max-width: 1024px) 100vw, 50vw"
                     className="object-cover"
                     loading="lazy"
                   />
@@ -226,7 +229,7 @@ export default function LokasiKlinikPage() {
                     </h3>
                   </div>
                 </div>
-                <div className="space-y-3 ml-[4.5rem]">
+                <div className="space-y-3 ml-0 sm:ml-[4.5rem]">
                   {klinikData.operationalHours.map((item, index) => (
                     <div
                       key={index}
@@ -263,7 +266,7 @@ export default function LokasiKlinikPage() {
                     </h3>
                   </div>
                 </div>
-                <div className="space-y-3 ml-[4.5rem]">
+                <div className="space-y-3 ml-0 sm:ml-[4.5rem]">
                   <a
                     href={`tel:${klinikData.phone}`}
                     className="flex items-center gap-3 text-muted-foreground hover:text-primary transition-colors"
@@ -289,7 +292,7 @@ export default function LokasiKlinikPage() {
                 <h3 className="font-bold text-foreground text-lg mb-4">
                   Layanan Tersedia
                 </h3>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {klinikData.services.map((service, index) => (
                     <div
                       key={index}

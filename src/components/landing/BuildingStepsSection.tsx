@@ -11,9 +11,7 @@ import { StepArrow } from "./StepArrow";
 
 import type { LucideIcon } from "lucide-react";
 
-// ============================================
-// Tipe & Interface
-// ============================================
+// --- Tipe & Interface ---
 interface Step {
   id: string;
   icon: LucideIcon;
@@ -28,9 +26,7 @@ interface StepCardProps {
   isAnyHovered: boolean;
 }
 
-// ============================================
-// StepCard Component - Konsisten & Simetris
-// ============================================
+// --- StepCard Component - Konsisten & Simetris ---
 function StepCard({ item, isHovered, isAnyHovered }: StepCardProps) {
   const IconComponent = item.icon;
   // Check if this is truly the last step (step 6 = Serah Terima)
@@ -83,9 +79,7 @@ function StepCard({ item, isHovered, isAnyHovered }: StepCardProps) {
   );
 }
 
-// ============================================
-// Komponen Utama
-// ============================================
+// --- Komponen Utama ---
 export default function BuildingStepsSection() {
   const ref = useScrollAnimation();
   const steps = buildingStepsData;
@@ -219,7 +213,7 @@ export default function BuildingStepsSection() {
             <ProgressIndicator totalSteps={steps.length} hoveredStep={hoveredStep} />
           </div>
 
-        {/* ==================== Instagram Section ==================== */}
+        {/* --- Instagram Section --- */}
         <div className="mt-16">
           <div className="text-center mb-8">
             <h3 className="text-xl lg:text-2xl font-bold text-foreground mb-2">
@@ -232,7 +226,7 @@ export default function BuildingStepsSection() {
             <div className="bg-card rounded-2xl overflow-hidden border border-border shadow-lg">
               <iframe
                 src="https://www.instagram.com/bp3kp_sumatera2/embed"
-                className="w-full h-[600px] md:h-[700px] lg:h-[750px] xl:h-[800px] 2xl:h-[850px] border-0"
+                className="w-full h-[450px] sm:h-[550px] md:h-[700px] lg:h-[750px] xl:h-[800px] 2xl:h-[850px] border-0"
                 loading="lazy"
                 title="Instagram BP3KP Sumatera II"
                 sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms allow-top-navigation-by-user-activation"

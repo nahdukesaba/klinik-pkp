@@ -139,6 +139,7 @@ export default function BeritaDetailView({
                     src={allImages[activeImageIndex]}
                     alt={berita.title}
                     fill
+                    sizes="(max-width: 1024px) 100vw, 896px"
                     className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
                     priority
                   />
@@ -193,6 +194,7 @@ export default function BeritaDetailView({
                           src={img}
                           alt={`Thumbnail ${idx + 1}`}
                           fill
+                          sizes="80px"
                           className="object-cover"
                         />
                       </button>

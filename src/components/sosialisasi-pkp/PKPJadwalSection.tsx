@@ -28,9 +28,7 @@ import { Input } from "@/components/ui/input";
 import { SearchableSelect, stringsToOptions } from "@/components/ui/searchable-select";
 import { type SosialisasiLocation } from "@/services/sosialisasi.service";
 
-// ============================================
-// Types
-// ============================================
+// --- Types ---
 
 interface PKPJadwalSectionProps {
   jadwalYear: string;
@@ -55,9 +53,7 @@ interface PKPJadwalSectionProps {
   compact?: boolean;
 }
 
-// ============================================
-// JadwalCard — Kartu jadwal individual
-// ============================================
+// --- JadwalCard — Kartu jadwal individual ---
 
 function JadwalCard({
   jadwal,
@@ -133,9 +129,7 @@ function JadwalCard({
   );
 }
 
-// ============================================
-// Main Section
-// ============================================
+// --- Main Section ---
 
 export function PKPJadwalSection({
   jadwalYear,

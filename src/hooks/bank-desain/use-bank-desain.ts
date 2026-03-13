@@ -13,10 +13,9 @@ import { useMemo, useState, useCallback } from "react";
 import { useBankDesainQuery, type BankDesainData } from "@/hooks/bank-desain/use-bank-desain-query";
 import { useDebounce } from "@/hooks/use-debounce";
 import { usePagination } from "@/hooks/use-pagination";
+import { sanitizeInput } from "@/lib/security";
 
-// ============================================
-// Konstanta
-// ============================================
+// --- Konstanta ---
 const DEFAULT_FILTER = "all";
 
 /**
@@ -27,9 +26,7 @@ function getDesignDownloadUrl(design: BankDesainData): string {
   return design.designFileUrl || design.previewImages[0] || design.thumbnail;
 }
 
-// ============================================
-// Implementasi Hook
-// ============================================
+// --- Implementasi Hook ---
 export function useBankDesain() {
   // Sumber data dari API (React Query)
   const { data: designs, categories, isLoading, isError, error, refetch } = useBankDesainQuery();
@@ -63,7 +60,7 @@ export function useBankDesain() {
 
   // Filter desain berdasarkan semua kriteria
   const filteredDesigns = useMemo(() => {
-    const searchLower = debouncedSearch.toLowerCase().trim();
+    const searchLower = sanitizeInput(debouncedSearch).toLowerCase().trim();
 
     return designs.filter((design) => {
       const matchesType = typeFilter === DEFAULT_FILTER || design.type === typeFilter;

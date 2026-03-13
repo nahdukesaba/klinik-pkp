@@ -21,16 +21,12 @@ import { SearchableFilterSelect } from "@/components/shared/SearchableFilterSele
 import { SidebarPagination } from "@/components/shared/SidebarPagination";
 import type { BspsData } from "@/services/bsps.service";
 
-// ============================================
-// Constants
-// ============================================
+// --- Constants ---
 
 /** Jumlah item per halaman sidebar */
 const ITEMS_PER_PAGE = 20;
 
-// ============================================
-// Types (filter state dari parent)
-// ============================================
+// --- Types (filter state dari parent) ---
 
 interface FilterState {
   searchQuery: string;
@@ -64,9 +60,7 @@ interface StatusLabels {
   [key: string]: string;
 }
 
-// ============================================
-// Location Card — kartu info satu desa penerima
-// ============================================
+// --- Location Card — kartu info satu desa penerima ---
 
 const BspsLocationCard = memo(function BspsLocationCard({
   desa,
@@ -113,9 +107,7 @@ const BspsLocationCard = memo(function BspsLocationCard({
   );
 });
 
-// ============================================
-// Sidebar Component
-// ============================================
+// --- Sidebar Component ---
 
 export interface BspsSidebarProps {
   isOpen: boolean;

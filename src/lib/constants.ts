@@ -1,20 +1,8 @@
-/**
- * Shared Constants
- *
- * Konstanta yang digunakan di seluruh aplikasi.
- * Berisi daftar bulan, navigasi link, API configuration, dan konfigurasi lainnya.
- *
- * @module constants
- */
+/** Shared constants — bulan, navigasi, API config, dll. */
 
-// ============================================
-// API Configuration
-// ============================================
+// --- API Configuration ---
 
-/**
- * Konfigurasi default React Query untuk semua data hooks.
- * Digunakan sebagai spread di useQuery() agar konsisten.
- */
+/** Default React Query config untuk semua data hooks. */
 export const QUERY_CONFIG = {
   staleTime: 5 * 60 * 1000,       // Data fresh selama 5 menit
   gcTime: 10 * 60 * 1000,         // Cache disimpan 10 menit
@@ -24,42 +12,24 @@ export const QUERY_CONFIG = {
 
 /**
  * Base URL untuk API request dari client-side.
- *
- * Semua request API dari browser melewati Next.js rewrites di /api/ext
- * agar tetap same-origin dan menghindari CORS.
- * Konfigurasi rewrite ada di next.config.mjs.
- *
- * Alur request:
- *   Browser → /api/ext/rusun → Next.js Rewrite → Backend API/rusun
- *
- * Konfigurasi backend URL (set di .env.local):
- *   API_URL=http://localhost:8000/api/v1
- *
- * PENTING: Jangan gunakan NEXT_PUBLIC_ prefix untuk URL backend!
- * Prefix tersebut akan mengexpose URL ke client-side JavaScript.
+ * Request melewati Next.js rewrites /api/ext → backend (same-origin, no CORS).
+ * Konfigurasi backend URL: set API_URL di .env.local
  */
 export const API_BASE_URL = "/api/ext";
 
-/**
- * Helper function untuk membuat full API URL (melalui rewrite).
- * Contoh: getApiUrl("rusun") → "/api/ext/rusun"
- */
+/** Helper: getApiUrl("rusun") → "/api/ext/rusun" */
 export function getApiUrl(endpoint: string): string {
-  // Hapus leading slash jika ada
   const cleanEndpoint = endpoint.startsWith("/") ? endpoint.slice(1) : endpoint;
   return `${API_BASE_URL}/${cleanEndpoint}`;
 }
 
-// ============================================
-// React Query Configuration
-// ============================================
+// --- Date & Time Constants ---
 
-// ============================================
-// Date & Time Constants
-// ============================================
+/** Tahun sekarang sebagai number — dipakai untuk fallback tahun di filter */
+export const CURRENT_YEAR_NUM = new Date().getFullYear();
 
 /** Tahun sekarang sebagai string — dipakai sebagai default filter di semua halaman */
-export const CURRENT_YEAR = new Date().getFullYear().toString();
+export const CURRENT_YEAR = CURRENT_YEAR_NUM.toString();
 
 /** Daftar bulan dalam Bahasa Indonesia untuk filter tanggal */
 export const MONTHS_LIST = [

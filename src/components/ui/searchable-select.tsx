@@ -6,9 +6,7 @@ import { Check, ChevronDown, Search, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-// ============================================
-// Types
-// ============================================
+// --- Types ---
 export interface SearchableSelectOption {
   value: string;
   label: string;
@@ -37,11 +35,7 @@ export interface SearchableSelectProps {
   showAllOption?: boolean;
 }
 
-// ============================================
-// SearchableSelect Component
-// A reusable select component with search functionality
-// for filtering through large lists of options
-// ============================================
+// --- SearchableSelect Component ---
 export function SearchableSelect({
   value,
   onValueChange,
@@ -136,7 +130,7 @@ export function SearchableSelect({
         aria-haspopup="listbox"
       >
         <span className={cn(
-          "truncate text-left flex-1",
+          "text-left flex-1 min-w-0",
           value === "all" ? "text-foreground/70" : "text-foreground"
         )}>
           {displayLabel}
@@ -227,9 +221,7 @@ export function SearchableSelect({
   );
 }
 
-// ============================================
-// Helper function to convert string array to options
-// ============================================
+// --- Helper function to convert string array to options ---
 export function stringsToOptions(strings: string[]): SearchableSelectOption[] {
   return strings
     .filter((s) => s !== "all" && s !== "Semua Lokasi") // Filter out "all" values

@@ -1,14 +1,4 @@
-/**
- * Rusun API Service
- *
- * Modul ini menangani semua komunikasi dengan backend API untuk data Rusun.
- * Dipisahkan dari hooks agar:
- * - Logic API tidak tercampur dengan React state management
- * - Mudah di-test secara unit tanpa React
- * - Bisa dipakai ulang di server-side maupun client-side
- *
- * @module services/rusun
- */
+/** Service API untuk data Rusun. Transform snake_case → camelCase. */
 
 import { apiClient } from "@/lib/api-client";
 import { API_BASE_URL } from "@/lib/constants";
@@ -18,14 +8,12 @@ import type {
   VillageApi,
   DistrictApi,
   RegionApi,
-} from "@/services/api-types";
-import { extractVillageName, extractDistrictName, extractRegionName } from "@/services/api-types";
+} from "@/types/api";
+import { extractVillageName, extractDistrictName, extractRegionName } from "@/types/api";
 
-// ============================================
-// Tipe Data API (sesuai response backend Go)
-// ============================================
+// --- Tipe API ---
 
-/** Struktur data rusun dari API (snake_case sesuai backend Go) */
+/** Struktur data rusun dari API (snake_case) */
 export interface RusunApiItem {
   id: string;
   village_id: string;
@@ -45,11 +33,9 @@ export interface RusunApiItem {
   region?: RegionApi;
 }
 
-// ============================================
-// Tipe Data Frontend (camelCase untuk UI)
-// ============================================
+// --- Tipe Frontend ---
 
-/** Data rusun yang sudah ditransformasi untuk UI */
+/** Data rusun untuk UI (camelCase) */
 export interface RusunData {
   id: string;
   name: string;
@@ -67,18 +53,11 @@ export interface RusunData {
   image?: string;
 }
 
-// ============================================
-// Fungsi Transformasi Data
-// ============================================
+// --- Transformasi ---
 
 /**
- * Bangun URL gambar lengkap dari path relatif yang dikembalikan API.
- *
- * API bisa mengembalikan format:
- *   - "rusun/1/file.jpg"          → /api/ext/uploads/rusun/1/file.jpg
- *   - "uploads/rusun/6/file.jpg"  → /api/ext/uploads/rusun/6/file.jpg
- *
- * File statis disajikan di GET /api/v1/uploads/* → di-rewrite ke /api/ext/uploads/*
+ * Bangun URL gambar dari path relatif API.
+ * "rusun/1/file.jpg" → /api/ext/uploads/rusun/1/file.jpg
  */
 export function buildImageUrl(path: string): string {
   const clean = path.startsWith("/") ? path.slice(1) : path;
@@ -86,10 +65,7 @@ export function buildImageUrl(path: string): string {
   return `${API_BASE_URL}/${withUploads}`;
 }
 
-/**
- * Transformasi data API (snake_case) ke format frontend (camelCase).
- * Mengekstrak nama lokasi dari nested objects (Village → District → Region).
- */
+/** Transform data API → format frontend. Ekstrak nama lokasi dari nested objects. */
 export function transformRusunItem(item: RusunApiItem): RusunData {
   const kelurahan = extractVillageName(item.village);
   const kecamatan = extractDistrictName(item.district, item.village);
@@ -116,17 +92,9 @@ export function transformRusunItem(item: RusunApiItem): RusunData {
   };
 }
 
-// ============================================
-// Fungsi API (pemanggilan backend)
-// ============================================
+// --- API ---
 
-/**
- * Ambil semua data rusun dari API backend.
- * Data di-cache oleh React Query di hook pemanggil.
- *
- * Endpoint: GET /api/ext/rusun → backend GET /api/v1/rusun
- * @throws Error jika API mengembalikan response tidak valid
- */
+/** GET /api/ext/rusun — ambil semua data rusun */
 export async function fetchRusunList(): Promise<RusunData[]> {
   const res = await apiClient.get<ApiResponse<RusunApiItem[]>>("/rusun");
 

@@ -22,9 +22,7 @@ import type { BspsProcessStep } from "@/services/bsps.service";
 import type { LucideIcon } from "lucide-react";
 
 
-// ============================================
-// Background Pattern
-// ============================================
+// --- Background Pattern ---
 
 export function BspsBackgroundPattern() {
   return (
@@ -36,9 +34,7 @@ export function BspsBackgroundPattern() {
   );
 }
 
-// ============================================
-// Info Cards
-// ============================================
+// --- Info Cards ---
 
 interface InfoCardProps {
   id: string;
@@ -95,9 +91,7 @@ export function BspsInfoCards() {
   );
 }
 
-// ============================================
-// Requirements
-// ============================================
+// --- Requirements ---
 
 interface BspsRequirementsProps {
   requirements: string[];
@@ -125,9 +119,7 @@ export function BspsRequirements({ requirements }: BspsRequirementsProps) {
   );
 }
 
-// ============================================
-// Process Steps
-// ============================================
+// --- Process Steps ---
 
 const stepIcons: Record<number, LucideIcon> = {
   1: ClipboardList,
@@ -295,9 +287,7 @@ export function BspsProcessSteps({
   );
 }
 
-// ============================================
-// Kriteria
-// ============================================
+// --- Kriteria ---
 
 interface BspsKriteriaProps {
   kriteriaUtama: string[];
@@ -346,9 +336,7 @@ export function BspsKriteria({ kriteriaUtama, prioritasPenerima }: BspsKriteriaP
   );
 }
 
-// ============================================
-// CTA
-// ============================================
+// --- CTA ---
 
 export function BspsCta() {
   return (

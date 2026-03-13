@@ -18,9 +18,7 @@ import {
 
 import type * as L from "leaflet";
 
-// ============================================
-// Pure Logic: Kewenangan berdasarkan luas kawasan
-// ============================================
+// --- Pure Logic: Kewenangan berdasarkan luas kawasan ---
 
 /**
  * Menentukan kewenangan penanganan kawasan kumuh berdasarkan luas.

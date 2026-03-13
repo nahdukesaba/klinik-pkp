@@ -23,11 +23,9 @@ export default function SebaranRusunPage() {
     filters,
     selectedRusun,
     sidebarOpen,
-    availableYears,
     filterOptions,
     stats,
     setSearchQuery,
-    setYearFilter,
     setKabupatenFilter,
     setKecamatanFilter,
     setKelurahanFilter,
@@ -54,13 +52,10 @@ export default function SebaranRusunPage() {
         {dataReady && (
           <RusunHeader
             searchQuery={filters.searchQuery}
-            yearFilter={filters.yearFilter}
-            availableYears={availableYears}
             totalRusun={stats.totalRusun}
             totalUnits={stats.totalUnits}
             onBack={handleBack}
             onSearchChange={setSearchQuery}
-            onYearChange={setYearFilter}
             onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
           />
         )}

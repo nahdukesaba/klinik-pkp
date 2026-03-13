@@ -2,6 +2,8 @@
 
 import { useState, useMemo, useCallback } from "react";
 
+import { CURRENT_YEAR } from "@/lib/constants";
+import { sanitizeInput } from "@/lib/security";
 import { type SosialisasiLocation } from "@/services/sosialisasi.service";
 
 /**
@@ -17,8 +19,8 @@ export function useSosialisasiPKPJadwal(
   upcomingLocations: SosialisasiLocation[],
   kabupatenOptions: string[]
 ) {
-  // Default: semua tahun agar jadwal langsung terlihat saat halaman dimuat
-  const [jadwalYear, setJadwalYear] = useState<string>("all");
+  // Default: tahun sekarang
+  const [jadwalYear, setJadwalYear] = useState<string>(CURRENT_YEAR);
   const [jadwalMonth, setJadwalMonth] = useState<string>("all");
   const [jadwalStartDate, setJadwalStartDate] = useState<string>("");
   const [jadwalEndDate, setJadwalEndDate] = useState<string>("");
@@ -69,7 +71,7 @@ export function useSosialisasiPKPJadwal(
 
     // Filter by search query
     if (jadwalSearch.trim()) {
-      const query = jadwalSearch.toLowerCase().trim();
+      const query = sanitizeInput(jadwalSearch).toLowerCase().trim();
       result = result.filter(
         (j) =>
           j.name.toLowerCase().includes(query) ||
@@ -93,7 +95,7 @@ export function useSosialisasiPKPJadwal(
   // Wrap resetFilters in useCallback for stable reference.
   // Ref: vercel-react-best-practices/rerender-functional-setstate
   const resetFilters = useCallback(() => {
-    setJadwalYear("all");
+    setJadwalYear(CURRENT_YEAR);
     setJadwalMonth("all");
     setJadwalStartDate("");
     setJadwalEndDate("");
@@ -102,7 +104,7 @@ export function useSosialisasiPKPJadwal(
   }, []);
 
   const hasActiveFilters =
-    jadwalYear !== "all" ||
+    jadwalYear !== CURRENT_YEAR ||
     jadwalMonth !== "all" ||
     jadwalStartDate !== "" ||
     jadwalEndDate !== "" ||

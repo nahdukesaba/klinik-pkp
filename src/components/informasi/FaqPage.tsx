@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { faqCategories, faqList } from "@/content/informasi";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useScrollAnimation } from "@/hooks/use-scroll-animation";
+import { sanitizeInput } from "@/lib/security";
 
 import type { LucideIcon } from "lucide-react";
 
@@ -37,10 +38,11 @@ export default function FAQPage() {
   const debouncedSearchQuery = useDebounce(searchQuery, 250);
 
   const filteredFaqs = useMemo(() => {
+    const q = sanitizeInput(debouncedSearchQuery).toLowerCase();
     return faqList.filter((faq) => {
       const matchesSearch =
-        faq.q.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-        faq.a.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
+        faq.q.toLowerCase().includes(q) ||
+        faq.a.toLowerCase().includes(q);
       const matchesCategory =
         activeCategory === "all" || faq.category === activeCategory;
       return matchesSearch && matchesCategory;

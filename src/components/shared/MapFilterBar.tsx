@@ -11,12 +11,9 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
 
-// ============================================
-// Types
-// ============================================
+// --- Types ---
 interface FilterOption {
   value: string;
   label: string;
@@ -56,10 +53,7 @@ interface MapFilterBarProps {
   onResetFilters: () => void;
 }
 
-// ============================================
-// MapFilterBar Component
-// Reusable filter bar for map pages with searchable dropdowns
-// ============================================
+// --- MapFilterBar Component ---
 export function MapFilterBar({
   searchQuery = "",
   onSearchChange,
@@ -196,7 +190,9 @@ export function MapFilterBar({
           {/* Status Filter - Regular Select (fewer options) */}
           <Select value={statusFilter} onValueChange={onStatusChange}>
             <SelectTrigger className="bg-card h-9 text-sm">
-              <SelectValue placeholder="Status" />
+              <span>
+                {statusFilter === "all" ? "Semua Status" : statusOptions.find(o => o.value === statusFilter)?.label ?? statusFilter}
+              </span>
             </SelectTrigger>
             <SelectContent className="bg-popover z-[9999]">
               <SelectItem value="all">Semua Status</SelectItem>

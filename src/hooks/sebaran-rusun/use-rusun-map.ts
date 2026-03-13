@@ -14,7 +14,6 @@ import {
   bindMarkerInteraction,
   buildSafePopup,
 } from "@/lib/map-utils";
-import { sanitizeUrl } from "@/lib/security";
 
 import type * as L from "leaflet";
 
@@ -47,7 +46,7 @@ function createPopupContent(rusun: RusunData): string {
     title: rusun.name,
     headerColor: "hsl(191, 79%, 25%)",
     headerGradientEnd: "hsl(195, 85%, 21%)",
-    imageUrl: rusun.image ? sanitizeUrl(rusun.image) : undefined,
+    imageUrl: rusun.image || undefined,
     imageAlt: rusun.name,
     fields: [
       {

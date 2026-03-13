@@ -7,7 +7,13 @@
  * - page.tsx (routing) → components/login/LoginPage.tsx
  */
 
+import type { Metadata } from "next";
 import dynamic from "next/dynamic";
+
+export const metadata: Metadata = {
+  title: "Login",
+  description: "Masuk ke dashboard Klinik PKP untuk mengelola data perumahan dan kawasan permukiman.",
+};
 
 // Skeleton loading untuk LoginPage
 function LoginSkeleton() {

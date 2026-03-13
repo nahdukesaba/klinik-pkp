@@ -1,11 +1,4 @@
-/**
- * Kawasan Kumuh API Service
- *
- * Modul ini menangani semua komunikasi dengan backend API untuk data
- * Kawasan Kumuh (daerah permukiman kumuh).
- *
- * @module services/kawasan-kumuh
- */
+/** Service API untuk data Kawasan Kumuh. */
 
 import { apiClient } from "@/lib/api-client";
 import type {
@@ -13,13 +6,11 @@ import type {
   CoordinateApi,
   DistrictApi,
   RegionApi,
-} from "@/services/api-types";
+} from "@/types/api";
 
-// ============================================
-// Tipe Data API (sesuai response backend Go)
-// ============================================
+// --- Tipe API ---
 
-/** Struktur data kawasan kumuh dari API (snake_case sesuai backend Go) */
+/** Struktur data kawasan kumuh dari API (snake_case) */
 export interface KumuhApiItem {
   id: string;
   district_id: string;
@@ -36,11 +27,9 @@ export interface KumuhApiItem {
   region?: RegionApi;
 }
 
-// ============================================
-// Tipe Data Frontend (camelCase untuk UI)
-// ============================================
+// --- Tipe Frontend ---
 
-/** Data kawasan kumuh yang sudah ditransformasi untuk UI */
+/** Data kawasan kumuh untuk UI (camelCase) */
 export interface KawasanKumuhData {
   id: string;
   name: string;
@@ -62,9 +51,7 @@ export interface KawasanKumuhData {
   yearInspected: number;
 }
 
-// ============================================
-// Konstanta UI (tetap di frontend — tidak dari API)
-// ============================================
+// --- Konstanta UI ---
 
 /** Warna status kawasan kumuh untuk peta dan legenda */
 export const kawasanStatusColors: Record<string, { fill: string; label: string }> = {
@@ -73,17 +60,11 @@ export const kawasanStatusColors: Record<string, { fill: string; label: string }
   ringan: { fill: "#22c55e", label: "Kumuh Ringan" },
 };
 
-// ============================================
-// Fungsi Transformasi Data
-// ============================================
+// --- Transformasi ---
 
 /**
- * Tentukan status tingkat kekumuhan berdasarkan slum_value dari API.
- *
- * Skala penilaian:
- * - >= 71: Kumuh Berat (kondisi sangat tidak layak)
- * - 40–70: Kumuh Sedang (perlu penanganan)
- * - < 40: Kumuh Ringan (perlu pencegahan)
+ * Status kekumuhan berdasarkan slum_value:
+ * >= 71: berat | 40–70: sedang | < 40: ringan
  */
 function deriveSlumStatus(slumValue: number): "berat" | "sedang" | "ringan" {
   if (slumValue >= 71) return "berat";
@@ -91,10 +72,7 @@ function deriveSlumStatus(slumValue: number): "berat" | "sedang" | "ringan" {
   return "ringan";
 }
 
-/**
- * Transformasi data API (snake_case) ke format frontend (camelCase).
- * Mengekstrak nama lokasi dari nested objects dan menghitung status.
- */
+/** Transform data API → format frontend */
 export function transformKumuhItem(item: KumuhApiItem): KawasanKumuhData {
   const kabupaten = item.region?.name ?? "";
   const kecamatan = item.district?.name ?? "";
@@ -127,16 +105,9 @@ export function transformKumuhItem(item: KumuhApiItem): KawasanKumuhData {
   };
 }
 
-// ============================================
-// Fungsi API (pemanggilan backend)
-// ============================================
+// --- API ---
 
-/**
- * Ambil data kawasan kumuh dari API, opsional filter berdasarkan tahun.
- * Data di-cache oleh React Query di hook pemanggil.
- *
- * Endpoint: GET /api/ext/kumuh?year=2024 atau GET /api/ext/kumuh (semua)
- */
+/** GET /api/ext/kumuh — ambil data kawasan kumuh, opsional filter tahun */
 export async function fetchKumuhList(year?: number): Promise<KawasanKumuhData[]> {
   const endpoint = year != null ? `/kumuh?year=${year}` : "/kumuh";
   const res = await apiClient.get<ApiResponse<KumuhApiItem[]>>(endpoint);

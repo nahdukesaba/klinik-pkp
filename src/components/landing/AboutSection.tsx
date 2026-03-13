@@ -67,7 +67,7 @@ export default function AboutSection() {
 
           {/* Right Content - Tugas & Fungsi Cards */}
           <div className="space-y-6">
-            <div className="p-8 bg-card rounded-2xl border border-border shadow-lg animate-on-scroll hover:shadow-xl transition-shadow">
+            <div className="p-5 sm:p-8 bg-card rounded-2xl border border-border shadow-lg animate-on-scroll hover:shadow-xl transition-shadow">
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-12 h-12 bg-gradient-to-br from-primary to-accent rounded-xl flex items-center justify-center text-primary-foreground shadow-lg">
                   <ClipboardList className="w-6 h-6" />
@@ -80,7 +80,7 @@ export default function AboutSection() {
             </div>
 
             <div
-              className="p-8 bg-card rounded-2xl border border-border shadow-lg animate-on-scroll hover:shadow-xl transition-shadow"
+              className="p-5 sm:p-8 bg-card rounded-2xl border border-border shadow-lg animate-on-scroll hover:shadow-xl transition-shadow"
               style={{ transitionDelay: "0.1s" }}
             >
               <div className="flex items-center gap-4 mb-4">

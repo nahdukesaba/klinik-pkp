@@ -1,105 +1,27 @@
 /**
- * Kawasan Kumuh UI Components
- * 
- * DESKRIPSI: Komponen-komponen UI untuk halaman Profil Kawasan Kumuh
- * Dipisahkan dari KawasanKumuhPage untuk clean architecture
- * 
- * KOMPONEN:
- * - KawasanKumuhHeader: Header dengan search, filter region & status
- * - KawasanKumuhSidebar: Sidebar dengan filter lokasi dan list kawasan
- * - KawasanKumuhLegend: Legend status warna kawasan
- * - KawasanCard: Card individual untuk setiap kawasan
+ * KawasanKumuhComponents
+ * Sub-komponen untuk halaman Kawasan Kumuh:
+ * Header, Sidebar, Legend, dan MobileSidebarToggle.
  */
 
 "use client";
 
 import { memo } from "react";
 
-import Link from "next/link";
+import { Layers, MapPin, Search, Users, X } from "lucide-react";
 
-import { ArrowLeft, Building2, Layers, MapPin, Search, Users, X } from "lucide-react";
-
-import { SearchableFilterSelect, SidebarPagination } from "@/components/shared";
+import { SearchableFilterSelect, SidebarPagination, YearFilterSelect } from "@/components/shared";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
-import { type KawasanKumuhData } from "@/services/kawasan-kumuh.service";
+import type { KawasanKumuhData } from "@/services/kawasan-kumuh.service";
 
-// ============================================
-// Types & Constants
-// ============================================
-
-interface FilterOption {
-  value: string;
-  label: string;
-}
-
-const STATUS_OPTIONS: FilterOption[] = [
-  { value: "all", label: "Semua Status" },
-  { value: "berat", label: "Kumuh Berat" },
-  { value: "sedang", label: "Kumuh Sedang" },
-  { value: "ringan", label: "Kumuh Ringan" },
-];
-
-// ============================================
-// KawasanCard Component
-// ============================================
-
-interface StatusColor {
-  fill: string;
-  label: string;
-}
-
-interface KawasanCardProps {
-  kawasan: KawasanKumuhData;
-  isSelected: boolean;
-  statusColor: StatusColor;
-  onClick: () => void;
-}
-
-/**
- * KawasanCard — wrapped in React.memo agar tidak re-render saat
- * item lain di list berubah (e.g. selection change).
- * Ref: vercel-react-best-practices/rerender-memo
- */
-export const KawasanCard = memo(function KawasanCard({ kawasan, isSelected, statusColor, onClick }: KawasanCardProps) {
-  return (
-    <div
-      onClick={onClick}
-      className={`clinic-card cursor-pointer transition-all ${
-        isSelected ? "clinic-card-active" : ""
-      }`}
-    >
-      <div className="flex items-start justify-between gap-2">
-        <h3 className="font-semibold text-foreground text-sm line-clamp-1 flex-1">
-          {kawasan.name}
-        </h3>
-        <span
-          className="text-xs px-2 py-0.5 rounded text-white whitespace-nowrap flex-shrink-0"
-          style={{ backgroundColor: statusColor.fill }}
-        >
-          {statusColor.label}
-        </span>
-      </div>
-      <p className="text-xs text-muted-foreground mt-1">
-        <MapPin className="w-3 h-3 inline mr-1" />
-        {kawasan.kelurahan}, {kawasan.kecamatan}
-      </p>
-      <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-        <span>{kawasan.luas} Ha</span>
-        <span>{kawasan.penduduk === 0 ? "-" : `${kawasan.penduduk.toLocaleString("id-ID")} Penduduk`}</span>
-      </div>
-    </div>
-  );
-});
-
-// ============================================
-// KawasanKumuhHeader Component
-// ============================================
+// =============================================================================
+// KawasanKumuhHeader
+// =============================================================================
 
 interface KawasanKumuhHeaderProps {
   searchQuery: string;
@@ -127,98 +49,88 @@ export function KawasanKumuhHeader({
   onToggleSidebar,
 }: KawasanKumuhHeaderProps) {
   return (
-    <div className="bg-card border-b border-border px-4 py-3 flex-shrink-0 relative z-10">
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          {/* Title Section */}
-          <div className="flex items-center gap-3">
-            <Link href="/" className="p-2 hover:bg-secondary rounded-lg transition-colors">
-              <ArrowLeft className="w-5 h-5" />
-            </Link>
-            <div>
-              <p className="text-xs text-muted-foreground">Kawasan Kumuh</p>
-              <h1 className="text-lg font-bold text-foreground">Sumatera Utara</h1>
-            </div>
+    <div className="bg-card border-b border-border px-4 py-3 flex-shrink-0">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        {/* Kiri: Judul */}
+        <div className="flex items-center gap-3">
+          <div>
+            <p className="text-xs text-muted-foreground">Kawasan Kumuh</p>
+            <h1 className="text-lg font-bold text-foreground">Sumatera Utara</h1>
+          </div>
+        </div>
+
+        {/* Kanan: Pencarian, Filter, Statistik */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Input Pencarian */}
+          <div className="relative flex-1 min-w-0 sm:min-w-[200px] md:min-w-[300px] max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Cari kawasan..."
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-secondary border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-200"
+            />
           </div>
 
-          {/* Controls Section */}
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Search Input */}
-            <div className="relative flex-1 min-w-0 sm:min-w-[200px] md:min-w-[300px] max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Cari kawasan..."
-                value={searchQuery}
-                onChange={(e) => onSearchChange(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-secondary border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-200"
-              />
-            </div>
+          {/* Filter Tahun — Reusable dropdown */}
+          <YearFilterSelect
+            years={availableYears}
+            selectedYear={yearFilter}
+            onYearChange={onYearChange}
+          />
 
-            {/* Year Filter */}
-            <Select value={yearFilter} onValueChange={onYearChange}>
-              <SelectTrigger className="w-full sm:w-40 h-10 text-sm">
-                <span className="truncate">
-                  Tahun: {yearFilter === "all" ? "Semua" : yearFilter}
-                </span>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Semua Tahun</SelectItem>
-                {availableYears.map((y) => (
-                  <SelectItem key={y} value={String(y)}>{y}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          {/* Filter Status */}
+          <Select value={statusFilter} onValueChange={onStatusChange}>
+            <SelectTrigger className="w-full sm:w-auto sm:min-w-[10rem]">
+              <span>
+                Status: {statusFilter === "all" ? "Semua" : statusFilter}
+              </span>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Semua Status</SelectItem>
+              <SelectItem value="berat">Kumuh Berat</SelectItem>
+              <SelectItem value="sedang">Kumuh Sedang</SelectItem>
+              <SelectItem value="ringan">Kumuh Ringan</SelectItem>
+            </SelectContent>
+          </Select>
 
-            {/* Status Filter (Desktop) */}
-            <div className="hidden sm:block">
-              <Select value={statusFilter} onValueChange={onStatusChange}>
-                <SelectTrigger className="w-40 h-10 text-sm">
-                  <SelectValue placeholder="Semua Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  {STATUS_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Stats Badges */}
-            <div className="stat-badge">
-              <Building2 className="w-4 h-4" />
-              <span className="hidden xs:inline">{totalKawasan}</span>
-              <span className="xs:hidden">{totalKawasan}</span>
-              <span className="hidden sm:inline ml-1">Kawasan</span>
-            </div>
-            <div className="stat-badge hidden md:flex">
-              <Users className="w-4 h-4" />
-              <span>{totalPenduduk === 0 ? "-" : totalPenduduk.toLocaleString("id-ID")} Penduduk</span>
-            </div>
-
-            {/* Mobile Sidebar Toggle */}
-            <button onClick={onToggleSidebar} className="lg:hidden p-2 hover:bg-secondary rounded-lg">
-              <Layers className="w-5 h-5" />
-            </button>
+          {/* Badge Statistik */}
+          <div className="stat-badge">
+            <MapPin className="w-4 h-4" />
+            <span>{totalKawasan}</span>
+            <span className="hidden sm:inline ml-1">Kawasan</span>
           </div>
+          <div className="stat-badge hidden md:flex">
+            <Users className="w-4 h-4" />
+            <span>{totalPenduduk.toLocaleString("id-ID")}</span>
+            <span className="hidden sm:inline ml-1">Penduduk</span>
+          </div>
+
+          {/* Toggle Sidebar Mobile */}
+          <button
+            onClick={onToggleSidebar}
+            className="lg:hidden p-2 hover:bg-secondary rounded-lg"
+            aria-label="Toggle sidebar"
+          >
+            <Layers className="w-5 h-5" />
+          </button>
         </div>
       </div>
     </div>
   );
 }
 
-// ============================================
-// KawasanKumuhSidebar Component
-// ============================================
+// =============================================================================
+// KawasanKumuhSidebar
+// =============================================================================
 
 interface KawasanKumuhSidebarProps {
   isOpen: boolean;
   kabupatenFilter: string;
   kecamatanFilter: string;
   kelurahanFilter: string;
-  statusColors: Record<string, StatusColor>;
+  statusColors: Record<string, { fill: string; label: string }>;
   onKabupatenChange: (value: string) => void;
   onKecamatanChange: (value: string) => void;
   onKelurahanChange: (value: string) => void;
@@ -232,9 +144,56 @@ interface KawasanKumuhSidebarProps {
   totalPages: number;
   selectedKawasanId: string | null;
   onKawasanClick: (kawasan: KawasanKumuhData) => void;
-  onCloseSidebar?: () => void;
+  onCloseSidebar: () => void;
   onPageChange: (page: number) => void;
 }
+
+const KawasanCard = memo(function KawasanCard({
+  kawasan,
+  isSelected,
+  statusColors,
+  onClick,
+}: {
+  kawasan: KawasanKumuhData;
+  isSelected: boolean;
+  statusColors: Record<string, { fill: string; label: string }>;
+  onClick: () => void;
+}) {
+  const statusColor = statusColors[kawasan.status];
+
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full text-left p-3 rounded-xl border transition-all duration-200 ${
+        isSelected
+          ? "bg-primary/10 border-primary shadow-sm"
+          : "bg-card border-border hover:bg-secondary/50 hover:border-border/80"
+      }`}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-sm text-foreground truncate">{kawasan.name}</h3>
+          <p className="text-xs text-muted-foreground mt-0.5 truncate">
+            {kawasan.kelurahan}, {kawasan.kecamatan}
+          </p>
+          <p className="text-xs text-muted-foreground truncate">{kawasan.kabupaten}</p>
+        </div>
+        {statusColor && (
+          <span
+            className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium text-white flex-shrink-0"
+            style={{ backgroundColor: statusColor.fill }}
+          >
+            {statusColor.label}
+          </span>
+        )}
+      </div>
+      <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+        <span>{kawasan.luas.toFixed(2)} Ha</span>
+        <span>{kawasan.penduduk.toLocaleString("id-ID")} jiwa</span>
+      </div>
+    </button>
+  );
+});
 
 export function KawasanKumuhSidebar({
   isOpen,
@@ -262,10 +221,10 @@ export function KawasanKumuhSidebar({
     <div
       className={`${
         isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-      } fixed lg:relative z-40 lg:z-10 h-[calc(100vh-4rem)] lg:h-full top-16 lg:top-0 left-0 w-[85vw] sm:w-80 lg:w-96 bg-card border-r border-border transition-transform duration-300 flex flex-col shadow-xl lg:shadow-none`}
+      } fixed lg:relative z-40 lg:z-20 h-[calc(100vh-4rem)] lg:h-full top-16 lg:top-0 left-0 w-[85vw] sm:w-80 lg:w-96 bg-card border-r border-border transition-transform duration-300 flex flex-col shadow-xl lg:shadow-none`}
     >
-      {/* Mobile Header with Close Button */}
-      <div className="lg:hidden flex items-center justify-between p-3 border-b border-border bg-secondary/50 flex-shrink-0">
+      {/* Header Mobile dengan Tombol Tutup */}
+      <div className="lg:hidden flex items-center justify-between p-3 border-b border-border bg-secondary/50">
         <span className="font-semibold text-foreground text-sm">Filter & Daftar Kawasan</span>
         <button
           onClick={onCloseSidebar}
@@ -276,35 +235,38 @@ export function KawasanKumuhSidebar({
         </button>
       </div>
 
-      {/* Filter Section - Fixed */}
-      <div className="flex-shrink-0 p-3 border-b border-border bg-card">
+      {/* Bagian Filter */}
+      <div className="p-3 border-b border-border flex-shrink-0">
         <div className="grid grid-cols-2 gap-2">
           <SearchableFilterSelect
             value={kabupatenFilter}
             onValueChange={onKabupatenChange}
             placeholder="Kab/Kota"
             searchPlaceholder="Cari kabupaten..."
-            options={kabupatenList}
             allLabel="Semua Kab/Kota"
+            options={kabupatenList}
           />
+
           <SearchableFilterSelect
             value={kecamatanFilter}
             onValueChange={onKecamatanChange}
             placeholder="Kecamatan"
             searchPlaceholder="Cari kecamatan..."
-            options={kecamatanList}
             allLabel="Semua Kecamatan"
+            options={kecamatanList}
             disabled={kabupatenFilter === "all"}
           />
+
           <SearchableFilterSelect
             value={kelurahanFilter}
             onValueChange={onKelurahanChange}
             placeholder="Kelurahan"
             searchPlaceholder="Cari kelurahan..."
-            options={kelurahanList}
             allLabel="Semua Kelurahan"
+            options={kelurahanList}
             disabled={kecamatanFilter === "all"}
           />
+
           <button
             onClick={onResetFilters}
             className="w-full h-9 text-xs px-2 py-1 text-primary hover:bg-primary/10 rounded-lg transition-colors border border-primary/30 flex items-center justify-center gap-1"
@@ -314,11 +276,11 @@ export function KawasanKumuhSidebar({
         </div>
       </div>
 
-      {/* Kawasan List - Scrollable */}
+      {/* Daftar Kawasan */}
       <div className="flex-1 min-h-0 overflow-y-scroll p-3 sm:p-4 space-y-2 sm:space-y-3">
         {paginatedKawasan.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground text-sm">
-            Tidak ada kawasan ditemukan
+          <div className="text-center text-muted-foreground py-8">
+            <p className="text-sm">Tidak ada kawasan ditemukan</p>
           </div>
         ) : (
           paginatedKawasan.map((kawasan) => (
@@ -326,7 +288,7 @@ export function KawasanKumuhSidebar({
               key={kawasan.id}
               kawasan={kawasan}
               isSelected={selectedKawasanId === kawasan.id}
-              statusColor={statusColors[kawasan.status]}
+              statusColors={statusColors}
               onClick={() => onKawasanClick(kawasan)}
             />
           ))
@@ -345,29 +307,26 @@ export function KawasanKumuhSidebar({
   );
 }
 
-// ============================================
-// KawasanKumuhLegend Component
-// ============================================
+// =============================================================================
+// KawasanKumuhLegend
+// =============================================================================
 
 interface KawasanKumuhLegendProps {
-  statusColors: Record<string, StatusColor>;
+  statusColors: Record<string, { fill: string; label: string }>;
 }
 
 export function KawasanKumuhLegend({ statusColors }: KawasanKumuhLegendProps) {
   return (
-    <div className="absolute bottom-4 right-4 bg-card/95 backdrop-blur-sm border border-border rounded-xl shadow-lg p-3 sm:p-4 z-20 max-w-[180px] sm:max-w-[200px] pointer-events-auto">
-      <span className="text-xs font-semibold text-foreground mb-2 sm:mb-3 flex items-center gap-2">
-        <span className="w-2 h-2 bg-primary rounded-full" />
-        Status Kawasan
-      </span>
-      <div className="space-y-1.5 sm:space-y-2">
-        {Object.entries(statusColors).map(([key, value]) => (
-          <div key={key} className="flex items-center gap-2 text-xs">
-            <div
-              className="w-3 h-3 sm:w-4 sm:h-4 rounded border border-white/50 shadow-sm flex-shrink-0"
-              style={{ backgroundColor: value.fill }}
+    <div className="absolute bottom-4 right-4 bg-card/95 backdrop-blur-sm border border-border rounded-xl p-3 shadow-lg z-[500]">
+      <p className="text-xs font-semibold text-foreground mb-2">Legenda</p>
+      <div className="space-y-1.5">
+        {Object.entries(statusColors).map(([key, { fill, label }]) => (
+          <div key={key} className="flex items-center gap-2">
+            <span
+              className="w-3 h-3 rounded-full flex-shrink-0"
+              style={{ backgroundColor: fill }}
             />
-            <span className="text-foreground font-medium">{value.label}</span>
+            <span className="text-xs text-muted-foreground">{label}</span>
           </div>
         ))}
       </div>
@@ -375,9 +334,9 @@ export function KawasanKumuhLegend({ statusColors }: KawasanKumuhLegendProps) {
   );
 }
 
-// ============================================
-// MobileSidebarToggle Component
-// ============================================
+// =============================================================================
+// MobileSidebarToggle
+// =============================================================================
 
 interface MobileSidebarToggleProps {
   isVisible: boolean;
@@ -390,7 +349,7 @@ export function MobileSidebarToggle({ isVisible, onClick }: MobileSidebarToggleP
   return (
     <button
       onClick={onClick}
-      className="lg:hidden absolute top-4 right-4 bg-card border border-border rounded-lg p-3 shadow-lg z-[1000] hover:bg-secondary transition-colors"
+      className="lg:hidden absolute top-4 left-4 bg-card border border-border rounded-lg p-3 shadow-lg z-[1000] hover:bg-secondary transition-colors"
       aria-label="Buka filter"
     >
       <Layers className="w-5 h-5 text-foreground" />

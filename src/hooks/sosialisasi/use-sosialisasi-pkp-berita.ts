@@ -3,6 +3,8 @@
 import { useState, useMemo, useCallback } from "react";
 
 import { usePagination } from "@/hooks/use-pagination";
+import { CURRENT_YEAR } from "@/lib/constants";
+import { sanitizeInput } from "@/lib/security";
 import { type BeritaSosialisasi } from "@/services/sosialisasi.service";
 
 /**
@@ -16,8 +18,8 @@ import { type BeritaSosialisasi } from "@/services/sosialisasi.service";
 export function useSosialisasiPKPBerita(
   rawBerita: BeritaSosialisasi[]
 ) {
-  // Default: semua tahun agar berita langsung terlihat saat halaman dimuat
-  const [beritaYear, setBeritaYear] = useState<string>("all");
+  // Default: tahun sekarang
+  const [beritaYear, setBeritaYear] = useState<string>(CURRENT_YEAR);
   const [beritaMonth, setBeritaMonth] = useState<string>("all");
   const [beritaStartDate, setBeritaStartDate] = useState<string>("");
   const [beritaEndDate, setBeritaEndDate] = useState<string>("");
@@ -59,7 +61,7 @@ export function useSosialisasiPKPBerita(
 
     // Filter by search query
     if (beritaSearch.trim()) {
-      const query = beritaSearch.toLowerCase().trim();
+      const query = sanitizeInput(beritaSearch).toLowerCase().trim();
       result = result.filter(
         (b) =>
           b.title.toLowerCase().includes(query) ||
@@ -74,7 +76,7 @@ export function useSosialisasiPKPBerita(
   // Wrap resetFilters in useCallback for stable reference.
   // Ref: vercel-react-best-practices/rerender-functional-setstate
   const resetFilters = useCallback(() => {
-    setBeritaYear("all");
+    setBeritaYear(CURRENT_YEAR);
     setBeritaMonth("all");
     setBeritaStartDate("");
     setBeritaEndDate("");
@@ -82,7 +84,7 @@ export function useSosialisasiPKPBerita(
   }, []);
 
   const hasActiveFilters =
-    beritaYear !== "all" ||
+    beritaYear !== CURRENT_YEAR ||
     beritaMonth !== "all" ||
     beritaStartDate !== "" ||
     beritaEndDate !== "" ||

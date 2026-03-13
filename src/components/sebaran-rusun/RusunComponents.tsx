@@ -1,89 +1,38 @@
+/**
+ * RusunComponents
+ * Sub-komponen untuk halaman Sebaran Rusun:
+ * Header, MapContainer, Card, dan Sidebar.
+ */
+
 "use client";
 
-import { memo, type RefObject } from "react";
+import { memo } from "react";
+import type { RefObject } from "react";
 
 import { ArrowLeft, Building2, Layers, MapPin, Search, Users, X } from "lucide-react";
 
 import { SearchableFilterSelect, SidebarPagination } from "@/components/shared";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from "@/components/ui/select";
 import { type RusunData } from "@/hooks/sebaran-rusun/use-rusun-query";
 
-// ============================================
-// Tipe Data
-// ============================================
+// =============================================================================
+// RusunHeader
+// =============================================================================
+
 interface RusunHeaderProps {
   searchQuery: string;
-  yearFilter: string;
-  availableYears: number[];
   totalRusun: number;
   totalUnits: number;
   onBack: () => void;
   onSearchChange: (value: string) => void;
-  onYearChange: (value: string) => void;
   onToggleSidebar: () => void;
 }
 
-interface RusunMapContainerProps {
-  mapRef: RefObject<HTMLDivElement | null>;
-}
-
-interface RusunSidebarProps {
-  isOpen: boolean;
-  paginatedRusun: RusunData[];
-  totalItems: number;
-  currentPage: number;
-  totalPages: number;
-  selectedRusun: RusunData | null;
-  kabupatenFilter: string;
-  kecamatanFilter: string;
-  kelurahanFilter: string;
-  kabupatenList: string[];
-  kecamatanList: string[];
-  kelurahanList: string[];
-  onRusunClick: (rusun: RusunData) => void;
-  onKabupatenChange: (value: string) => void;
-  onKecamatanChange: (value: string) => void;
-  onKelurahanChange: (value: string) => void;
-  onResetFilters: () => void;
-  onToggleSidebar: () => void;
-  onCloseSidebar?: () => void;
-  onPageChange: (page: number) => void;
-}
-
-interface RusunCardProps {
-  rusun: RusunData;
-  isSelected: boolean;
-  onClick: () => void;
-}
-
-// ============================================
-// Komponen Kontainer Peta
-// ============================================
-export function RusunMapContainer({ mapRef }: RusunMapContainerProps) {
-  return (
-    <div className="absolute inset-0 z-10 bg-[#e5e7eb]">
-      <div ref={mapRef} className="w-full h-full" />
-    </div>
-  );
-}
-
-// ============================================
-// Komponen Header
-// ============================================
 export function RusunHeader({
   searchQuery,
-  yearFilter,
-  availableYears,
   totalRusun,
   totalUnits,
   onBack,
   onSearchChange,
-  onYearChange,
   onToggleSidebar,
 }: RusunHeaderProps) {
   return (
@@ -118,21 +67,6 @@ export function RusunHeader({
             />
           </div>
 
-          {/* Filter Tahun */}
-          <Select value={yearFilter} onValueChange={onYearChange}>
-            <SelectTrigger className="w-full sm:w-40">
-              <span className="truncate">
-                Tahun: {yearFilter === "all" ? "Semua" : yearFilter}
-              </span>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Semua Tahun</SelectItem>
-              {availableYears.map((y) => (
-                <SelectItem key={y} value={String(y)}>{y}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
           {/* Badge Statistik */}
           <div className="stat-badge">
             <Building2 className="w-4 h-4" />
@@ -159,17 +93,37 @@ export function RusunHeader({
   );
 }
 
-// ============================================
-// Komponen Kartu Rusun — React.memo agar tidak re-render
-// saat item lain di list berubah (selection change).
-// Ref: vercel-react-best-practices/rerender-memo
-// ============================================
-const RusunCard = memo(function RusunCard({ rusun, isSelected, onClick }: RusunCardProps) {
+// =============================================================================
+// RusunMapContainer
+// =============================================================================
+
+interface RusunMapContainerProps {
+  mapRef: RefObject<HTMLDivElement | null>;
+}
+
+export function RusunMapContainer({ mapRef }: RusunMapContainerProps) {
+  return (
+    <div className="absolute inset-0 z-10 bg-[#e5e7eb]">
+      <div ref={mapRef} className="w-full h-full" />
+    </div>
+  );
+}
+
+// =============================================================================
+// RusunCard
+// =============================================================================
+
+interface RusunCardProps {
+  rusun: RusunData;
+  isSelected: boolean;
+  onClick: () => void;
+}
+
+export const RusunCard = memo(function RusunCard({ rusun, isSelected, onClick }: RusunCardProps) {
   return (
     <div
       onClick={onClick}
-      className={`clinic-card cursor-pointer overflow-hidden ${isSelected ? "clinic-card-active" : ""
-        }`}
+      className={`clinic-card cursor-pointer overflow-hidden ${isSelected ? "clinic-card-active" : ""}`}
     >
       <h3 className="font-semibold text-foreground text-sm">{rusun.name}</h3>
       <p className="text-xs text-muted-foreground mt-1">
@@ -184,9 +138,33 @@ const RusunCard = memo(function RusunCard({ rusun, isSelected, onClick }: RusunC
   );
 });
 
-// ============================================
-// Komponen Sidebar
-// ============================================
+// =============================================================================
+// RusunSidebar
+// =============================================================================
+
+interface RusunSidebarProps {
+  isOpen: boolean;
+  paginatedRusun: RusunData[];
+  totalItems: number;
+  currentPage: number;
+  totalPages: number;
+  selectedRusun: RusunData | null;
+  kabupatenFilter: string;
+  kecamatanFilter: string;
+  kelurahanFilter: string;
+  kabupatenList: string[];
+  kecamatanList: string[];
+  kelurahanList: string[];
+  onRusunClick: (rusun: RusunData) => void;
+  onKabupatenChange: (value: string) => void;
+  onKecamatanChange: (value: string) => void;
+  onKelurahanChange: (value: string) => void;
+  onResetFilters: () => void;
+  onToggleSidebar: () => void;
+  onCloseSidebar?: () => void;
+  onPageChange: (page: number) => void;
+}
+
 export function RusunSidebar({
   isOpen,
   paginatedRusun,

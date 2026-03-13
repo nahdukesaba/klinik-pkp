@@ -64,7 +64,7 @@ export function useSosialisasiPKPMap(
   const [mapReady, setMapReady] = useState(false);
   // Default: tahun sekarang agar peta langsung fokus ke data tahun ini
   const [mapYear, setMapYear] = useState<string>(CURRENT_YEAR);
-  const [mapStatusFilter, setMapStatusFilter] = useState<string>("all");
+  const [mapStatusFilter, setMapStatusFilter] = useState<string>("mendatang");
   const [mapSearchQuery, setMapSearchQuery] = useState<string>("");
   const [mapShowFilters, setMapShowFilters] = useState(true);
   const enabledRef = useRef<boolean>(isEnabled);

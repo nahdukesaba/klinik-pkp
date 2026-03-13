@@ -21,7 +21,7 @@ function FeatureCard({ icon, title, description, delay, href }: FeatureCardProps
   return (
     <Link
       href={href}
-      className="block p-6 bg-card/80 backdrop-blur-sm rounded-2xl border border-border shadow-lg hover:shadow-xl hover:border-primary/30 transition-all duration-300 group animate-slide-up cursor-pointer"
+      className="block p-4 sm:p-6 bg-card/80 backdrop-blur-sm rounded-2xl border border-border shadow-lg hover:shadow-xl hover:border-primary/30 transition-all duration-300 group animate-slide-up cursor-pointer"
       style={{ animationDelay: delay }}
     >
       <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-4 group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-300 group-hover:scale-110">
@@ -48,6 +48,7 @@ export default function HeroSection() {
           src="/sumatera-map-bg.jpg"
           alt="Peta Sumatera"
           fill
+          sizes="100vw"
           className="object-cover"
           priority
         />
@@ -97,7 +98,7 @@ export default function HeroSection() {
 
           {/* Right Content - Feature Cards */}
           <div className="relative">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FeatureCard
                 icon={<MapPin className="w-6 h-6" />}
                 title="Sebaran Rusun"

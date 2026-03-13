@@ -1,14 +1,18 @@
 /**
  * Hook: useKawasanKumuhQuery
- * React Query wrapper — fetch data per-tahun untuk efisiensi.
- * useKumuhYearsQuery() mengambil semua data 1x (cache lama) untuk daftar tahun.
+ * React Query wrapper — fetch data per-tahun.
+ * useKumuhYearsQuery — ambil semua data 1x (cache lama) untuk daftar tahun.
+ *
+ * Query key dipisah agar tidak collision:
+ * - Years: ["kawasan-kumuh-years"]
+ * - Data:  ["kawasan-kumuh", year]
  */
 
 "use client";
 
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 
-import { QUERY_CONFIG } from "@/lib/constants";
+import { CURRENT_YEAR_NUM, QUERY_CONFIG } from "@/lib/constants";
 import {
   fetchKumuhList,
   type KawasanKumuhData,
@@ -17,10 +21,12 @@ import {
 export type { KawasanKumuhData };
 
 const EMPTY: KawasanKumuhData[] = [];
-const CURRENT_YEAR_NUM = new Date().getFullYear();
 
-/** Ambil daftar tahun yang tersedia (fetch all, cache 30 menit) */
-export function useKumuhYearsQuery() {
+/**
+ * Daftar tahun yang tersedia — derived dari semua data (1x fetch, cache 30 menit).
+ * Selalu menyertakan CURRENT_YEAR_NUM agar tahun sekarang tidak hilang dari dropdown.
+ */
+export function useKumuhYearsQuery(): number[] {
   const query = useQuery({
     queryKey: ["kawasan-kumuh-years"],
     queryFn: () => fetchKumuhList(),
@@ -50,8 +56,6 @@ export function useKawasanKumuhQuery(year?: number) {
   return {
     data: query.data ?? EMPTY,
     isLoading: query.isLoading,
-    isFetching: query.isFetching,
-    isPlaceholderData: query.isPlaceholderData,
     isError: query.isError,
     error: query.error,
     refetch: query.refetch,

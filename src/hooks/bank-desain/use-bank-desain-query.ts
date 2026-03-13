@@ -1,14 +1,6 @@
 "use client";
 
-/**
- * Hook: useBankDesainQuery
- * React Query wrapper untuk mengambil data Bank Desain dari API.
- *
- * Mengikuti pola useRusunQuery — menggunakan React Query untuk
- * caching, retry otomatis, dan state management.
- *
- * @module hooks/bank-desain/use-bank-desain-query
- */
+/** useBankDesainQuery — React Query wrapper untuk data Bank Desain. */
 
 import { useMemo } from "react";
 

@@ -1,34 +1,24 @@
 /**
- * Sosialisasi PKP API Service
- *
- * Modul ini menangani semua komunikasi dengan backend API untuk data
- * Sosialisasi Klinik PKP. Satu endpoint API menghasilkan dua tipe data:
- * - SosialisasiLocation: untuk peta dan jadwal
- * - BeritaSosialisasi: untuk section berita (hanya item yang sudah selesai + punya deskripsi)
- *
- * Status ("selesai" / "mendatang") dihitung otomatis berdasarkan
- * scheduled_at_start vs tanggal hari ini.
- *
- * @module services/sosialisasi
+ * Service API untuk Sosialisasi Klinik PKP.
+ * Satu endpoint menghasilkan dua tipe: SosialisasiLocation (peta/jadwal) + BeritaSosialisasi (berita).
+ * Status dihitung otomatis: scheduled_at_start < hari ini → "selesai", else "mendatang".
  */
 
 import { apiClient } from "@/lib/api-client";
+import { formatDateId } from "@/lib/date";
+import { buildImageUrl } from "@/services/rusun.service";
 import type {
   ApiResponse,
   CoordinateApi,
   DistrictApi,
   RegionApi,
   VillageApi,
-} from "@/services/api-types";
-import { extractDistrictName, extractRegionName, extractVillageName } from "@/services/api-types";
-import { buildImageUrl } from "@/services/rusun.service";
+} from "@/types/api";
+import { extractDistrictName, extractRegionName, extractVillageName } from "@/types/api";
 
+// --- Tipe API ---
 
-// ============================================
-// Tipe Data API (sesuai response backend Go)
-// ============================================
-
-/** Struktur data sosialisasi dari API (snake_case sesuai backend Go) */
+/** Struktur data sosialisasi dari API (snake_case) */
 export interface SosialisasiApiItem {
   id: string;
   village_id: string;
@@ -46,15 +36,9 @@ export interface SosialisasiApiItem {
   region?: RegionApi;
 }
 
-// ============================================
-// Tipe Data Frontend (camelCase untuk UI)
-// ============================================
+// --- Tipe Frontend ---
 
-/**
- * Data lokasi sosialisasi — digunakan untuk peta dan jadwal.
- * Bentuk ini kompatibel dengan RawSosialisasiLocation + status
- * sehingga hook consumer tidak perlu refactor besar.
- */
+/** Data lokasi sosialisasi untuk peta dan jadwal */
 export interface SosialisasiLocation {
   id: number;
   name: string;
@@ -70,11 +54,7 @@ export interface SosialisasiLocation {
   status: "selesai" | "mendatang";
 }
 
-/**
- * Data berita sosialisasi — digunakan untuk section berita.
- * Hanya item yang sudah selesai (date < hari ini) dan
- * memiliki deskripsi + minimal 1 gambar.
- */
+/** Data berita sosialisasi (hanya item selesai + punya deskripsi + gambar) */
 export interface BeritaSosialisasi {
   id: number;
   title: string;
@@ -88,15 +68,9 @@ export interface BeritaSosialisasi {
   images?: string[];
 }
 
-// ============================================
-// Fungsi Utilitas
-// ============================================
+// --- Utilitas ---
 
-/**
- * Hitung status otomatis berdasarkan tanggal mulai kegiatan.
- * - Jika scheduled_at_start < hari ini → "selesai"
- * - Jika scheduled_at_start >= hari ini → "mendatang"
- */
+/** Status otomatis: scheduled_at_start < hari ini → "selesai", else "mendatang" */
 function computeStatus(scheduledAtStart: string): "selesai" | "mendatang" {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -107,10 +81,7 @@ function computeStatus(scheduledAtStart: string): "selesai" | "mendatang" {
   return eventDate < today ? "selesai" : "mendatang";
 }
 
-/**
- * Ekstrak rentang waktu dari dua RFC 3339 timestamp.
- * Contoh: "2026-03-15T09:00:00Z" + "2026-03-15T12:00:00Z" → "09:00 - 12:00"
- */
+/** Ekstrak rentang waktu: "09:00 - 12:00" dari dua timestamp RFC 3339 */
 function extractTimeRange(start: string, end: string): string {
   const formatTime = (iso: string) => {
     const d = new Date(iso);
@@ -121,36 +92,17 @@ function extractTimeRange(start: string, end: string): string {
   return `${formatTime(start)} - ${formatTime(end)}`;
 }
 
-/**
- * Format tanggal ke format Indonesia: "15 Januari 2026"
- */
-function formatDateIndonesian(dateStr: string): string {
-  const d = new Date(dateStr);
-  return d.toLocaleDateString("id-ID", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-}
-
-/**
- * Ekstrak "YYYY-MM-DD" dari RFC 3339 timestamp.
- */
+/** Ekstrak "YYYY-MM-DD" dari RFC 3339 */
 function extractDateString(iso: string): string {
   return iso.slice(0, 10);
 }
 
-/**
- * Ekstrak "YYYY-MM" dari date string "YYYY-MM-DD".
- */
+/** Ekstrak "YYYY-MM" dari "YYYY-MM-DD" */
 function extractMonthString(dateStr: string): string {
   return dateStr.slice(0, 7);
 }
 
-/**
- * Bangun URL gambar dari path relatif API.
- * Jika path sudah merupakan URL absolut, kembalikan apa adanya.
- */
+/** Bangun URL gambar, bypass jika sudah absolut */
 function buildSosialisasiImageUrl(path: string): string {
   if (path.startsWith("http://") || path.startsWith("https://")) {
     return path;
@@ -158,13 +110,9 @@ function buildSosialisasiImageUrl(path: string): string {
   return buildImageUrl(path);
 }
 
-// ============================================
-// Fungsi Transformasi Data
-// ============================================
+// --- Transformasi ---
 
-/**
- * Transformasi data API ke SosialisasiLocation untuk peta dan jadwal.
- */
+/** Transform API item → SosialisasiLocation (peta & jadwal) */
 export function transformToLocation(item: SosialisasiApiItem): SosialisasiLocation {
   const kabupaten = extractRegionName(item.region);
   const kecamatan = extractDistrictName(item.district) || undefined;
@@ -194,10 +142,7 @@ export function transformToLocation(item: SosialisasiApiItem): SosialisasiLocati
   };
 }
 
-/**
- * Transformasi data API ke BeritaSosialisasi untuk section berita.
- * Hanya dipanggil untuk item yang memenuhi syarat (selesai + ada deskripsi).
- */
+/** Transform API item → BeritaSosialisasi (hanya untuk item yang memenuhi syarat) */
 export function transformToBerita(item: SosialisasiApiItem): BeritaSosialisasi {
   const kabupaten = extractRegionName(item.region);
   const dateStr = extractDateString(item.scheduled_at_start);
@@ -207,7 +152,7 @@ export function transformToBerita(item: SosialisasiApiItem): BeritaSosialisasi {
     id: Number(item.id),
     title: item.title,
     image: images[0] ?? "",
-    date: formatDateIndonesian(item.scheduled_at_start),
+    date: formatDateId(item.scheduled_at_start),
     rawDate: dateStr,
     month: extractMonthString(dateStr),
     description: item.description,
@@ -220,11 +165,9 @@ export function transformToBerita(item: SosialisasiApiItem): BeritaSosialisasi {
   };
 }
 
-// ============================================
-// Hasil Transformasi
-// ============================================
+// --- Hasil transformasi ---
 
-/** Hasil lengkap dari fetchSosialisasiList, siap dikonsumsi oleh hook */
+/** Hasil dari fetchSosialisasiList, siap dikonsumsi hook */
 export interface SosialisasiResult {
   /** Semua lokasi dengan status ter-compute */
   locations: SosialisasiLocation[];
@@ -238,18 +181,9 @@ export interface SosialisasiResult {
   kabupatenList: string[];
 }
 
-// ============================================
-// Fungsi API (pemanggilan backend)
-// ============================================
+// --- API ---
 
-/**
- * Ambil semua data sosialisasi dari API backend.
- * Data ditransformasi menjadi SosialisasiResult yang berisi
- * locations, upcomingLocations, completedLocations, berita, dan kabupatenList.
- *
- * Endpoint: GET /api/ext/sosialisasi → backend GET /api/v1/sosialisasi
- * @throws Error jika API mengembalikan response tidak valid
- */
+/** GET /api/ext/sosialisasi — ambil semua data sosialisasi */
 export async function fetchSosialisasiList(): Promise<SosialisasiResult> {
   const res = await apiClient.get<ApiResponse<SosialisasiApiItem[]>>("/sosialisasi");
 
@@ -259,9 +193,7 @@ export async function fetchSosialisasiList(): Promise<SosialisasiResult> {
 
   const items = res.data;
 
-  // Single-pass: transformasi + klasifikasi sekaligus.
-  // Menghindari 3x iterasi terpisah (map + 2x filter).
-  // Ref: vercel-react-best-practices/js-combine-iterations
+  // Single-pass: transformasi + klasifikasi sekaligus
   const locations: SosialisasiLocation[] = [];
   const upcomingLocations: SosialisasiLocation[] = [];
   const completedLocations: SosialisasiLocation[] = [];

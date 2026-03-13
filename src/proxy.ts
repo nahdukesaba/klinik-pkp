@@ -1,15 +1,5 @@
 /**
- * Next.js Proxy
- *
- * Proxy ini berjalan di SETIAP request sebelum halaman di-render.
- * Menangani keamanan secara menyeluruh:
- *
- * 1. Content Security Policy (CSP) — Blokir third-party scripts berbahaya
- * 2. Clickjacking Protection — X-Frame-Options + frame-ancestors
- * 3. Security Headers — HSTS, X-Content-Type-Options, dll
- * 4. Route Protection — Proteksi halaman yang membutuhkan auth
- * 5. Rate Limiting dasar — Anti brute-force
- *
+ * Next.js Proxy — CSP, security headers, route protection, rate limiting.
  * @see https://nextjs.org/docs/app/guides/content-security-policy
  */
 
@@ -17,9 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { AUTH_COOKIE_NAME } from "@/lib/auth";
 
-// ============================================
-// Protected Routes Configuration
-// ============================================
+// --- Protected Routes Configuration ---
 
 /** Routes yang membutuhkan authentication */
 const PROTECTED_ROUTES = ["/dashboard", "/admin"];
@@ -27,9 +15,7 @@ const PROTECTED_ROUTES = ["/dashboard", "/admin"];
 /** Routes yang hanya bisa diakses oleh user yang BELUM login */
 const AUTH_ROUTES = ["/login"];
 
-// ============================================
-// Rate Limiting Store (in-memory, per server instance)
-// ============================================
+// --- Rate Limiting Store (in-memory, per server instance) ---
 
 const rateLimitStore = new Map<
   string,
@@ -81,9 +67,7 @@ function isRateLimited(ip: string): boolean {
   return entry.count > RATE_LIMIT_MAX;
 }
 
-// ============================================
-// Proxy Handler
-// ============================================
+// --- Proxy Handler ---
 
 /**
  * Daftar path API backend yang diizinkan.
@@ -246,9 +230,7 @@ export function proxy(request: NextRequest) {
   return response;
 }
 
-// ============================================
-// Matcher Configuration
-// ============================================
+// --- Matcher Configuration ---
 
 /**
  * Jalankan middleware di semua routes KECUALI:

@@ -9,7 +9,7 @@ const RE_JAVASCRIPT_PROTO = /javascript:/gi;
 const RE_DATA_PROTO = /data:/gi;
 const RE_VBSCRIPT_PROTO = /vbscript:/gi;
 const RE_EMAIL_CHARS = /[^a-zA-Z0-9@._+\-]/g;
-const RE_NIP_CHARS = /[^0-9\s]/g;
+const RE_NIP_CHARS = /[^0-9]/g;
 const RE_HTML_ESCAPE = /[&<>"'/`]/g;
 
 /**
@@ -34,7 +34,7 @@ export function sanitizeEmail(input: string): string {
   return input.replace(RE_EMAIL_CHARS, "").trim();
 }
 
-/** Sanitize NIP — hanya izinkan angka dan spasi. */
+/** Sanitize NIP — hanya izinkan angka. */
 export function sanitizeNip(input: string): string {
   if (!input || typeof input !== "string") return "";
   return input.replace(RE_NIP_CHARS, "").trim();
@@ -124,21 +124,7 @@ export function checkRateLimit(
   };
 }
 
-// --- 4. CSRF Token ---
-
-/** Generate CSRF token (double-submit cookie pattern). */
-export function generateCsrfToken(): string {
-  if (typeof window === "undefined") return "";
-
-  const token = crypto.randomUUID();
-
-  // Set cookie SameSite=Strict agar tidak dikirim cross-origin
-  document.cookie = `csrf-token=${token}; path=/; SameSite=Strict; max-age=600`;
-
-  return token;
-}
-
-// --- 5. Password Strength ---
+// --- 4. Password Strength ---
 
 export interface PasswordStrength {
   score: number; // 0-4

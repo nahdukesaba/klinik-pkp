@@ -52,9 +52,11 @@ export const YearFilterSelect = memo(function YearFilterSelect({
 }: YearFilterSelectProps) {
   return (
     <Select value={selectedYear} onValueChange={onYearChange}>
-      <SelectTrigger className={`w-auto min-w-[9rem] h-10 text-sm ${className}`}>
-        <span>
-          Tahun: {selectedYear === "all" ? "Semua" : selectedYear}
+      <SelectTrigger
+        className={`w-full sm:w-auto sm:min-w-[9rem] min-h-10 text-sm ${className}`}
+      >
+        <span className="break-words whitespace-normal text-left leading-tight">
+          {selectedYear === "all" ? "Semua Tahun" : selectedYear}
         </span>
       </SelectTrigger>
       <SelectContent className="bg-popover z-[9999]">

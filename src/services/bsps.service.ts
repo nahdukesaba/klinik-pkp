@@ -1,8 +1,11 @@
 /** Service API untuk data BSPS (Bantuan Stimulan Perumahan Swadaya). */
 
-import { apiClient } from "@/lib/api-client";
+import {
+  fetchApiList,
+  fetchApiListWithMeta,
+  type ApiPaginatedResult,
+} from "@/lib/api-client";
 import type {
-  ApiResponse,
   CoordinateApi,
   VillageApi,
   DistrictApi,
@@ -39,6 +42,9 @@ export interface PenerimaBsps {
 /** Data desa penerima BSPS untuk UI (camelCase) */
 export interface BspsData {
   id: number;
+  villageId: string;
+  districtId: string;
+  regionId: string;
   nama: string;
   kelurahan: string;
   kecamatan: string;
@@ -115,12 +121,24 @@ const STATUS_MAP: Record<string, "selesai" | "proses" | "rencana"> = {
   "Rencana": "rencana",
 };
 
+export interface BspsListParams {
+  year?: number;
+  page?: number;
+  perPage?: number;
+  regionId?: string;
+  districtId?: string;
+  villageId?: string;
+}
+
 // --- Transformasi ---
 
 /** Transform data API → format frontend */
 export function transformBspsItem(item: BspsApiItem): BspsData {
   return {
     id: parseInt(item.id, 10) || 0,
+    villageId: item.village_id,
+    districtId: item.district_id,
+    regionId: item.region_id,
     nama: extractVillageName(item.village),
     kelurahan: extractVillageName(item.village),
     kecamatan: extractDistrictName(item.district, item.village),
@@ -139,13 +157,47 @@ export function transformBspsItem(item: BspsApiItem): BspsData {
 // --- API ---
 
 /** GET /api/ext/bsps — ambil data BSPS, opsional filter tahun */
-export async function fetchBspsList(year?: number): Promise<BspsData[]> {
-  const endpoint = year != null ? `/bsps?year=${year}` : "/bsps";
-  const res = await apiClient.get<ApiResponse<BspsApiItem[]>>(endpoint);
+export async function fetchBspsList(
+  input?: number | BspsListParams
+): Promise<BspsData[]> {
+  const params =
+    typeof input === "number"
+      ? { year: input }
+      : input ?? {};
 
-  if (!res.success || !Array.isArray(res.data)) {
-    throw new Error(res.message ?? "Gagal mengambil data BSPS dari server");
-  }
+  return fetchApiList<BspsApiItem, BspsData>("/bsps", {
+    query: {
+      year_given: params.year,
+      page: params.page,
+      limit: params.perPage,
+      region_id: params.regionId,
+      district_id: params.districtId,
+      village_id: params.villageId,
+    },
+    transform: transformBspsItem,
+    errorMessage: "Gagal mengambil data BSPS dari server",
+    collectAllPages: false,
+  });
+}
 
-  return res.data.map(transformBspsItem);
+export async function fetchBspsPage(
+  input?: number | BspsListParams
+): Promise<ApiPaginatedResult<BspsData>> {
+  const params =
+    typeof input === "number"
+      ? { year: input }
+      : input ?? {};
+
+  return fetchApiListWithMeta<BspsApiItem, BspsData>("/bsps", {
+    query: {
+      year_given: params.year,
+      page: params.page,
+      limit: params.perPage,
+      region_id: params.regionId,
+      district_id: params.districtId,
+      village_id: params.villageId,
+    },
+    transform: transformBspsItem,
+    errorMessage: "Gagal mengambil data BSPS dari server",
+  });
 }

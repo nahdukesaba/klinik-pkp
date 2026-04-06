@@ -61,6 +61,8 @@ export default function KawasanKumuhPage() {
     error,
     refetch,
   } = useKawasanKumuhPage();
+  const mapLazyRef = mapLazy.ref;
+  const isMapMounted = mapLazy.isMounted;
 
   // Tampilkan loading state saat data sedang dimuat dari API
   if (isLoading) {
@@ -123,13 +125,15 @@ export default function KawasanKumuhPage() {
           />
 
           <div className="flex-1 relative overflow-hidden">
-            <div ref={mapLazy.ref} className="w-full h-full">
-              {mapLazy.isMounted ? (
+            {/* eslint-disable react-hooks/refs -- useLazyMount returns a callback ref plus a mounted flag */}
+            <div ref={mapLazyRef} className="w-full h-full">
+              {isMapMounted ? (
                 <KawasanKumuhMap mapRef={mapRef} />
               ) : (
                 <MapSkeleton className="w-full h-full" />
               )}
             </div>
+            {/* eslint-enable react-hooks/refs */}
 
             <KawasanKumuhLegend statusColors={statusColors} />
 

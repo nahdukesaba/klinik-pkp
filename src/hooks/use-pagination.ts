@@ -10,7 +10,7 @@
 
 "use client";
 
-import { useMemo, useState, useCallback, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 const DEFAULT_PER_PAGE = 9;
 
@@ -42,32 +42,39 @@ export function usePagination<T>(
 ): UsePaginationReturn<T> {
   const perPage = options?.perPage ?? DEFAULT_PER_PAGE;
   const [currentPage, setCurrentPage] = useState(1);
+  const totalItems = items.length;
+  const previousItemCountRef = useRef(totalItems);
 
-  const totalPages = Math.max(1, Math.ceil(items.length / perPage));
+  const totalPages = Math.max(1, Math.ceil(totalItems / perPage));
 
-  // Derive state during render: reset halaman jika items berubah.
-  // Menghindari extra render dari useEffect + setState.
-  // Ref: vercel-react-best-practices/rerender-derived-state-no-effect
-  const prevLengthRef = useRef(items.length);
-  let activePage = currentPage;
-  if (prevLengthRef.current !== items.length) {
-    prevLengthRef.current = items.length;
-    if (currentPage !== 1) {
-      activePage = 1;
-    }
-  }
-  // Clamp jika halaman melebihi total setelah filter
-  if (activePage > totalPages) {
-    activePage = 1;
-  }
-  if (activePage !== currentPage) {
-    setCurrentPage(activePage);
-  }
+  useEffect(() => {
+    const previousItemCount = previousItemCountRef.current;
+    previousItemCountRef.current = totalItems;
+
+    setCurrentPage((page) => {
+      if (previousItemCount !== totalItems && page !== 1) {
+        return 1;
+      }
+
+      if (page > totalPages) {
+        return totalPages;
+      }
+
+      return page;
+    });
+  }, [totalItems, totalPages]);
 
   const paginatedItems = useMemo(() => {
-    const start = (activePage - 1) * perPage;
+    const start = (currentPage - 1) * perPage;
     return items.slice(start, start + perPage);
-  }, [items, activePage, perPage]);
+  }, [items, currentPage, perPage]);
+
+  const setPage = useCallback(
+    (page: number) => {
+      setCurrentPage(Math.min(Math.max(page, 1), totalPages));
+    },
+    [totalPages]
+  );
 
   // Functional setState: callback tidak perlu dependency pada totalPages.
   // Ref: vercel-react-best-practices/rerender-functional-setstate
@@ -81,10 +88,10 @@ export function usePagination<T>(
 
   return {
     paginatedItems,
-    currentPage: activePage,
+    currentPage,
     totalPages,
-    totalItems: items.length,
-    setCurrentPage,
+    totalItems,
+    setCurrentPage: setPage,
     goToNextPage,
     goToPrevPage,
   };

@@ -5,11 +5,65 @@
  * POST /api/auth/logout
  */
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-import { AUTH_COOKIE_NAME, REFRESH_COOKIE_NAME } from "@/lib/auth";
+import {
+  buildBackendProxyUrl,
+  createBackendHeaders,
+  getBackendApiBaseUrl,
+} from "@/lib/admin/backend-api";
+import { CSRF_COOKIE_NAME } from "@/lib/admin/security";
+import {
+  AUTH_COOKIE_NAME,
+  REFRESH_COOKIE_NAME,
+  verifyToken,
+} from "@/lib/auth";
 
-export async function POST() {
+async function resolveBackendRefreshToken(request: NextRequest) {
+  const refreshToken = request.cookies.get(REFRESH_COOKIE_NAME)?.value;
+  const accessToken = request.cookies.get(AUTH_COOKIE_NAME)?.value;
+
+  if (refreshToken) {
+    const payload = await verifyToken(refreshToken);
+    if (payload?.backendRefreshToken) {
+      return payload.backendRefreshToken;
+    }
+  }
+
+  if (accessToken) {
+    const payload = await verifyToken(accessToken);
+    if (payload?.backendRefreshToken) {
+      return payload.backendRefreshToken;
+    }
+  }
+
+  return null;
+}
+
+async function terminateBackendSession(request: NextRequest) {
+  const backendRefreshToken = await resolveBackendRefreshToken(request);
+  if (!backendRefreshToken) {
+    return;
+  }
+
+  try {
+    getBackendApiBaseUrl();
+    await fetch(buildBackendProxyUrl(request.nextUrl.origin, "authentications"), {
+      method: "DELETE",
+      headers: createBackendHeaders({
+        Cookie: `refresh_token=${encodeURIComponent(backendRefreshToken)}`,
+      }),
+      cache: "no-store",
+      signal: AbortSignal.timeout(10_000),
+    });
+  } catch {
+    // Logout lokal tetap harus berhasil walau backend sedang tidak bisa dijangkau.
+  }
+}
+
+export async function POST(request: NextRequest) {
+  await terminateBackendSession(request);
+
   const response = NextResponse.json({ success: true });
 
   // Hapus access token cookie
@@ -27,6 +81,14 @@ export async function POST() {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/api/auth",
+    maxAge: 0,
+  });
+
+  response.cookies.set(CSRF_COOKIE_NAME, "", {
+    httpOnly: false,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    path: "/",
     maxAge: 0,
   });
 

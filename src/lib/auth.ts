@@ -32,37 +32,56 @@ export const REFRESH_COOKIE_NAME = "klinik-pkp-refresh";
 
 // --- Tipe Token ---
 
+export type AuthRole = "admin" | "user";
+
 export interface AuthUser {
   id: string;
   email: string;
   nip: string;
-  role: "admin" | "user";
+  role: AuthRole;
   name: string;
+  backendAccessToken?: string;
+  backendRefreshToken?: string;
 }
 
 export interface TokenPayload extends JWTPayload {
   userId: string;
   email: string;
   nip: string;
-  role: "admin" | "user";
+  role: AuthRole;
   name: string;
   type: "access" | "refresh";
+  backendAccessToken?: string;
+  backendRefreshToken?: string;
 }
 
 // --- Operasi JWT ---
 
-/** Buat JWT access token (15 menit). */
-export async function createAccessToken(user: AuthUser): Promise<string> {
-  const secret = getJwtSecret();
-
-  return new SignJWT({
+function buildTokenPayload(
+  user: AuthUser,
+  type: TokenPayload["type"]
+): TokenPayload {
+  return {
     userId: user.id,
     email: user.email,
     nip: user.nip,
     role: user.role,
     name: user.name,
-    type: "access",
-  } as TokenPayload)
+    type,
+    ...(type === "access" && user.backendAccessToken
+      ? { backendAccessToken: user.backendAccessToken }
+      : {}),
+    ...(type === "refresh" && user.backendRefreshToken
+      ? { backendRefreshToken: user.backendRefreshToken }
+      : {}),
+  };
+}
+
+/** Buat JWT access token (15 menit). */
+export async function createAccessToken(user: AuthUser): Promise<string> {
+  const secret = getJwtSecret();
+
+  return new SignJWT(buildTokenPayload(user, "access"))
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime(ACCESS_TOKEN_EXPIRY)
@@ -75,14 +94,7 @@ export async function createAccessToken(user: AuthUser): Promise<string> {
 export async function createRefreshToken(user: AuthUser): Promise<string> {
   const secret = getJwtSecret();
 
-  return new SignJWT({
-    userId: user.id,
-    email: user.email,
-    nip: user.nip,
-    role: user.role,
-    name: user.name,
-    type: "refresh",
-  } as TokenPayload)
+  return new SignJWT(buildTokenPayload(user, "refresh"))
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime(REFRESH_TOKEN_EXPIRY)

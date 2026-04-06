@@ -139,10 +139,17 @@ function getErrorDisplay(error?: Error | null): ErrorDisplay {
   }
 
   // Generic error (bukan ApiError)
+  const genericMessage =
+    error instanceof Error &&
+    error.message.trim() !== "" &&
+    error.message.trim().toLowerCase() !== "success"
+      ? error.message.trim()
+      : "Tidak dapat terhubung ke server. Pastikan koneksi internet Anda stabil dan coba lagi.";
+
   return {
     icon: <ServerOff className="w-8 h-8 text-destructive" />,
     title: "Gagal Memuat Data",
-    description: "Tidak dapat terhubung ke server. Pastikan koneksi internet Anda stabil dan coba lagi.",
+    description: genericMessage,
     bgColor: "bg-destructive/10",
   };
 }

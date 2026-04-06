@@ -76,11 +76,22 @@ function SosialisasiKlinikPKPContent() {
   }, []);
 
   // Hooks untuk logic - pass handleImageClick for map popup image zoom
-  const pageLogic = useSosialisasiPKPPage(handleImageClick);
+  const {
+    berita,
+    error,
+    flyToLocation,
+    isError,
+    jadwal,
+    map,
+    mapLazy,
+    refetch,
+  } = useSosialisasiPKPPage(handleImageClick);
+  const mapLazyRef = mapLazy.ref;
+  const isMapMounted = mapLazy.isMounted;
 
   // Error state tetap full-page karena tidak ada data sama sekali
-  if (pageLogic.isError) {
-    return <ApiErrorState error={pageLogic.error} onRetry={pageLogic.refetch} />;
+  if (isError) {
+    return <ApiErrorState error={error} onRetry={refetch} />;
   }
 
   return (
@@ -122,58 +133,60 @@ function SosialisasiKlinikPKPContent() {
           {/* Map + Jadwal Side by Side on Desktop */}
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-12">
             {/* Map Section - Larger (3/5) */}
-            <div ref={pageLogic.mapLazy.ref} className="lg:col-span-3 lg:sticky lg:top-24 lg:self-start sosialisasi-map">
-              {pageLogic.mapLazy.isMounted ? (
+            {/* eslint-disable react-hooks/refs -- useLazyMount returns a callback ref plus a mounted flag */}
+            <div ref={mapLazyRef} className="lg:col-span-3 lg:sticky lg:top-24 lg:self-start sosialisasi-map">
+              {isMapMounted ? (
                 <PKPMapSection
-                  mapRef={pageLogic.map.mapRef}
-                  filteredLocations={pageLogic.map.filteredMapLocations}
-                  mapYear={pageLogic.map.mapYear}
-                  setMapYear={pageLogic.map.setMapYear}
-                  mapYears={pageLogic.map.mapYears}
-                  kabupatenFilter={pageLogic.map.mapKabupatenFilter}
-                  setKabupatenFilter={pageLogic.map.setMapKabupatenFilter}
-                  kecamatanFilter={pageLogic.map.mapKecamatanFilter}
-                  setKecamatanFilter={pageLogic.map.setMapKecamatanFilter}
-                  kelurahanFilter={pageLogic.map.mapKelurahanFilter}
-                  setKelurahanFilter={pageLogic.map.setMapKelurahanFilter}
-                  statusFilter={pageLogic.map.mapStatusFilter}
-                  setStatusFilter={pageLogic.map.setMapStatusFilter}
-                  kabupatenList={pageLogic.map.mapKabupatenList}
-                  kecamatanList={pageLogic.map.mapKecamatanList}
-                  kelurahanList={pageLogic.map.mapKelurahanList}
-                  showFilters={pageLogic.map.mapShowFilters}
-                  setShowFilters={pageLogic.map.setMapShowFilters}
-                  searchQuery={pageLogic.map.mapSearchQuery}
-                  setSearchQuery={pageLogic.map.setMapSearchQuery}
+                  mapRef={map.mapRef}
+                  filteredLocations={map.filteredMapLocations}
+                  mapYear={map.mapYear}
+                  setMapYear={map.setMapYear}
+                  mapYears={map.mapYears}
+                  kabupatenFilter={map.mapKabupatenFilter}
+                  setKabupatenFilter={map.setMapKabupatenFilter}
+                  kecamatanFilter={map.mapKecamatanFilter}
+                  setKecamatanFilter={map.setMapKecamatanFilter}
+                  kelurahanFilter={map.mapKelurahanFilter}
+                  setKelurahanFilter={map.setMapKelurahanFilter}
+                  statusFilter={map.mapStatusFilter}
+                  setStatusFilter={map.setMapStatusFilter}
+                  kabupatenList={map.mapKabupatenList}
+                  kecamatanList={map.mapKecamatanList}
+                  kelurahanList={map.mapKelurahanList}
+                  showFilters={map.mapShowFilters}
+                  setShowFilters={map.setMapShowFilters}
+                  searchQuery={map.mapSearchQuery}
+                  setSearchQuery={map.setMapSearchQuery}
                   compact={true}
                 />
               ) : (
                 <MapSkeleton className="h-[400px] sm:h-[450px] md:h-[550px] lg:h-[650px] xl:h-[750px]" />
               )}
             </div>
+            {/* eslint-enable react-hooks/refs */}
 
             {/* Jadwal Section - Scrollable (2/5) */}
             <div id="jadwal-section" className="lg:col-span-2 scroll-mt-24">
-                <PKPJadwalSection
-                jadwalYear={pageLogic.jadwal.jadwalYear}
-                setJadwalYear={pageLogic.jadwal.setJadwalYear}
-                jadwalMonth={pageLogic.jadwal.jadwalMonth}
-                setJadwalMonth={pageLogic.jadwal.setJadwalMonth}
-                jadwalStartDate={pageLogic.jadwal.jadwalStartDate}
-                setJadwalStartDate={pageLogic.jadwal.setJadwalStartDate}
-                jadwalEndDate={pageLogic.jadwal.jadwalEndDate}
-                setJadwalEndDate={pageLogic.jadwal.setJadwalEndDate}
-                jadwalSearch={pageLogic.jadwal.jadwalSearch}
-                setJadwalSearch={pageLogic.jadwal.setJadwalSearch}
-                jadwalKabupatenFilter={pageLogic.jadwal.jadwalKabupatenFilter}
-                setJadwalKabupatenFilter={pageLogic.jadwal.setJadwalKabupatenFilter}
-                jadwalYears={pageLogic.jadwal.jadwalYears}
-                filteredJadwal={pageLogic.jadwal.filteredJadwal}
-                totalResults={pageLogic.jadwal.filteredJadwal.length}
-                kabupatenList={pageLogic.jadwal.kabupatenList}
-                resetFilters={pageLogic.jadwal.resetFilters}
-                hasActiveFilters={pageLogic.jadwal.hasActiveFilters}
-                onCardClick={pageLogic.flyToLocation}
+              <PKPJadwalSection
+                jadwalYear={jadwal.jadwalYear}
+                setJadwalYear={jadwal.setJadwalYear}
+                jadwalMonth={jadwal.jadwalMonth}
+                setJadwalMonth={jadwal.setJadwalMonth}
+                jadwalStartDate={jadwal.jadwalStartDate}
+                setJadwalStartDate={jadwal.setJadwalStartDate}
+                jadwalEndDate={jadwal.jadwalEndDate}
+                setJadwalEndDate={jadwal.setJadwalEndDate}
+                jadwalSearch={jadwal.jadwalSearch}
+                setJadwalSearch={jadwal.setJadwalSearch}
+                jadwalKabupatenFilter={jadwal.jadwalKabupatenFilter}
+                setJadwalKabupatenFilter={jadwal.setJadwalKabupatenFilter}
+                jadwalYears={jadwal.jadwalYears}
+                filteredJadwal={jadwal.filteredJadwal}
+                totalResults={jadwal.filteredJadwal.length}
+                kabupatenList={jadwal.kabupatenList}
+                resetFilters={jadwal.resetFilters}
+                hasActiveFilters={jadwal.hasActiveFilters}
+                onCardClick={flyToLocation}
                 compact={true}
               />
             </div>
@@ -181,25 +194,25 @@ function SosialisasiKlinikPKPContent() {
 
           {/* Berita Section - Full Width */}
           <div id="berita-section" className="scroll-mt-24">
-              <PKPBeritaSection
-                beritaYear={pageLogic.berita.beritaYear}
-                setBeritaYear={pageLogic.berita.setBeritaYear}
-                beritaMonth={pageLogic.berita.beritaMonth}
-                setBeritaMonth={pageLogic.berita.setBeritaMonth}
-                beritaStartDate={pageLogic.berita.beritaStartDate}
-                setBeritaStartDate={pageLogic.berita.setBeritaStartDate}
-                beritaEndDate={pageLogic.berita.beritaEndDate}
-                setBeritaEndDate={pageLogic.berita.setBeritaEndDate}
-                beritaSearch={pageLogic.berita.beritaSearch}
-                setBeritaSearch={pageLogic.berita.setBeritaSearch}
-                beritaYears={pageLogic.berita.beritaYears}
-                filteredBerita={pageLogic.berita.filteredBerita}
-                paginatedBerita={pageLogic.berita.paginatedBerita}
-                pagination={pageLogic.berita.pagination}
-                resetFilters={pageLogic.berita.resetFilters}
-                hasActiveFilters={pageLogic.berita.hasActiveFilters}
+            <PKPBeritaSection
+                beritaYear={berita.beritaYear}
+                setBeritaYear={berita.setBeritaYear}
+                beritaMonth={berita.beritaMonth}
+                setBeritaMonth={berita.setBeritaMonth}
+                beritaStartDate={berita.beritaStartDate}
+                setBeritaStartDate={berita.setBeritaStartDate}
+                beritaEndDate={berita.beritaEndDate}
+                setBeritaEndDate={berita.setBeritaEndDate}
+                beritaSearch={berita.beritaSearch}
+                setBeritaSearch={berita.setBeritaSearch}
+                beritaYears={berita.beritaYears}
+                filteredBerita={berita.filteredBerita}
+                paginatedBerita={berita.paginatedBerita}
+                pagination={berita.pagination}
+                resetFilters={berita.resetFilters}
+                hasActiveFilters={berita.hasActiveFilters}
                 onImageClick={handleImageClick}
-                onViewOnMap={pageLogic.flyToLocation}
+                onViewOnMap={flyToLocation}
               />
           </div>
         </div>

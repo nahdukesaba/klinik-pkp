@@ -87,7 +87,7 @@ const DesignCard = memo(function DesignCard({
         </p>
 
         {/* Specs Grid */}
-        <div className="grid grid-cols-2 gap-2.5 mb-4">
+        <div className="mb-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
           <SpecItem icon={BedDouble} label={`${design.bedrooms} Kamar Tidur`} />
           <SpecItem icon={Bath} label={`${design.bathrooms} Kamar Mandi`} />
           <SpecItem icon={Maximize2} label={`${design.area} m²`} />
@@ -108,7 +108,7 @@ const DesignCard = memo(function DesignCard({
             Lihat Preview
           </button>
           
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row">
             <a
               href={getDownloadUrl(design)}
               target="_blank"
@@ -143,9 +143,9 @@ interface SpecItemProps {
 
 function SpecItem({ icon: Icon, label }: SpecItemProps) {
   return (
-    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+    <div className="flex items-start gap-2 text-sm text-muted-foreground">
       <Icon className="w-4 h-4 text-primary flex-shrink-0" />
-      <span>{label}</span>
+      <span className="break-words">{label}</span>
     </div>
   );
 }
@@ -181,7 +181,7 @@ function FilterChip({ label, isActive, onClick }: { label: string; isActive: boo
   return (
     <button
       onClick={onClick}
-      className={`px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 border whitespace-nowrap min-h-[36px] ${
+      className={`min-h-[36px] rounded-full border px-3 py-2 text-center text-xs font-medium leading-snug transition-all duration-200 ${
         isActive
           ? "bg-primary text-primary-foreground border-primary shadow-sm"
           : "bg-secondary/50 text-muted-foreground border-border hover:bg-secondary hover:text-foreground"

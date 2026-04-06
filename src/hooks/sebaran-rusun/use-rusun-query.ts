@@ -30,7 +30,7 @@ const EMPTY_RUSUN: RusunData[] = [];
 export function useRusunQuery() {
   const query = useQuery({
     queryKey: ["rusun"] as const,
-    queryFn: fetchRusunList,
+    queryFn: () => fetchRusunList(),
     ...QUERY_CONFIG,
   });
 

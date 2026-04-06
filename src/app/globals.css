@@ -1,9 +1,8 @@
 /* Font loaded via next/font/google di layout.tsx (zero layout shift, self-hosted) */
 /* Leaflet CSS loaded per-page di loader components (mengurangi ~40KB CSS di non-map pages) */
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@config "../../tailwind.config.mjs";
 
 @layer base {
   :root {
@@ -184,7 +183,8 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+    font-family: "Segoe UI Variable", "Aptos", "Trebuchet MS", system-ui, sans-serif;
+    overflow-x: hidden;
   }
 
   h1,
@@ -194,6 +194,23 @@
   h5,
   h6 {
     @apply font-semibold tracking-tight;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  p,
+  a,
+  span,
+  button,
+  li,
+  label,
+  td,
+  th {
+    overflow-wrap: anywhere;
   }
 }
 
@@ -236,7 +253,7 @@
   }
 
   .stat-badge {
-    @apply inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium 
+    @apply inline-flex max-w-full flex-wrap items-center gap-1.5 px-2.5 py-1 text-xs font-medium 
            rounded-full bg-accent text-accent-foreground;
   }
 

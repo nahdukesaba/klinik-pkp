@@ -6,7 +6,7 @@
 
 "use client";
 
-import { AlertCircle, Loader2, RefreshCw } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 import { Navbar } from "@/components/layout";
 import {
@@ -14,6 +14,7 @@ import {
   RusunSidebar,
   RusunMapContainer,
 } from "@/components/sebaran-rusun";
+import { ApiErrorState } from "@/components/shared";
 import { MapSkeleton } from "@/components/ui/skeleton";
 import { useSebaranRusun } from "@/hooks/sebaran-rusun/use-sebaran-rusun";
 
@@ -39,6 +40,8 @@ export default function SebaranRusunPage() {
     isError,
     error,
   } = useSebaranRusun();
+  const mapLazyRef = mapLazy.ref;
+  const isMapMounted = mapLazy.isMounted;
 
   // Status data (loading / error / ready)
   const dataReady = !isLoading && !isError;
@@ -96,7 +99,8 @@ export default function SebaranRusunPage() {
           )}
 
           {/* Area Peta — SELALU dirender agar ref lazy mount tetap di DOM */}
-          <div ref={mapLazy.ref} className="flex-1 relative">
+          {/* eslint-disable react-hooks/refs -- useLazyMount returns a callback ref plus a mounted flag */}
+          <div ref={mapLazyRef} className="flex-1 relative">
             {/* Loading overlay — saat menunggu data API */}
             {isLoading && (
               <div className="absolute inset-0 z-20 flex items-center justify-center bg-background">
@@ -110,22 +114,11 @@ export default function SebaranRusunPage() {
             {/* Error overlay */}
             {isError && (
               <div className="absolute inset-0 z-20 flex items-center justify-center bg-background">
-                <div className="text-center space-y-4 max-w-md px-4">
-                  <AlertCircle className="w-12 h-12 text-destructive mx-auto" />
-                  <h2 className="font-semibold text-lg text-foreground">Gagal Memuat Data</h2>
-                  <p className="text-muted-foreground text-sm">
-                    {error instanceof Error
-                      ? error.message
-                      : "Terjadi kesalahan saat mengambil data rusun."}
-                  </p>
-                  <button
-                    onClick={() => window.location.reload()}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm hover:bg-primary/90 transition-colors"
-                  >
-                    <RefreshCw className="w-4 h-4" />
-                    Coba Lagi
-                  </button>
-                </div>
+                <ApiErrorState
+                  error={error}
+                  onRetry={() => window.location.reload()}
+                  fullPage={false}
+                />
               </div>
             )}
 
@@ -135,12 +128,13 @@ export default function SebaranRusunPage() {
              * 2. Data siap tapi map belum dimount → MapSkeleton
              * 3. Data siap dan map dimount → RusunMapContainer
              */}
-            {!isLoading && mapLazy.isMounted && dataReady ? (
+            {!isLoading && isMapMounted && dataReady ? (
               <RusunMapContainer mapRef={mapRef} />
             ) : !isLoading ? (
               <MapSkeleton className="w-full h-full" />
             ) : null}
           </div>
+          {/* eslint-enable react-hooks/refs */}
         </div>
       </div>
     </div>

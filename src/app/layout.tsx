@@ -1,5 +1,5 @@
-import { Plus_Jakarta_Sans } from "next/font/google";
 import { headers } from "next/headers";
+
 
 import { QueryProvider } from "@/components/providers/QueryProvider";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
@@ -9,20 +9,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import type { Metadata } from "next";
 
 import "./globals.css";
-
-/**
- * Self-hosted font via next/font — menghilangkan render-blocking request
- * ke fonts.googleapis.com. Font di-inline saat build sehingga:
- * - Zero layout shift (CLS = 0)
- * - ~200ms lebih cepat First Contentful Paint
- * - Tidak perlu CSP whitelist fonts.googleapis.com
- */
-const plusJakartaSans = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-  variable: "--font-plus-jakarta-sans",
-});
 
 export const metadata: Metadata = {
   title: "Klinik PKP - BP3KP Sumatera II",
@@ -50,8 +36,8 @@ export default async function RootLayout({
   const nonce = (await headers()).get("x-nonce") ?? "";
 
   return (
-    <html lang="id" suppressHydrationWarning className={plusJakartaSans.variable}>
-      <body className={`${plusJakartaSans.className} antialiased`}>
+    <html lang="id" suppressHydrationWarning>
+      <body className="antialiased">
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"

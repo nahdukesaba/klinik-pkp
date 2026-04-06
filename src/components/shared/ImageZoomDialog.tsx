@@ -100,15 +100,16 @@ export function ImageZoomDialog({
   imageHeight = "60vh",
   showThumbnails,
 }: ImageZoomDialogProps) {
-  const [currentImageIndex, setCurrentImageIndex] = useState(initialIndex);
+  const imageSessionKey = `${initialIndex}:${images.join("|")}`;
+  const [viewerState, setViewerState] = useState(() => ({
+    currentImageIndex: initialIndex,
+    sessionKey: imageSessionKey,
+  }));
   const transformRef = useRef<ReactZoomPanPinchContentRef>(null);
-
-  // Reset index saat dialog dibuka atau images berubah
-  useEffect(() => {
-    if (isOpen) {
-      setCurrentImageIndex(initialIndex);
-    }
-  }, [isOpen, initialIndex]);
+  const currentImageIndex =
+    viewerState.sessionKey === imageSessionKey
+      ? viewerState.currentImageIndex
+      : initialIndex;
 
   const hasMultipleImages = images.length > 1;
   const shouldShowThumbnails = showThumbnails ?? hasMultipleImages;
@@ -116,19 +117,35 @@ export function ImageZoomDialog({
   // Navigation handlers
   const nextImage = useCallback(() => {
     if (!hasMultipleImages) return;
-    setCurrentImageIndex((prev) => 
-      prev < images.length - 1 ? prev + 1 : 0
-    );
+    setViewerState((current) => ({
+      sessionKey: imageSessionKey,
+      currentImageIndex:
+        current.sessionKey === imageSessionKey
+          ? current.currentImageIndex < images.length - 1
+            ? current.currentImageIndex + 1
+            : 0
+          : initialIndex < images.length - 1
+            ? initialIndex + 1
+            : 0,
+    }));
     transformRef.current?.resetTransform();
-  }, [images.length, hasMultipleImages]);
+  }, [hasMultipleImages, imageSessionKey, images.length, initialIndex]);
 
   const prevImage = useCallback(() => {
     if (!hasMultipleImages) return;
-    setCurrentImageIndex((prev) => 
-      prev > 0 ? prev - 1 : images.length - 1
-    );
+    setViewerState((current) => ({
+      sessionKey: imageSessionKey,
+      currentImageIndex:
+        current.sessionKey === imageSessionKey
+          ? current.currentImageIndex > 0
+            ? current.currentImageIndex - 1
+            : images.length - 1
+          : initialIndex > 0
+            ? initialIndex - 1
+            : images.length - 1,
+    }));
     transformRef.current?.resetTransform();
-  }, [images.length, hasMultipleImages]);
+  }, [hasMultipleImages, imageSessionKey, images.length, initialIndex]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -237,7 +254,10 @@ export function ImageZoomDialog({
                 <button
                   key={index}
                   onClick={() => {
-                    setCurrentImageIndex(index);
+                    setViewerState({
+                      sessionKey: imageSessionKey,
+                      currentImageIndex: index,
+                    });
                     transformRef.current?.resetTransform();
                   }}
                   className={`relative w-16 h-12 rounded-md overflow-hidden border-2 transition-all flex-shrink-0 ${

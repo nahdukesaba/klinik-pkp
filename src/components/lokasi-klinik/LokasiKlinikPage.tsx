@@ -26,7 +26,7 @@ import { escapeAttr } from "@/lib/security";
  */
 export default function LokasiKlinikPage() {
   const ref = useScrollAnimation();
-  const mapLazy = useLazyMount();
+  const { ref: mapLazyRef, isMounted: isMapMounted } = useLazyMount();
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
 
@@ -39,7 +39,7 @@ export default function LokasiKlinikPage() {
   }, []);
 
   useEffect(() => {
-    if (!mapLazy.isMounted) return;
+    if (!isMapMounted) return;
     if (typeof window === "undefined" || !mapRef.current) return;
 
     // Prevent re-initialization if already initialized
@@ -127,7 +127,7 @@ export default function LokasiKlinikPage() {
       destroyMap(mapInstanceRef.current);
       mapInstanceRef.current = null;
     };
-  }, [mapLazy.isMounted]);
+  }, [isMapMounted]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -158,8 +158,8 @@ export default function LokasiKlinikPage() {
 
           <div className="grid lg:grid-cols-2 gap-8 mb-12">
             {/* Map Section */}
-            <div ref={mapLazy.ref} className="space-y-6 animate-on-scroll">
-              {mapLazy.isMounted ? (
+            <div ref={mapLazyRef} className="space-y-6 animate-on-scroll">
+              {isMapMounted ? (
                 <div
                   ref={mapRef}
                   className="w-full h-[350px] md:h-[400px] lg:h-[450px] 2xl:h-[500px] rounded-2xl overflow-hidden shadow-2xl border border-border"

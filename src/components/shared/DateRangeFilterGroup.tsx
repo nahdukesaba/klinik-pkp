@@ -129,7 +129,7 @@ export function DateRangeFilterGroup({
         {extraFiltersMobile}
 
         {/* Year + Month grid */}
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <Select value={year} onValueChange={handleYearChange}>
             <SelectTrigger className={`w-full bg-secondary ${sizeClass}`}>
               <SelectValue placeholder="Tahun" />

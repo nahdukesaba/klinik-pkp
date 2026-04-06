@@ -3,10 +3,16 @@ import Link from "next/link";
 
 import { Clock, ExternalLink, Mail, MapPin, Phone } from "lucide-react";
 
+import { klinikData } from "@/content/lokasi-klinik";
 import { INFO_LINKS, QUICK_LINKS } from "@/lib/constants";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+  const phoneHref = klinikData.phone.replace(/[^\d+]/g, "");
+  const weekdayHours = klinikData.operationalHours
+    .filter((item) => !item.hours.toLowerCase().includes("tutup"))
+    .map((item) => `${item.day} ${item.hours}`)
+    .join(", ");
 
   return (
     <footer className="bg-card border-t border-border">
@@ -33,9 +39,8 @@ export default function Footer() {
                 </h3>
               </div>
             </Link>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              Pusat layanan dan informasi mengenai perumahan dan kawasan
-              permukiman di wilayah Sumatera II.
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              Layanan informasi perumahan dan permukiman di wilayah Sumatera II.
             </p>
           </div>
 
@@ -47,7 +52,7 @@ export default function Footer() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                    className="break-words text-sm text-muted-foreground transition-colors hover:text-primary"
                   >
                     {link.label}
                   </Link>
@@ -67,7 +72,7 @@ export default function Footer() {
                       href={link.href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-1"
+                      className="inline-flex items-start gap-1 break-words text-sm text-muted-foreground transition-colors hover:text-primary"
                     >
                       {link.label}
                       <ExternalLink className="w-3 h-3" />
@@ -75,7 +80,7 @@ export default function Footer() {
                   ) : (
                     <Link
                       href={link.href}
-                      className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                      className="break-words text-sm text-muted-foreground transition-colors hover:text-primary"
                     >
                       {link.label}
                     </Link>
@@ -91,34 +96,32 @@ export default function Footer() {
             <ul className="space-y-3">
               <li>
                 <a
-                  href="mailto:klinikpkpsumateraii@gmail.com"
-                  className="flex items-start gap-3 text-sm text-muted-foreground hover:text-primary transition-colors"
+                  href={`mailto:${klinikData.email}`}
+                  className="flex items-start gap-3 break-words text-sm text-muted-foreground transition-colors hover:text-primary"
                 >
                   <Mail className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                  <span>klinikpkpsumateraii@gmail.com</span>
+                  <span className="break-all">{klinikData.email}</span>
                 </a>
               </li>
               <li>
                 <a
-                  href="tel:+6282246960231"
-                  className="flex items-start gap-3 text-sm text-muted-foreground hover:text-primary transition-colors"
+                  href={`tel:${phoneHref}`}
+                  className="flex items-start gap-3 break-words text-sm text-muted-foreground transition-colors hover:text-primary"
                 >
                   <Phone className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                  <span>(061)80033120</span>
+                  <span>{klinikData.phone}</span>
                 </a>
               </li>
               <li>
                 <div className="flex items-start gap-3 text-sm text-muted-foreground">
                   <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                  <span>
-                    Jl. Suluh No.99, Sidorejo Hilir, Kec. Medan Tembung, Kota Medan, Sumatera Utara 20222
-                  </span>
+                  <span className="break-words">{klinikData.address}</span>
                 </div>
               </li>
               <li>
                 <div className="flex items-start gap-3 text-sm text-muted-foreground">
                   <Clock className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                  <span>Senin - Jumat: 08:00 - 16:00 WIB</span>
+                  <span className="break-words">{weekdayHours}</span>
                 </div>
               </li>
             </ul>
@@ -127,12 +130,11 @@ export default function Footer() {
 
         {/* Bar Bawah */}
         <div className="mt-12 pt-8 border-t border-border">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-muted-foreground text-center md:text-left">
-              © {currentYear} Klinik PKP BP3KP Sumatera II. Hak Cipta
-              Dilindungi.
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <p className="text-center text-sm text-muted-foreground md:text-left">
+              © {currentYear} Klinik PKP BP3KP Sumatera II
             </p>
-            <div className="flex items-center gap-6">
+            <div className="flex flex-wrap items-center justify-center gap-4 md:justify-end">
               <Link
                 href="/informasi/kebijakan-privasi"
                 className="text-sm text-muted-foreground hover:text-primary transition-colors"

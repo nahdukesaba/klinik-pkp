@@ -22,7 +22,7 @@ const EMPTY_DESAIN: BankDesainData[] = [];
 export function useBankDesainQuery() {
   const query = useQuery({
     queryKey: ["bank-desain"] as const,
-    queryFn: fetchBankDesainList,
+    queryFn: () => fetchBankDesainList(),
     ...QUERY_CONFIG,
   });
 

@@ -143,7 +143,7 @@ const BspsHeader = memo(function BspsHeader({
           {/* Controls */}
           <div className="flex flex-wrap items-center gap-2">
             {/* Search */}
-            <div className="relative flex-1 min-w-0 sm:min-w-[200px] md:min-w-[300px] max-w-md">
+            <div className="relative w-full max-w-md flex-1 min-w-0 sm:w-auto sm:min-w-[200px] md:min-w-[300px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <input
                 type="text"
@@ -155,9 +155,9 @@ const BspsHeader = memo(function BspsHeader({
             </div>
 
             {/* Status (desktop only) */}
-            <div className="hidden sm:block">
+            <div className="w-full sm:w-auto">
               <Select value={statusFilter} onValueChange={onStatusChange}>
-                <SelectTrigger className="w-auto min-w-[10rem] h-10 text-sm">
+                <SelectTrigger className="min-h-10 w-full text-sm sm:w-auto sm:min-w-[10rem]">
                   <SelectValue placeholder="Semua Status" />
                 </SelectTrigger>
                 <SelectContent className="bg-popover z-[9999]">

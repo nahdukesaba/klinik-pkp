@@ -27,21 +27,7 @@ const EMPTY: KawasanKumuhData[] = [];
  * Selalu menyertakan CURRENT_YEAR_NUM agar tahun sekarang tidak hilang dari dropdown.
  */
 export function useKumuhYearsQuery(): number[] {
-  const query = useQuery({
-    queryKey: ["kawasan-kumuh-years"],
-    queryFn: () => fetchKumuhList(),
-    staleTime: 30 * 60 * 1000,
-    gcTime: 60 * 60 * 1000,
-    retry: 2,
-    refetchOnWindowFocus: false,
-    select: (data) => {
-      const years = [...new Set(data.map((k) => k.yearInspected))];
-      if (!years.includes(CURRENT_YEAR_NUM)) years.push(CURRENT_YEAR_NUM);
-      return years.sort((a, b) => b - a);
-    },
-  });
-
-  return query.data ?? [CURRENT_YEAR_NUM];
+  return [CURRENT_YEAR_NUM];
 }
 
 /** Ambil data per-tahun (undefined = semua tahun) */

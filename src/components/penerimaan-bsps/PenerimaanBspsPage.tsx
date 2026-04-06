@@ -50,6 +50,8 @@ export default function PenerimaanBspsPage() {
     error,
     refetch,
   } = usePenerimaanBspsPage();
+  const mapLazyRef = mapLazy.ref;
+  const isMapMounted = mapLazy.isMounted;
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const toggleSidebar = useCallback(() => setSidebarOpen((prev) => !prev), []);
@@ -90,8 +92,9 @@ export default function PenerimaanBspsPage() {
       </section>
 
       {/* Full-screen Map Section (like Kawasan Kumuh) */}
-      <section id="peta-bsps" ref={mapLazy.ref} className="h-screen flex flex-col scroll-mt-16 lg:scroll-mt-20 isolate">
-        {mapLazy.isMounted ? (
+      {/* eslint-disable react-hooks/refs -- useLazyMount returns a callback ref plus a mounted flag */}
+      <section id="peta-bsps" ref={mapLazyRef} className="h-screen flex flex-col scroll-mt-16 lg:scroll-mt-20 isolate">
+        {isMapMounted ? (
           <BspsMapSection
             filterState={filterState}
             filterActions={filterActions}
@@ -109,6 +112,7 @@ export default function PenerimaanBspsPage() {
           <MapSkeleton className="h-screen" />
         )}
       </section>
+      {/* eslint-enable react-hooks/refs */}
 
       {/* Information Sections */}
       <main ref={ref} className="py-16">

@@ -41,6 +41,68 @@ export interface ApiResponse<T> {
   success: boolean;
   message: string;
   data: T;
+  error?: string;
+  details?: Record<string, string | string[]>;
+}
+
+export interface ApiPaginatedCollection<T> {
+  items: T[];
+  total_records?: number;
+  page?: number;
+  limit?: number;
+}
+
+export interface ApiPaginationMeta {
+  totalRecords?: number;
+  page?: number;
+  limit?: number;
+}
+
+const API_COLLECTION_KEYS = [
+  "items",
+  "rows",
+  "records",
+  "results",
+  "list",
+] as const;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function getNumberValue(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
+export function extractApiCollectionItems<T>(data: unknown): T[] | null {
+  if (Array.isArray(data)) {
+    return data as T[];
+  }
+
+  if (!isRecord(data)) {
+    return null;
+  }
+
+  for (const key of API_COLLECTION_KEYS) {
+    const candidate = data[key];
+    if (Array.isArray(candidate)) {
+      return candidate as T[];
+    }
+  }
+
+  return null;
+}
+
+export function extractApiPaginationMeta(data: unknown): ApiPaginationMeta {
+  if (!isRecord(data)) {
+    return {};
+  }
+
+  return {
+    totalRecords: getNumberValue(data.total_records),
+    page: getNumberValue(data.page),
+    limit: getNumberValue(data.limit),
+  };
 }
 
 // --- Helper: ekstrak nama lokasi dari nested objects ---

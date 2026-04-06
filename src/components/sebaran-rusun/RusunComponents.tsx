@@ -56,7 +56,7 @@ export function RusunHeader({
         {/* Kanan: Pencarian, Filter, Statistik */}
         <div className="flex flex-wrap items-center gap-2">
           {/* Input Pencarian */}
-          <div className="relative flex-1 min-w-0 sm:min-w-[200px] md:min-w-[300px] max-w-md">
+          <div className="relative w-full max-w-md flex-1 min-w-0 sm:w-auto sm:min-w-[200px] md:min-w-[300px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <input
               type="text"
@@ -125,8 +125,10 @@ export const RusunCard = memo(function RusunCard({ rusun, isSelected, onClick }:
       onClick={onClick}
       className={`clinic-card cursor-pointer overflow-hidden ${isSelected ? "clinic-card-active" : ""}`}
     >
-      <h3 className="font-semibold text-foreground text-sm">{rusun.name}</h3>
-      <p className="text-xs text-muted-foreground mt-1">
+      <h3 className="text-sm font-semibold leading-snug text-foreground break-words">
+        {rusun.name}
+      </h3>
+      <p className="mt-1 text-xs leading-snug text-muted-foreground break-words">
         <MapPin className="w-3 h-3 inline mr-1" />
         {rusun.kelurahan}, {rusun.kecamatan}
       </p>
@@ -192,7 +194,7 @@ export function RusunSidebar({
       {/* Sidebar */}
       <div
         className={`${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-          } fixed lg:relative z-40 lg:z-20 h-[calc(100vh-4rem)] lg:h-full top-16 lg:top-0 left-0 w-[85vw] sm:w-80 lg:w-96 bg-card border-r border-border transition-transform duration-300 flex flex-col shadow-xl lg:shadow-none`}
+          } fixed lg:relative z-40 lg:z-20 h-[calc(100vh-4rem)] lg:h-full top-16 lg:top-0 left-0 w-[min(92vw,24rem)] sm:w-80 lg:w-96 bg-card border-r border-border transition-transform duration-300 flex flex-col shadow-xl lg:shadow-none`}
       >
         {/* Header Mobile dengan Tombol Tutup */}
         <div className="lg:hidden flex items-center justify-between p-3 border-b border-border bg-secondary/50">
@@ -208,7 +210,7 @@ export function RusunSidebar({
 
         {/* Bagian Filter */}
         <div className="p-3 border-b border-border flex-shrink-0">
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             <SearchableFilterSelect
               value={kabupatenFilter}
               onValueChange={onKabupatenChange}
@@ -240,7 +242,7 @@ export function RusunSidebar({
 
             <button
               onClick={onResetFilters}
-              className="w-full h-9 text-xs px-2 py-1 text-primary hover:bg-primary/10 rounded-lg transition-colors border border-primary/30 flex items-center justify-center gap-1"
+              className="flex min-h-10 w-full items-center justify-center gap-1 rounded-lg border border-primary/30 px-2 py-1 text-xs text-primary transition-colors hover:bg-primary/10"
             >
               Reset Filter
             </button>

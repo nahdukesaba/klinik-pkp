@@ -1,26 +1,14 @@
-import { dirname } from "path";
-import { fileURLToPath } from "url";
-
-import { FlatCompat } from "@eslint/eslintrc";
-import importPlugin from "eslint-plugin-import";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-});
+import nextCoreWebVitals from "eslint-config-next/core-web-vitals";
+import nextTypescript from "eslint-config-next/typescript";
 
 const eslintConfig = [
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
+  ...nextCoreWebVitals,
+  ...nextTypescript,
   {
-    plugins: {
-      import: importPlugin,
-    },
     rules: {
       // Import ordering rules
       "import/order": [
-        "error",
+        "warn",
         {
           groups: [
             "builtin",
@@ -58,7 +46,9 @@ const eslintConfig = [
       ],
       "import/newline-after-import": ["error", { count: 1 }],
       "import/no-duplicates": "error",
-      
+      "react-hooks/refs": "warn",
+      "react-hooks/set-state-in-effect": "warn",
+
       // Clean code practices
       "no-unused-vars": "off",
       "@typescript-eslint/no-unused-vars": [

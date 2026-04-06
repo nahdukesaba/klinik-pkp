@@ -55,7 +55,7 @@ const EMPTY_RESULT: SosialisasiResult = {
 export function useSosialisasiQuery(): SosialisasiRawData {
   const query = useQuery<SosialisasiResult>({
     queryKey: ["sosialisasi"],
-    queryFn: fetchSosialisasiList,
+    queryFn: () => fetchSosialisasiList(),
     ...QUERY_CONFIG,
   });
 

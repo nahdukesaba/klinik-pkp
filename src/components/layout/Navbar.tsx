@@ -62,7 +62,7 @@ const menuItems: MenuItem[] = [
     href: "/bank-desain",
   },
   {
-    label: "Sosialisasi Klinik PKP",
+    label: "Sosialisasi",
     icon: <BookOpen className="w-4 h-4" />,
     href: "/sosialisasi-klinik-pkp",
   },
@@ -108,13 +108,13 @@ function DropdownMenu({
       <Link
         href={item.href}
         className={cn(
-          "flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-200",
+          "flex items-center gap-1.5 rounded-lg px-4 py-2.5 text-left text-sm font-medium transition-all duration-200",
           "hover:bg-primary/10 hover:text-primary",
           isActive && "bg-primary/15 text-primary font-semibold"
         )}
       >
         {item.icon}
-        <span>{item.label}</span>
+        <span className="break-words leading-snug">{item.label}</span>
       </Link>
     );
   }
@@ -130,13 +130,13 @@ function DropdownMenu({
     >
       <button
         className={cn(
-          "flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-200",
+          "flex items-center gap-1.5 rounded-lg px-4 py-2.5 text-left text-sm font-medium transition-all duration-200",
           "hover:bg-primary/10 hover:text-primary",
           (isOpen || isActive) && "bg-primary/15 text-primary font-semibold"
         )}
       >
         {item.icon}
-        <span>{item.label}</span>
+        <span className="break-words leading-snug">{item.label}</span>
         {item.subItems && (
           <ChevronDown
             className={cn(
@@ -149,7 +149,7 @@ function DropdownMenu({
 
       {isOpen && item.subItems && (
         <div className="absolute top-full left-0 pt-2 z-50 animate-fade-in">
-          <div className="bg-card border border-border rounded-xl shadow-xl py-2 min-w-[220px]">
+          <div className="w-[min(18rem,calc(100vw-2rem))] rounded-xl border border-border bg-card py-2 shadow-xl">
             {item.subItems.map((subItem, idx) => (
               <div
                 key={idx}
@@ -167,39 +167,47 @@ function DropdownMenu({
                       href={subItem.href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center justify-between px-4 py-2.5 text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                      className="flex items-start justify-between gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
                     >
-                      <span>{subItem.label}</span>
-                      <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
+                      <span className="min-w-0 break-words leading-snug">
+                        {subItem.label}
+                      </span>
+                      <ExternalLink className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
                     </a>
                   ) : (
                     <Link
                       href={subItem.href}
-                      className="flex items-center justify-between px-4 py-2.5 text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                      className="flex items-start justify-between gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
                     >
-                      <span>{subItem.label}</span>
+                      <span className="min-w-0 break-words leading-snug">
+                        {subItem.label}
+                      </span>
                     </Link>
                   )
                 ) : (
-                  <div className="flex items-center justify-between px-4 py-2.5 text-sm hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors">
-                    <span>{subItem.label}</span>
+                  <div className="flex cursor-pointer items-start justify-between gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-accent hover:text-accent-foreground">
+                    <span className="min-w-0 break-words leading-snug">
+                      {subItem.label}
+                    </span>
                     {subItem.subItems && (
-                      <ChevronDown className="w-4 h-4 -rotate-90" />
+                      <ChevronDown className="h-4 w-4 flex-shrink-0 -rotate-90" />
                     )}
                   </div>
                 )}
 
                 {activeSubMenu === subItem.label && subItem.subItems && (
                   <div className="absolute left-full top-0 ml-1 z-50 animate-fade-in">
-                    <div className="bg-card border border-border rounded-xl shadow-xl py-2 min-w-[180px]">
+                    <div className="w-[min(16rem,calc(100vw-2rem))] rounded-xl border border-border bg-card py-2 shadow-xl">
                       {subItem.subItems.map((nestedItem, nestedIdx) => (
                         <Link
                           key={nestedIdx}
                           href={nestedItem.href}
-                          className="flex items-center px-4 py-2.5 text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                          className="flex items-start gap-2 px-4 py-2.5 text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
                         >
-                          <MapPin className="w-3.5 h-3.5 mr-2 text-primary" />
-                          <span>{nestedItem.label}</span>
+                          <MapPin className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-primary" />
+                          <span className="break-words leading-snug">
+                            {nestedItem.label}
+                          </span>
                         </Link>
                       ))}
                     </div>
@@ -229,12 +237,12 @@ function MobileMenuItem({ item, onClose, isActive }: MobileMenuItemProps) {
         href={item.href}
         onClick={onClose}
         className={cn(
-          "flex items-center gap-3 px-4 py-3 text-base font-medium hover:bg-accent rounded-lg transition-colors",
+          "flex items-start gap-3 rounded-lg px-4 py-3 text-left text-base font-medium transition-colors hover:bg-accent",
           isActive && "bg-primary/15 text-primary font-semibold"
         )}
       >
         {item.icon}
-        <span>{item.label}</span>
+        <span className="break-words leading-snug">{item.label}</span>
       </Link>
     );
   }
@@ -244,13 +252,13 @@ function MobileMenuItem({ item, onClose, isActive }: MobileMenuItemProps) {
       <button
         onClick={() => setIsExpanded(!isExpanded)}
         className={cn(
-          "flex items-center justify-between w-full px-4 py-3 text-base font-medium hover:bg-accent rounded-lg transition-colors",
+          "flex w-full items-start justify-between rounded-lg px-4 py-3 text-left text-base font-medium transition-colors hover:bg-accent",
           isActive && "bg-primary/15 text-primary font-semibold"
         )}
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-start gap-3">
           {item.icon}
-          <span>{item.label}</span>
+          <span className="break-words leading-snug">{item.label}</span>
         </div>
         <ChevronDown
           className={cn(
@@ -271,10 +279,12 @@ function MobileMenuItem({ item, onClose, isActive }: MobileMenuItemProps) {
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={onClose}
-                  className="flex items-center justify-between px-4 py-2.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
+                  className="flex items-start justify-between gap-3 rounded-lg px-4 py-2.5 text-left text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                 >
-                  <span>{subItem.label}</span>
-                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span className="min-w-0 break-words leading-snug">
+                    {subItem.label}
+                  </span>
+                  <ExternalLink className="h-3.5 w-3.5 flex-shrink-0" />
                 </a>
               ) : (
                 <Link
@@ -312,9 +322,9 @@ function MobileSubMenuItem({ subItem, onClose }: MobileSubMenuItemProps) {
     <div>
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="flex items-center justify-between w-full px-4 py-2.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
+        className="flex w-full items-start justify-between rounded-lg px-4 py-2.5 text-left text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
       >
-        <span>{subItem.label}</span>
+        <span className="break-words leading-snug">{subItem.label}</span>
         {subItem.subItems && (
           <ChevronDown
             className={cn(
@@ -332,10 +342,10 @@ function MobileSubMenuItem({ subItem, onClose }: MobileSubMenuItemProps) {
               key={idx}
               href={nestedItem.href}
               onClick={onClose}
-              className="flex items-center gap-2 px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
+              className="flex items-start gap-2 rounded-lg px-4 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             >
-              <MapPin className="w-3 h-3 text-primary" />
-              {nestedItem.label}
+              <MapPin className="mt-0.5 h-3 w-3 flex-shrink-0 text-primary" />
+              <span className="break-words leading-snug">{nestedItem.label}</span>
             </Link>
           ))}
         </div>
@@ -375,7 +385,7 @@ export default function Navbar() {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16 lg:h-20">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 sm:gap-3">
+          <Link href="/" className="flex min-w-0 items-center gap-2 sm:gap-3">
             <div className="w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 rounded-full overflow-hidden flex items-center justify-center shadow-lg bg-white flex-shrink-0">
               <Image
                 src="/logo-bp3kp.png"
@@ -386,8 +396,8 @@ export default function Navbar() {
                 priority
               />
             </div>
-            <div className="flex flex-col">
-              <p className="text-[8px] sm:text-[10px] lg:text-xs text-muted-foreground font-medium uppercase tracking-wider leading-tight">
+            <div className="min-w-0">
+              <p className="text-[9px] sm:text-[10px] lg:text-xs text-muted-foreground font-medium uppercase tracking-wider leading-tight">
                 BP3KP Sumatera II
               </p>
               <h1 className="text-xs sm:text-sm lg:text-base font-bold text-foreground leading-tight">
@@ -458,7 +468,7 @@ export default function Navbar() {
               />
             ))}
             <div className="pt-4 border-t border-border">
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row">
                 <Link
                   href="/informasi/kontak"
                   onClick={() => setIsMobileMenuOpen(false)}
@@ -469,7 +479,7 @@ export default function Navbar() {
                 <Link
                   href="/login"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="p-3 bg-secondary text-secondary-foreground rounded-lg border border-border hover:bg-secondary/80 transition-colors"
+                  className="flex items-center justify-center rounded-lg border border-border bg-secondary p-3 text-secondary-foreground transition-colors hover:bg-secondary/80"
                   title="Login"
                 >
                   <LogIn className="w-5 h-5" />

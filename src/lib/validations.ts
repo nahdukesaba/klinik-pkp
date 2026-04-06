@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 
-import { sanitizeEmail, sanitizeNip } from "@/lib/security";
+import { sanitizeEmail, sanitizeInput, sanitizeNip } from "@/lib/security";
 
 // --- Login Form ---
 
@@ -17,19 +17,60 @@ export const loginSchema = z.object({
   nip: z
     .string()
     .min(1, "NIP wajib diisi")
-    .min(8, "NIP minimal 8 digit")
-    .max(20, "NIP maksimal 20 digit")
     .transform(sanitizeNip)
-    .refine(
-      (val: string) => /^\d[\d\s]*$/.test(val),
-      "NIP hanya boleh berisi angka"
-    ),
+    .refine((val: string) => /^\d{18}$/.test(val), "NIP harus tepat 18 digit"),
 
   password: z
     .string()
     .min(1, "Password wajib diisi")
     .min(8, "Password minimal 8 karakter")
     .max(128, "Password terlalu panjang"),
+});
+
+const phoneSchema = z
+  .string()
+  .max(50, "Nomor telepon terlalu panjang")
+  .transform((value) =>
+    sanitizeInput(value).replace(/[^\d+\-\s()]/g, "").trim()
+  );
+
+const adminUserBaseSchema = z.object({
+  name: z
+    .string()
+    .min(1, "Nama wajib diisi")
+    .max(120, "Nama terlalu panjang")
+    .transform((value) => sanitizeInput(value).replace(/\s+/g, " ").trim()),
+  email: z
+    .string()
+    .min(1, "Email wajib diisi")
+    .email("Format email tidak valid")
+    .max(255, "Email terlalu panjang")
+    .transform(sanitizeEmail),
+  nip: z
+    .string()
+    .min(1, "NIP wajib diisi")
+    .transform(sanitizeNip)
+    .refine((val) => /^\d{18}$/.test(val), "NIP harus tepat 18 digit"),
+  phone: phoneSchema.optional().default(""),
+  role: z.enum(["admin", "user"], {
+    error: "Role tidak valid.",
+  }),
+  isActive: z.boolean(),
+});
+
+export const adminUserCreateSchema = adminUserBaseSchema.extend({
+  password: z
+    .string()
+    .min(8, "Password minimal 8 karakter")
+    .max(128, "Password terlalu panjang"),
+});
+
+export const adminUserUpdateSchema = adminUserBaseSchema.extend({
+  password: z
+    .string()
+    .max(128, "Password terlalu panjang")
+    .optional()
+    .transform((value) => value?.trim() ?? ""),
 });
 
 // --- Validation Helper ---

@@ -148,7 +148,7 @@ export function MapFilterBar({
 
       {/* Collapsible Filters with Searchable Selects */}
       {showFilters && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 p-3 bg-secondary/50 rounded-xl border border-border animate-in slide-in-from-top-2 duration-200">
+        <div className="grid grid-cols-1 gap-2 rounded-xl border border-border bg-secondary/50 p-3 duration-200 animate-in slide-in-from-top-2 sm:grid-cols-2 md:grid-cols-4">
           {/* Kabupaten Filter - Searchable */}
           <SearchableSelect
             value={kabupatenFilter}
@@ -189,9 +189,11 @@ export function MapFilterBar({
 
           {/* Status Filter - Regular Select (fewer options) */}
           <Select value={statusFilter} onValueChange={onStatusChange}>
-            <SelectTrigger className="bg-card h-9 text-sm">
-              <span>
-                {statusFilter === "all" ? "Semua Status" : statusOptions.find(o => o.value === statusFilter)?.label ?? statusFilter}
+            <SelectTrigger className="min-h-10 bg-card text-sm">
+              <span className="break-words text-left leading-snug">
+                {statusFilter === "all"
+                  ? "Semua Status"
+                  : statusOptions.find((o) => o.value === statusFilter)?.label ?? statusFilter}
               </span>
             </SelectTrigger>
             <SelectContent className="bg-popover z-[9999]">

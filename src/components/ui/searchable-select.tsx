@@ -120,7 +120,7 @@ export function SearchableSelect({
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
         className={cn(
-          "flex h-9 w-full items-center justify-between rounded-md border border-input bg-card px-3 py-2 text-sm ring-offset-background",
+          "flex min-h-10 w-full items-start justify-between gap-2 rounded-md border border-input bg-card px-3 py-2 text-sm ring-offset-background",
           "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
           "disabled:cursor-not-allowed disabled:opacity-50",
           "hover:bg-accent/50 transition-colors",
@@ -130,7 +130,7 @@ export function SearchableSelect({
         aria-haspopup="listbox"
       >
         <span className={cn(
-          "text-left flex-1 min-w-0",
+          "min-w-0 flex-1 break-words text-left whitespace-normal leading-tight",
           value === "all" ? "text-foreground/70" : "text-foreground"
         )}>
           {displayLabel}
@@ -143,7 +143,7 @@ export function SearchableSelect({
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute z-[9999] mt-1 w-full min-w-[180px] rounded-md border border-border bg-popover shadow-lg animate-in fade-in-0 zoom-in-95 slide-in-from-top-2">
+        <div className="absolute z-[9999] mt-1 w-full min-w-0 max-w-[min(24rem,calc(100vw-2rem))] rounded-md border border-border bg-popover shadow-lg animate-in fade-in-0 zoom-in-95 slide-in-from-top-2">
           {/* Search Input */}
           <div className="p-2 border-b border-border">
             <div className="relative">
@@ -181,11 +181,13 @@ export function SearchableSelect({
                     ? "bg-primary/10 text-primary font-medium"
                     : "hover:bg-accent hover:text-accent-foreground"
                 )}
-              >
-                <span className="flex-1 text-left">{allOptionLabel}</span>
-                {value === "all" && (
-                  <Check className="h-4 w-4 text-primary" />
-                )}
+                >
+                  <span className="flex-1 break-words text-left whitespace-normal leading-tight">
+                    {allOptionLabel}
+                  </span>
+                  {value === "all" && (
+                    <Check className="h-4 w-4 text-primary" />
+                  )}
               </button>
             )}
 
@@ -203,7 +205,9 @@ export function SearchableSelect({
                       : "hover:bg-accent hover:text-accent-foreground"
                   )}
                 >
-                  <span className="flex-1 text-left truncate">{option.label}</span>
+                  <span className="flex-1 break-words text-left whitespace-normal leading-tight">
+                    {option.label}
+                  </span>
                   {value === option.value && (
                     <Check className="h-4 w-4 text-primary shrink-0" />
                   )}

@@ -1,8 +1,11 @@
 /** Service API untuk data Kawasan Kumuh. */
 
-import { apiClient } from "@/lib/api-client";
+import {
+  fetchApiList,
+  fetchApiListWithMeta,
+  type ApiPaginatedResult,
+} from "@/lib/api-client";
 import type {
-  ApiResponse,
   CoordinateApi,
   DistrictApi,
   RegionApi,
@@ -32,11 +35,15 @@ export interface KumuhApiItem {
 /** Data kawasan kumuh untuk UI (camelCase) */
 export interface KawasanKumuhData {
   id: string;
+  districtId: string;
+  regionId: string;
   name: string;
   kabupaten: string;
   kecamatan: string;
   kelurahan: string;
   lingkungan: string[];
+  lingkunganText: string;
+  villagesText: string;
   lat: number;
   lng: number;
   /** Luas kawasan dalam hektar */
@@ -45,10 +52,19 @@ export interface KawasanKumuhData {
   penduduk: number;
   /** Status tingkat kekumuhan */
   status: "berat" | "sedang" | "ringan";
+  slumValue: number;
   /** Legalitas lahan (tidak tersedia di API, default "Legal") */
   legalitasLahan: "Legal" | "Tidak Legal";
   /** Tahun inspeksi kawasan */
   yearInspected: number;
+}
+
+export interface KumuhListParams {
+  year?: number;
+  page?: number;
+  perPage?: number;
+  regionId?: string;
+  districtId?: string;
 }
 
 // --- Konstanta UI ---
@@ -90,16 +106,21 @@ export function transformKumuhItem(item: KumuhApiItem): KawasanKumuhData {
 
   return {
     id: item.id,
+    districtId: item.district_id,
+    regionId: item.region_id,
     name: item.area_name,
     kabupaten,
     kecamatan,
     kelurahan: villageNames[0] ?? "",
     lingkungan,
+    lingkunganText: item.environments,
+    villagesText: item.villages,
     lat: item.coordinate?.latitude ?? 0,
     lng: item.coordinate?.longitude ?? 0,
     luas: item.total_area,
     penduduk: item.total_population,
     status: deriveSlumStatus(item.slum_value),
+    slumValue: item.slum_value,
     legalitasLahan: "Legal",
     yearInspected: item.year_inspected ?? new Date().getFullYear(),
   };
@@ -108,13 +129,45 @@ export function transformKumuhItem(item: KumuhApiItem): KawasanKumuhData {
 // --- API ---
 
 /** GET /api/ext/kumuh — ambil data kawasan kumuh, opsional filter tahun */
-export async function fetchKumuhList(year?: number): Promise<KawasanKumuhData[]> {
-  const endpoint = year != null ? `/kumuh?year=${year}` : "/kumuh";
-  const res = await apiClient.get<ApiResponse<KumuhApiItem[]>>(endpoint);
+export async function fetchKumuhList(
+  input?: number | KumuhListParams
+): Promise<KawasanKumuhData[]> {
+  const params =
+    typeof input === "number"
+      ? { year: input }
+      : input ?? {};
 
-  if (!res.success || !Array.isArray(res.data)) {
-    throw new Error(res.message ?? "Gagal mengambil data kawasan kumuh dari server");
-  }
+  return fetchApiList<KumuhApiItem, KawasanKumuhData>("/kumuh", {
+    query: {
+      year_inspected: params.year,
+      page: params.page,
+      limit: params.perPage,
+      region_id: params.regionId,
+      district_id: params.districtId,
+    },
+    transform: transformKumuhItem,
+    errorMessage: "Gagal mengambil data kawasan kumuh dari server",
+    collectAllPages: false,
+  });
+}
 
-  return res.data.map(transformKumuhItem);
+export async function fetchKumuhPage(
+  input?: number | KumuhListParams
+): Promise<ApiPaginatedResult<KawasanKumuhData>> {
+  const params =
+    typeof input === "number"
+      ? { year: input }
+      : input ?? {};
+
+  return fetchApiListWithMeta<KumuhApiItem, KawasanKumuhData>("/kumuh", {
+    query: {
+      year_inspected: params.year,
+      page: params.page,
+      limit: params.perPage,
+      region_id: params.regionId,
+      district_id: params.districtId,
+    },
+    transform: transformKumuhItem,
+    errorMessage: "Gagal mengambil data kawasan kumuh dari server",
+  });
 }

@@ -43,7 +43,22 @@ Klinik PKP adalah **aplikasi web** yang menyediakan informasi lengkap tentang:
 | **Lokasi Klinik** | Alamat dan kontak klinik PKP | Data Statis |
 
 **Backend**: Golang (Go Fiber), menyediakan REST API di `/api/v1/...`
-**Frontend**: Next.js 16 (React 19), berkomunikasi dengan backend melalui proxy rewrite.
+**Frontend**: Next.js 16.2.1 (React 19.2.4), berkomunikasi dengan backend melalui proxy rewrite.
+
+### Status Arsitektur Saat Ini
+
+Jika ada bagian dokumentasi lama yang berbeda dengan poin di bawah, ikuti status ini sebagai sumber kebenaran terbaru:
+
+- Dashboard admin sekarang **hanya untuk role `admin`**.
+- Backend user directory memakai role `admin` dan `user`; role `user` tidak boleh masuk ke dashboard admin.
+- Login admin menggunakan `email`, `nip`, dan `password`, dengan **NIP wajib tepat 18 digit**.
+- Jika endpoint auth backend belum tersedia, aplikasi bisa memakai fallback login admin berbasis environment variable server-side (`ADMIN_EMAIL`, `ADMIN_NIP`, `ADMIN_PASSWORD`).
+- Users di dashboard admin dibaca dari backend `/api/v1/users` dan tampil sebagai **read-only directory**.
+- CRUD admin yang masih aktif diarahkan ke backend melalui route proxy `/api/admin/resources/[resource]`.
+- Penyimpanan lokal `data/admin/*.json` sudah dihapus.
+- Audit log admin saat ini masih **in-memory per server instance**, jadi belum persisten lintas restart.
+- Login backend mengikuti dokumentasi terbaru: `POST /api/v1/authentications`, lalu profil pengguna diambil dari `GET /api/v1/users/me`.
+- Jika login gagal, periksa `API_URL`, `AUTH_API_URL`, atau `AUTH_API_PATH`. Berdasarkan dokumentasi backend proyek, default path login adalah `POST /api/v1/authentications`.
 
 ---
 
@@ -53,9 +68,9 @@ Klinik PKP adalah **aplikasi web** yang menyediakan informasi lengkap tentang:
 
 | Teknologi | Versi | Fungsi |
 |---|---|---|
-| **Next.js** | 16.0.10 | Framework React dengan App Router |
-| **React** | 19.2.3 | Library UI |
-| **TypeScript** | 5.8.3 | Bahasa pemrograman (strict mode) |
+| **Next.js** | 16.2.1 | Framework React dengan App Router |
+| **React** | 19.2.4 | Library UI |
+| **TypeScript** | 6.0.2 | Bahasa pemrograman (strict mode) |
 | **Turbopack** | built-in | Bundler untuk development (pengganti Webpack) |
 
 ### Library Utama
@@ -196,7 +211,7 @@ klinik-pkp/
 │   └── proxy.ts             # Middleware (rate limit, CSP, keamanan)
 │
 ├── eslint.config.mjs        # Konfigurasi ESLint + import ordering
-├── tailwind.config.ts       # Konfigurasi Tailwind CSS
+├── tailwind.config.mjs      # Konfigurasi Tailwind CSS
 ├── tsconfig.json             # Konfigurasi TypeScript
 ├── next.config.mjs           # Konfigurasi Next.js (proxy, headers)
 └── package.json
@@ -285,8 +300,9 @@ klinik-pkp/
 | `/informasi/[slug]` | `app/informasi/[slug]/page.tsx` | Server | Halaman informasi dinamis |
 | `/lokasi-klinik` | `app/lokasi-klinik/page.tsx` | Server + Loader | Lokasi dan kontak klinik |
 | `/login` | `app/login/page.tsx` | Server | Halaman login |
-| `/api/auth/login` | `app/api/auth/route.ts` | API Route | Endpoint login |
-| `/api/auth/logout` | `app/api/auth/route.ts` | API Route | Endpoint logout |
+| `/api/auth/csrf` | `app/api/auth/csrf/route.ts` | API Route | Endpoint CSRF token |
+| `/api/auth/login` | `app/api/auth/login/route.ts` | API Route | Endpoint login admin |
+| `/api/auth/logout` | `app/api/auth/logout/route.ts` | API Route | Endpoint logout |
 | `/api/health` | `app/api/health/route.ts` | API Route | Health check |
 
 ### Pola Server + Loader
@@ -650,9 +666,12 @@ Hanya path berikut yang diizinkan melewati proxy ke backend:
 /api/ext/rusun
 /api/ext/uploads/*
 /api/ext/sosialisasi
-/api/ext/berita
-/api/ext/kawasan-kumuh
-/api/ext/penerimaan-bsps
+/api/ext/bank-desain
+/api/ext/kumuh
+/api/ext/bsps
+/api/ext/regions
+/api/ext/districts
+/api/ext/villages
 ```
 
 Path lain yang dimulai dengan `/api/ext/` akan mendapat response **403 Forbidden**.
@@ -703,11 +722,14 @@ interface AuthUser {
 ```
 
 ### Alur Login
-1. User submit email + password ke `POST /api/auth/login`
-2. Server verifikasi kredensial
-3. Server buat access token + refresh token
-4. Token disimpan di httpOnly cookies (tidak bisa diakses JavaScript)
-5. Middleware cek cookie di setiap request ke route yang dilindungi
+1. Client meminta CSRF token ke `GET /api/auth/csrf`.
+2. User mengirim `email`, `nip`, dan `password` ke `POST /api/auth/login`.
+3. Frontend memvalidasi **NIP tepat 18 digit** sebelum submit.
+4. Server memvalidasi input, CSRF token, dan rate limit login.
+5. Server mencoba fallback admin lokal dari environment variable bila dikonfigurasi, lalu meneruskan autentikasi ke backend auth endpoint jika diperlukan.
+6. Hanya role backend yang ternormalisasi menjadi `admin` yang boleh masuk dashboard.
+7. Server membuat access token + refresh token dan menyimpannya di httpOnly cookies.
+8. Middleware/protected layout memeriksa cookie untuk akses ke `/admin`.
 
 ---
 
@@ -1000,14 +1022,24 @@ npm run build
 |---|---|---|---|
 | `API_URL` | Ya | URL backend API (server-only, tidak terekspose ke browser) | `http://localhost:8000/api/v1` |
 | `JWT_SECRET` | Ya | Secret untuk signing JWT token | `your-secret-key-min-32-chars` |
-| `INTERNAL_API_KEY` | Opsional | Key untuk validasi internal API | `internal-key` |
-| `DEMO_USER_EMAIL` | Opsional | Email demo untuk login | `demo@klinikpkp.id` |
-| `DEMO_USER_NIP` | Opsional | NIP demo untuk login | `123456789` |
-| `DEMO_USER_PASSWORD` | Opsional | Password demo untuk login | `demo123` |
+| `ADMIN_NAME` | Opsional | Nama admin lokal fallback | `Administrator Klinik PKP` |
+| `ADMIN_EMAIL` | Opsional | Email admin lokal fallback | `admin@klinikpkp.go.id` |
+| `ADMIN_NIP` | Opsional | NIP admin lokal fallback, tepat 18 digit | `199001012020000001` |
+| `ADMIN_PASSWORD` | Opsional | Password admin lokal fallback | `password-kuat` |
+| `AUTH_API_URL` | Opsional | Full URL endpoint login backend bila path auth tidak default | `https://api.example.com/api/v1/auth/login` |
+| `AUTH_API_PATH` | Opsional | Path login relatif terhadap `API_URL` | `/auth/login` |
 | `NEXT_PUBLIC_APP_NAME` | Opsional | Nama aplikasi (tampil di UI) | `Klinik PKP` |
 | `NEXT_PUBLIC_APP_URL` | Opsional | URL aplikasi | `http://localhost:3000` |
 
 > **Penting**: Variable tanpa prefix `NEXT_PUBLIC_` hanya bisa diakses di server (middleware, API routes, server components). Variable dengan prefix `NEXT_PUBLIC_` bisa diakses di browser.
+
+### Catatan Operasional Login Admin
+
+- `API_URL` harus aktif dan dapat dijangkau dari server Next.js.
+- Jika backend auth belum tersedia, isi `ADMIN_EMAIL`, `ADMIN_NIP`, dan `ADMIN_PASSWORD` di `.env.local` untuk login admin lokal.
+- Jika endpoint auth backend tidak berada di path default, isi `AUTH_API_URL` atau `AUTH_API_PATH`.
+- Jika `API_URL` memakai ngrok, pastikan URL tersebut belum expired.
+- Login admin akan gagal bila backend mengembalikan role selain `admin`.
 
 ---
 

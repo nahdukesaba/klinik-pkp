@@ -13,7 +13,7 @@
 
 "use client";
 
-import { memo, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 
 import { MapPin, X } from "lucide-react";
 
@@ -82,7 +82,7 @@ const BspsLocationCard = memo(function BspsLocationCard({
         </h3>
         {statusColor && statusLabel && (
           <span
-            className="text-xs px-2 py-0.5 rounded text-white whitespace-nowrap flex-shrink-0"
+            className="rounded px-2 py-0.5 text-center text-xs leading-tight text-white flex-shrink-0"
             style={{ backgroundColor: statusColor.fill }}
           >
             {statusLabel}
@@ -130,28 +130,37 @@ export function BspsSidebar({
   statusColors,
   onCloseSidebar,
 }: BspsSidebarProps) {
-  const [currentPage, setCurrentPage] = useState(1);
-
-  // Derive-state-during-render: reset halaman tanpa extra re-render.
-  // Ref: vercel-react-best-practices/rerender-derived-state-no-effect
   const filterKey = `${filterState.kabupatenFilter}-${filterState.kecamatanFilter}-${filterState.kelurahanFilter}-${filterState.statusFilter}-${filterState.searchQuery}`;
-  const prevFilterKey = useRef(filterKey);
-  if (prevFilterKey.current !== filterKey) {
-    prevFilterKey.current = filterKey;
-    if (currentPage !== 1) setCurrentPage(1);
-  }
-
-  const totalPages = Math.ceil(filteredDesa.length / ITEMS_PER_PAGE);
+  const [paginationState, setPaginationState] = useState(() => ({
+    currentPage: 1,
+    filterKey,
+  }));
+  const currentPage =
+    paginationState.filterKey === filterKey
+      ? paginationState.currentPage
+      : 1;
+  const totalPages = Math.max(1, Math.ceil(filteredDesa.length / ITEMS_PER_PAGE));
+  const activePage = Math.min(currentPage, totalPages);
   const paginatedDesa = useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    const start = (activePage - 1) * ITEMS_PER_PAGE;
     return filteredDesa.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredDesa, currentPage]);
+  }, [activePage, filteredDesa]);
+
+  const handlePageChange = useCallback(
+    (page: number) => {
+      setPaginationState({
+        filterKey,
+        currentPage: Math.min(Math.max(page, 1), totalPages),
+      });
+    },
+    [filterKey, totalPages]
+  );
 
   return (
     <div
       className={`${
         isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-      } fixed lg:relative z-40 lg:z-10 h-[calc(100vh-4rem)] lg:h-full top-16 lg:top-0 left-0 w-[85vw] sm:w-80 lg:w-96 bg-card border-r border-border transition-transform duration-300 flex flex-col shadow-xl lg:shadow-none`}
+      } fixed lg:relative z-40 lg:z-10 h-[calc(100vh-4rem)] lg:h-full top-16 lg:top-0 left-0 w-[min(92vw,24rem)] sm:w-80 lg:w-96 bg-card border-r border-border transition-transform duration-300 flex flex-col shadow-xl lg:shadow-none`}
     >
       {/* Mobile: close button */}
       <div className="lg:hidden flex items-center justify-between p-3 border-b border-border bg-secondary/50 flex-shrink-0">
@@ -169,7 +178,7 @@ export function BspsSidebar({
 
       {/* Filter Section */}
       <div className="flex-shrink-0 p-3 border-b border-border bg-card">
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <SearchableFilterSelect
             value={filterState.kabupatenFilter}
             onValueChange={filterActions.handleKabupatenChange}
@@ -198,7 +207,7 @@ export function BspsSidebar({
           />
           <button
             onClick={filterActions.resetFilters}
-            className="w-full h-9 text-xs px-2 py-1 text-primary hover:bg-primary/10 rounded-lg transition-colors border border-primary/30 flex items-center justify-center gap-1"
+            className="flex min-h-10 w-full items-center justify-center gap-1 rounded-lg border border-primary/30 px-2 py-1 text-xs text-primary transition-colors hover:bg-primary/10"
           >
             Reset Filter
           </button>
@@ -225,10 +234,10 @@ export function BspsSidebar({
 
       {/* Pagination */}
       <SidebarPagination
-        currentPage={currentPage}
+        currentPage={activePage}
         totalPages={totalPages}
         totalItems={filteredDesa.length}
-        onPageChange={setCurrentPage}
+        onPageChange={handlePageChange}
       />
     </div>
   );

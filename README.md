@@ -30,6 +30,8 @@ Dibangun dengan **Next.js 16**, **TypeScript**, **Tailwind CSS**, dan **React Qu
 
 ## Struktur Folder
 
+Lihat panduan struktur yang lebih detail di [docs/PROJECT-STRUCTURE.md](docs/PROJECT-STRUCTURE.md).
+
 ```
 src/
 ├── app/                    # Next.js App Router (ROUTING ONLY)
@@ -113,6 +115,11 @@ Backend API URL dikonfigurasi di `.env.local`:
 API_URL=http://localhost:8000/api/v1
 # atau dengan ngrok:
 # API_URL=https://abc123.ngrok-free.dev/api/v1
+
+# Opsional: fallback login admin lokal jika auth backend belum tersedia
+ADMIN_EMAIL=admin@klinikpkp.go.id
+ADMIN_NIP=199001012020000001
+ADMIN_PASSWORD=password-kuat
 ```
 
 > **PENTING:** Jangan gunakan prefix `NEXT_PUBLIC_` untuk `API_URL`.  
@@ -139,6 +146,10 @@ Dokumentasi lengkap endpoint API ada di [docs/API_DOCUMENTATION.md](docs/API_DOC
 ### Dokumentasi Teknis
 
 Dokumentasi teknis lengkap (arsitektur, konvensi, panduan fitur baru) ada di [docs/DOKUMENTASI-PROYEK.md](docs/DOKUMENTASI-PROYEK.md).
+
+### Dokumentasi Admin
+
+Ringkasan arsitektur admin yang paling aktual ada di [docs/ADMIN-DASHBOARD-LAPORAN.md](docs/ADMIN-DASHBOARD-LAPORAN.md).
 
 ## Arsitektur
 

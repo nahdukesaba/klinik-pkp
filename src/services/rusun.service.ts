@@ -1,9 +1,12 @@
 /** Service API untuk data Rusun. Transform snake_case → camelCase. */
 
-import { apiClient } from "@/lib/api-client";
+import {
+  fetchApiList,
+  fetchApiListWithMeta,
+  type ApiPaginatedResult,
+} from "@/lib/api-client";
 import { API_BASE_URL } from "@/lib/constants";
 import type {
-  ApiResponse,
   CoordinateApi,
   VillageApi,
   DistrictApi,
@@ -38,6 +41,9 @@ export interface RusunApiItem {
 /** Data rusun untuk UI (camelCase) */
 export interface RusunData {
   id: string;
+  villageId: string;
+  districtId: string;
+  regionId: string;
   name: string;
   address: string;
   kelurahan: string;
@@ -51,6 +57,14 @@ export interface RusunData {
   lat: number;
   lng: number;
   image?: string;
+}
+
+export interface RusunListParams {
+  page?: number;
+  perPage?: number;
+  regionId?: string;
+  districtId?: string;
+  villageId?: string;
 }
 
 // --- Transformasi ---
@@ -76,6 +90,9 @@ export function transformRusunItem(item: RusunApiItem): RusunData {
 
   return {
     id: item.id,
+    villageId: item.village_id,
+    districtId: item.district_id,
+    regionId: item.region_id,
     name: item.name,
     address: item.address,
     kelurahan,
@@ -95,12 +112,35 @@ export function transformRusunItem(item: RusunApiItem): RusunData {
 // --- API ---
 
 /** GET /api/ext/rusun — ambil semua data rusun */
-export async function fetchRusunList(): Promise<RusunData[]> {
-  const res = await apiClient.get<ApiResponse<RusunApiItem[]>>("/rusun");
+export async function fetchRusunList(
+  params: RusunListParams = {}
+): Promise<RusunData[]> {
+  return fetchApiList<RusunApiItem, RusunData>("/rusun", {
+    query: {
+      page: params.page,
+      limit: params.perPage,
+      region_id: params.regionId,
+      district_id: params.districtId,
+      village_id: params.villageId,
+    },
+    transform: transformRusunItem,
+    errorMessage: "Gagal mengambil data rusun dari server",
+    collectAllPages: false,
+  });
+}
 
-  if (!res.success || !Array.isArray(res.data)) {
-    throw new Error(res.message ?? "Gagal mengambil data rusun dari server");
-  }
-
-  return res.data.map(transformRusunItem);
+export async function fetchRusunPage(
+  params: RusunListParams = {}
+): Promise<ApiPaginatedResult<RusunData>> {
+  return fetchApiListWithMeta<RusunApiItem, RusunData>("/rusun", {
+    query: {
+      page: params.page,
+      limit: params.perPage,
+      region_id: params.regionId,
+      district_id: params.districtId,
+      village_id: params.villageId,
+    },
+    transform: transformRusunItem,
+    errorMessage: "Gagal mengambil data rusun dari server",
+  });
 }

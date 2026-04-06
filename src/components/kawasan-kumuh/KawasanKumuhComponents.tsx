@@ -16,6 +16,7 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import type { KawasanKumuhData } from "@/services/kawasan-kumuh.service";
 
@@ -62,7 +63,7 @@ export function KawasanKumuhHeader({
         {/* Kanan: Pencarian, Filter, Statistik */}
         <div className="flex flex-wrap items-center gap-2">
           {/* Input Pencarian */}
-          <div className="relative flex-1 min-w-0 sm:min-w-[200px] md:min-w-[300px] max-w-md">
+          <div className="relative w-full max-w-md flex-1 min-w-0 sm:w-auto sm:min-w-[200px] md:min-w-[300px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <input
               type="text"
@@ -82,10 +83,8 @@ export function KawasanKumuhHeader({
 
           {/* Filter Status */}
           <Select value={statusFilter} onValueChange={onStatusChange}>
-            <SelectTrigger className="w-full sm:w-auto sm:min-w-[10rem]">
-              <span>
-                Status: {statusFilter === "all" ? "Semua" : statusFilter}
-              </span>
+            <SelectTrigger className="min-h-10 w-full sm:w-auto sm:min-w-[10rem]">
+              <SelectValue placeholder="Semua Status" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Semua Status</SelectItem>
@@ -171,12 +170,16 @@ const KawasanCard = memo(function KawasanCard({
       }`}
     >
       <div className="flex items-start justify-between gap-2">
-        <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-sm text-foreground truncate">{kawasan.name}</h3>
-          <p className="text-xs text-muted-foreground mt-0.5 truncate">
+        <div className="min-w-0 flex-1">
+          <h3 className="text-sm font-semibold leading-snug text-foreground break-words">
+            {kawasan.name}
+          </h3>
+          <p className="mt-0.5 text-xs leading-snug text-muted-foreground break-words">
             {kawasan.kelurahan}, {kawasan.kecamatan}
           </p>
-          <p className="text-xs text-muted-foreground truncate">{kawasan.kabupaten}</p>
+          <p className="text-xs text-muted-foreground break-words">
+            {kawasan.kabupaten}
+          </p>
         </div>
         {statusColor && (
           <span
@@ -221,7 +224,7 @@ export function KawasanKumuhSidebar({
     <div
       className={`${
         isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-      } fixed lg:relative z-40 lg:z-20 h-[calc(100vh-4rem)] lg:h-full top-16 lg:top-0 left-0 w-[85vw] sm:w-80 lg:w-96 bg-card border-r border-border transition-transform duration-300 flex flex-col shadow-xl lg:shadow-none`}
+      } fixed lg:relative z-40 lg:z-20 h-[calc(100vh-4rem)] lg:h-full top-16 lg:top-0 left-0 w-[min(92vw,24rem)] sm:w-80 lg:w-96 bg-card border-r border-border transition-transform duration-300 flex flex-col shadow-xl lg:shadow-none`}
     >
       {/* Header Mobile dengan Tombol Tutup */}
       <div className="lg:hidden flex items-center justify-between p-3 border-b border-border bg-secondary/50">
@@ -237,7 +240,7 @@ export function KawasanKumuhSidebar({
 
       {/* Bagian Filter */}
       <div className="p-3 border-b border-border flex-shrink-0">
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <SearchableFilterSelect
             value={kabupatenFilter}
             onValueChange={onKabupatenChange}
@@ -269,7 +272,7 @@ export function KawasanKumuhSidebar({
 
           <button
             onClick={onResetFilters}
-            className="w-full h-9 text-xs px-2 py-1 text-primary hover:bg-primary/10 rounded-lg transition-colors border border-primary/30 flex items-center justify-center gap-1"
+            className="flex min-h-10 w-full items-center justify-center gap-1 rounded-lg border border-primary/30 px-2 py-1 text-xs text-primary transition-colors hover:bg-primary/10"
           >
             Reset Filter
           </button>
@@ -317,7 +320,7 @@ interface KawasanKumuhLegendProps {
 
 export function KawasanKumuhLegend({ statusColors }: KawasanKumuhLegendProps) {
   return (
-    <div className="absolute bottom-4 right-4 bg-card/95 backdrop-blur-sm border border-border rounded-xl p-3 shadow-lg z-[500]">
+    <div className="absolute bottom-4 right-4 z-[500] max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-card/95 p-3 shadow-lg backdrop-blur-sm">
       <p className="text-xs font-semibold text-foreground mb-2">Legenda</p>
       <div className="space-y-1.5">
         {Object.entries(statusColors).map(([key, { fill, label }]) => (

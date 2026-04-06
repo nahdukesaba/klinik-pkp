@@ -1,8 +1,11 @@
 /** Service API untuk data Bank Desain. Transform snake_case → camelCase. */
 
-import { apiClient } from "@/lib/api-client";
+import {
+  fetchApiList,
+  fetchApiListWithMeta,
+  type ApiPaginatedResult,
+} from "@/lib/api-client";
 import { buildImageUrl } from "@/services/rusun.service";
-import type { ApiResponse } from "@/types/api";
 
 // --- Tipe API ---
 
@@ -58,6 +61,12 @@ export interface FilterCategories {
   type: FilterCategory[];
   bedroom: FilterCategory[];
   teras: FilterCategory[];
+}
+
+export interface BankDesainListParams {
+  type?: string;
+  page?: number;
+  perPage?: number;
 }
 
 // --- Mapping tipe ---
@@ -140,12 +149,34 @@ export function deriveFilterCategories(items: BankDesainData[]): FilterCategorie
 // --- API ---
 
 /** GET /api/ext/bank-desain — ambil semua data bank desain */
-export async function fetchBankDesainList(): Promise<BankDesainData[]> {
-  const res = await apiClient.get<ApiResponse<BankDesainApiItem[]>>("/bank-desain");
+export async function fetchBankDesainList(
+  params: BankDesainListParams = {}
+): Promise<BankDesainData[]> {
+  return fetchApiList<BankDesainApiItem, BankDesainData>("/bank-desain", {
+    query: {
+      type: params.type,
+      page: params.page,
+      limit: params.perPage,
+    },
+    transform: transformBankDesainItem,
+    errorMessage: "Gagal mengambil data bank desain dari server",
+    collectAllPages: false,
+  });
+}
 
-  if (!res.success || !Array.isArray(res.data)) {
-    throw new Error(res.message ?? "Gagal mengambil data bank desain dari server");
-  }
-
-  return res.data.map(transformBankDesainItem);
+export async function fetchBankDesainPage(
+  params: BankDesainListParams = {}
+): Promise<ApiPaginatedResult<BankDesainData>> {
+  return fetchApiListWithMeta<BankDesainApiItem, BankDesainData>(
+    "/bank-desain",
+    {
+      query: {
+        type: params.type,
+        page: params.page,
+        limit: params.perPage,
+      },
+      transform: transformBankDesainItem,
+      errorMessage: "Gagal mengambil data bank desain dari server",
+    }
+  );
 }

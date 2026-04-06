@@ -4,11 +4,14 @@
  * Status dihitung otomatis: scheduled_at_start < hari ini → "selesai", else "mendatang".
  */
 
-import { apiClient } from "@/lib/api-client";
+import {
+  fetchApiList,
+  fetchApiListWithMeta,
+  type ApiPaginationMeta,
+} from "@/lib/api-client";
 import { formatDateId } from "@/lib/date";
 import { buildImageUrl } from "@/services/rusun.service";
 import type {
-  ApiResponse,
   CoordinateApi,
   DistrictApi,
   RegionApi,
@@ -41,6 +44,9 @@ export interface SosialisasiApiItem {
 /** Data lokasi sosialisasi untuk peta dan jadwal */
 export interface SosialisasiLocation {
   id: number;
+  villageId: string;
+  districtId: string;
+  regionId: string;
   name: string;
   kabupaten: string;
   kecamatan?: string;
@@ -50,8 +56,11 @@ export interface SosialisasiLocation {
   time: string;       // "HH:mm - HH:mm"
   peserta: number;
   alamat: string;
+  description: string;
   images: string[];
   status: "selesai" | "mendatang";
+  scheduledAtStart: string;
+  scheduledAtEnd: string;
 }
 
 /** Data berita sosialisasi (hanya item selesai + punya deskripsi + gambar) */
@@ -125,6 +134,9 @@ export function transformToLocation(item: SosialisasiApiItem): SosialisasiLocati
 
   return {
     id: Number(item.id),
+    villageId: item.village_id,
+    districtId: item.district_id,
+    regionId: item.region_id,
     name: item.title,
     kabupaten,
     kecamatan,
@@ -137,8 +149,11 @@ export function transformToLocation(item: SosialisasiApiItem): SosialisasiLocati
     time: timeRange,
     peserta: 0, // Tidak tersedia di API, default 0
     alamat: item.location,
+    description: item.description,
     images,
     status: computeStatus(item.scheduled_at_start),
+    scheduledAtStart: item.scheduled_at_start,
+    scheduledAtEnd: item.scheduled_at_end,
   };
 }
 
@@ -181,17 +196,35 @@ export interface SosialisasiResult {
   kabupatenList: string[];
 }
 
+export interface SosialisasiPageResult extends SosialisasiResult {
+  meta: ApiPaginationMeta;
+}
+
+export interface SosialisasiListParams {
+  page?: number;
+  perPage?: number;
+  regionId?: string;
+  districtId?: string;
+  villageId?: string;
+}
+
 // --- API ---
 
 /** GET /api/ext/sosialisasi — ambil semua data sosialisasi */
-export async function fetchSosialisasiList(): Promise<SosialisasiResult> {
-  const res = await apiClient.get<ApiResponse<SosialisasiApiItem[]>>("/sosialisasi");
-
-  if (!res.success || !Array.isArray(res.data)) {
-    throw new Error(res.message ?? "Gagal mengambil data sosialisasi dari server");
-  }
-
-  const items = res.data;
+export async function fetchSosialisasiList(
+  params: SosialisasiListParams = {}
+): Promise<SosialisasiResult> {
+  const items = await fetchApiList<SosialisasiApiItem>("/sosialisasi", {
+    query: {
+      page: params.page,
+      limit: params.perPage,
+      region_id: params.regionId,
+      district_id: params.districtId,
+      village_id: params.villageId,
+    },
+    errorMessage: "Gagal mengambil data sosialisasi dari server",
+    collectAllPages: false,
+  });
 
   // Single-pass: transformasi + klasifikasi sekaligus
   const locations: SosialisasiLocation[] = [];
@@ -233,5 +266,58 @@ export async function fetchSosialisasiList(): Promise<SosialisasiResult> {
     completedLocations,
     berita,
     kabupatenList,
+  };
+}
+
+export async function fetchSosialisasiPage(
+  params: SosialisasiListParams = {}
+): Promise<SosialisasiPageResult> {
+  const pageResult = await fetchApiListWithMeta<SosialisasiApiItem>("/sosialisasi", {
+    query: {
+      page: params.page,
+      limit: params.perPage,
+      region_id: params.regionId,
+      district_id: params.districtId,
+      village_id: params.villageId,
+    },
+    errorMessage: "Gagal mengambil data sosialisasi dari server",
+  });
+
+  const locations: SosialisasiLocation[] = [];
+  const upcomingLocations: SosialisasiLocation[] = [];
+  const completedLocations: SosialisasiLocation[] = [];
+  const berita: BeritaSosialisasi[] = [];
+  const kabupatenSet = new Set<string>();
+
+  for (const item of pageResult.items) {
+    const location = transformToLocation(item);
+    locations.push(location);
+
+    if (location.status === "mendatang") {
+      upcomingLocations.push(location);
+    } else {
+      completedLocations.push(location);
+    }
+
+    if (
+      location.status === "selesai" &&
+      item.description &&
+      item.description.trim() !== ""
+    ) {
+      berita.push(transformToBerita(item));
+    }
+
+    if (location.kabupaten) {
+      kabupatenSet.add(location.kabupaten);
+    }
+  }
+
+  return {
+    locations,
+    upcomingLocations,
+    completedLocations,
+    berita,
+    kabupatenList: ["Semua Lokasi", ...Array.from(kabupatenSet).sort()],
+    meta: pageResult.meta,
   };
 }

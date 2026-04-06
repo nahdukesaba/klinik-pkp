@@ -81,6 +81,11 @@ const ALLOWED_API_PATHS = [
   "/api/ext/bank-desain",
   "/api/ext/kumuh",
   "/api/ext/bsps",
+  "/api/ext/authentications",
+  "/api/ext/users",
+  "/api/ext/regions",
+  "/api/ext/districts",
+  "/api/ext/villages",
 ];
 
 /** Cek apakah path API diizinkan berdasarkan allowlist */
@@ -179,7 +184,7 @@ export function proxy(request: NextRequest) {
   // Redirect ke dashboard jika sudah login tapi mengakses halaman login
   if (AUTH_ROUTES.some((route) => pathname.startsWith(route))) {
     if (authToken) {
-      return NextResponse.redirect(new URL("/", request.url));
+      return NextResponse.redirect(new URL("/admin", request.url));
     }
   }
 

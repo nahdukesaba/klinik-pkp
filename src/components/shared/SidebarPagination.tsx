@@ -40,26 +40,26 @@ export function SidebarPagination({
   if (totalPages <= 1) return null;
 
   return (
-    <div className="flex items-center justify-between px-3 py-2 border-t border-border flex-shrink-0 bg-card">
-      <span className="text-xs text-muted-foreground">
+    <div className="flex flex-col gap-2 border-t border-border bg-card px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <span className="text-xs leading-5 text-muted-foreground">
         {totalItems} {itemLabel}
       </span>
       <div className="flex items-center gap-1">
         <button
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage <= 1}
-          className="p-1 rounded hover:bg-secondary disabled:opacity-30 disabled:cursor-default transition-colors"
+          className="rounded p-1.5 hover:bg-secondary disabled:opacity-30 disabled:cursor-default transition-colors"
           aria-label="Halaman sebelumnya"
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
-        <span className="text-xs text-muted-foreground px-2">
+        <span className="px-2 text-xs text-muted-foreground">
           {currentPage}/{totalPages}
         </span>
         <button
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage >= totalPages}
-          className="p-1 rounded hover:bg-secondary disabled:opacity-30 disabled:cursor-default transition-colors"
+          className="rounded p-1.5 hover:bg-secondary disabled:opacity-30 disabled:cursor-default transition-colors"
           aria-label="Halaman berikutnya"
         >
           <ChevronRight className="w-4 h-4" />

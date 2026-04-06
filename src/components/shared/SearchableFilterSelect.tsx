@@ -27,7 +27,7 @@ export function SearchableFilterSelect({
   searchPlaceholder,
   options,
   allLabel = "Semua",
-  className = "w-full h-9 text-xs",
+  className = "w-full min-h-10 text-xs",
   disabled = false,
 }: SearchableFilterSelectProps) {
   const selectOptions = useMemo(() => stringsToOptions(options), [options]);

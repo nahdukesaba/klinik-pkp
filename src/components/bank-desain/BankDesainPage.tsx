@@ -1,21 +1,6 @@
-/**
- * BankDesainPage
- * Container UI untuk halaman Bank Desain.
- * 
- * CATATAN UNTUK DEVELOPER:
- * Komponen ini menggunakan data dari hook useBankDesainPage.
- * Mudah diintegrasikan dengan API backend (Golang) untuk data dinamis.
- * 
- * @features
- * - Filter berdasarkan tipe rumah, jumlah kamar, dan fitur teras
- * - Preview gambar desain dengan zoom (react-zoom-pan-pinch)
- * - Link unduh RAB PDF dan desain (buka tab baru)
- * - Responsive grid layout dengan pagination
- */
-
 "use client";
 
-import { memo } from "react";
+import { memo, type ElementType } from "react";
 
 import Image from "next/image";
 
@@ -33,7 +18,6 @@ import {
   SlidersHorizontal,
   X,
 } from "lucide-react";
-// Note: X used in search clear button, SlidersHorizontal used in filter row
 
 import { DesignPreviewDialog } from "@/components/bank-desain/DesignPreviewDialog";
 import { Footer, Navbar } from "@/components/layout";
@@ -41,7 +25,6 @@ import { ApiErrorState } from "@/components/shared";
 import { GridPagination } from "@/components/shared/GridPagination";
 import { useBankDesainPage } from "@/hooks/bank-desain/use-bank-desain-page";
 import type { BankDesainData } from "@/hooks/bank-desain/use-bank-desain-query";
-// --- Design Card Component ---
 
 interface DesignCardProps {
   design: BankDesainData;
@@ -50,9 +33,9 @@ interface DesignCardProps {
   getDownloadUrl: (design: BankDesainData) => string;
 }
 
-const DesignCard = memo(function DesignCard({ 
-  design, 
-  index, 
+const DesignCard = memo(function DesignCard({
+  design,
+  index,
   onPreview,
   getDownloadUrl,
 }: DesignCardProps) {
@@ -60,71 +43,72 @@ const DesignCard = memo(function DesignCard({
 
   return (
     <div
-      className="bg-card rounded-2xl border border-border overflow-hidden hover:border-primary/30 transition-all shadow-md hover:shadow-xl group opacity-0 animate-fade-in"
+      className="group animate-fade-in overflow-hidden rounded-2xl border border-border bg-card opacity-0 shadow-md transition-all hover:border-primary/30 hover:shadow-xl"
       style={{
         animationDelay: `${index * 0.05}s`,
         animationFillMode: "forwards",
       }}
     >
-      {/* Thumbnail */}
-      <div className="aspect-[4/3] bg-secondary relative overflow-hidden">
+      <div className="relative aspect-[4/3] overflow-hidden bg-secondary">
         <Image
           src={design.thumbnail}
           alt={design.title}
           fill
-          className="object-cover group-hover:scale-105 transition-transform duration-500"
+          className="object-cover transition-transform duration-500 group-hover:scale-105"
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
         />
       </div>
 
-      {/* Content */}
       <div className="p-5">
-        <h3 className="font-semibold text-foreground text-lg mb-1">
+        <h3 className="mb-1 text-lg font-semibold text-foreground">
           {design.title}
         </h3>
-        <p className="text-xs text-muted-foreground mb-3">
+        <p className="mb-3 text-xs text-muted-foreground">
           Kode: {design.code}
         </p>
 
-        {/* Specs Grid */}
         <div className="mb-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
           <SpecItem icon={BedDouble} label={`${design.bedrooms} Kamar Tidur`} />
           <SpecItem icon={Bath} label={`${design.bathrooms} Kamar Mandi`} />
-          <SpecItem icon={Maximize2} label={`${design.area} m²`} />
-          <SpecItem 
-            icon={Home} 
-            label={design.terasFeature === "dengan-teras" ? "Ada Teras" : "Tanpa Teras"} 
+          <SpecItem icon={Maximize2} label={`${design.area} m2`} />
+          <SpecItem
+            icon={Home}
+            label={
+              design.terasFeature === "dengan-teras"
+                ? "Ada Teras"
+                : "Tanpa Teras"
+            }
           />
         </div>
 
-        {/* Action Buttons */}
         <div className="flex flex-col gap-2">
           <button
+            type="button"
             onClick={() => onPreview(design)}
             disabled={!hasPreviewImages}
-            className="w-full px-4 py-3 bg-secondary text-secondary-foreground rounded-lg text-sm font-medium flex items-center justify-center gap-2 hover:bg-secondary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-secondary px-4 py-3 text-sm font-medium text-secondary-foreground transition-colors hover:bg-secondary/80 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <Eye className="w-4 h-4" />
+            <Eye className="h-4 w-4" />
             Lihat Preview
           </button>
-          
+
           <div className="flex flex-col gap-2 sm:flex-row">
             <a
               href={getDownloadUrl(design)}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 px-3 py-3 bg-accent text-accent-foreground rounded-lg text-sm font-medium flex items-center justify-center gap-2 hover:bg-accent/80 transition-colors"
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-accent px-3 py-3 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent/80"
             >
-              <FileText className="w-4 h-4" />
+              <FileText className="h-4 w-4" />
               Unduh Desain
             </a>
             <a
               href={design.rabPdfUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 px-3 py-3 bg-primary text-primary-foreground rounded-lg text-sm font-medium flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors"
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-3 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
             >
-              <Download className="w-4 h-4" />
+              <Download className="h-4 w-4" />
               Unduh RAB
             </a>
           </div>
@@ -134,65 +118,63 @@ const DesignCard = memo(function DesignCard({
   );
 });
 
-// --- Spec Item Component ---
-
 interface SpecItemProps {
-  icon: React.ElementType;
+  icon: ElementType;
   label: string;
 }
 
 function SpecItem({ icon: Icon, label }: SpecItemProps) {
   return (
     <div className="flex items-start gap-2 text-sm text-muted-foreground">
-      <Icon className="w-4 h-4 text-primary flex-shrink-0" />
+      <Icon className="h-4 w-4 flex-shrink-0 text-primary" />
       <span className="break-words">{label}</span>
     </div>
   );
 }
 
-// --- Empty State Component ---
-
 function EmptyState({ onReset }: { onReset: () => void }) {
   return (
-    <div className="text-center py-16 bg-card rounded-2xl border border-border">
-      <Palette className="w-16 h-16 text-muted-foreground/50 mx-auto mb-4" />
-      <h3 className="text-lg font-semibold text-foreground mb-2">
+    <div className="rounded-2xl border border-border bg-card py-16 text-center">
+      <Palette className="mx-auto mb-4 h-16 w-16 text-muted-foreground/50" />
+      <h3 className="mb-2 text-lg font-semibold text-foreground">
         Tidak Ada Desain Ditemukan
       </h3>
-      <p className="text-muted-foreground max-w-md mx-auto mb-4">
+      <p className="mx-auto mb-4 max-w-md text-muted-foreground">
         Coba ubah filter atau kata kunci pencarian Anda.
       </p>
       <button
+        type="button"
         onClick={onReset}
-        className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors inline-flex items-center gap-2"
+        className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
       >
-        <RotateCcw className="w-4 h-4" />
+        <RotateCcw className="h-4 w-4" />
         Reset Filter
       </button>
     </div>
   );
 }
 
-// --- Pagination Component ---
+interface FilterChipProps {
+  label: string;
+  isActive: boolean;
+  onClick: () => void;
+}
 
-// --- Filter Chip (inline — no separate component needed) ---
-
-function FilterChip({ label, isActive, onClick }: { label: string; isActive: boolean; onClick: () => void }) {
+function FilterChip({ label, isActive, onClick }: FilterChipProps) {
   return (
     <button
+      type="button"
       onClick={onClick}
       className={`min-h-[36px] rounded-full border px-3 py-2 text-center text-xs font-medium leading-snug transition-all duration-200 ${
         isActive
-          ? "bg-primary text-primary-foreground border-primary shadow-sm"
-          : "bg-secondary/50 text-muted-foreground border-border hover:bg-secondary hover:text-foreground"
+          ? "border-primary bg-primary text-primary-foreground shadow-sm"
+          : "border-border bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground"
       }`}
     >
       {label}
     </button>
   );
 }
-
-// --- Main Component ---
 
 export default function BankDesainPage() {
   const {
@@ -228,7 +210,6 @@ export default function BankDesainPage() {
     getDesignDownloadUrl,
   } = useBankDesainPage();
 
-  // Error state tetap full-page (tidak ada data sama sekali)
   if (isError) {
     return <ApiErrorState error={error} onRetry={refetch} />;
   }
@@ -236,78 +217,93 @@ export default function BankDesainPage() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <main ref={ref} className="pt-24 pb-16">
-        {/* Background Pattern */}
+      <main ref={ref} className="pb-16 pt-24">
         <div className="fixed inset-0 -z-10 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-secondary/60 via-background to-accent-2/20 dark:from-background dark:via-primary/5 dark:to-accent/5" />
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent-2/10 rounded-full blur-3xl" />
+          <div className="absolute left-1/4 top-1/4 h-96 w-96 rounded-full bg-primary/5 blur-3xl" />
+          <div className="absolute bottom-1/4 right-1/4 h-96 w-96 rounded-full bg-accent-2/10 blur-3xl" />
         </div>
 
         <div className="container mx-auto px-4">
-          {/* Header */}
-          <div className="text-center mb-10 animate-on-scroll">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-full text-sm font-medium mb-4 border border-primary/20">
-              <Palette className="w-4 h-4" />
+          <div className="mb-10 text-center animate-on-scroll">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-sm font-medium text-primary">
+              <Palette className="h-4 w-4" />
               <span>Bank Desain</span>
             </div>
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4">
+            <h1 className="mb-4 text-3xl font-bold text-foreground md:text-4xl lg:text-5xl">
               Koleksi Desain Rumah
             </h1>
-            <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
-              Temukan berbagai desain rumah yang dapat menjadi inspirasi untuk pembangunan hunian Anda.
+            <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
+              Temukan berbagai desain rumah yang dapat menjadi inspirasi untuk
+              pembangunan hunian Anda.
             </p>
           </div>
 
-          {/* Search + Filter Section - Modern Design */}
-          <div className="bg-card rounded-2xl border border-border p-5 mb-6 shadow-sm animate-on-scroll">
-            {/* Search Bar */}
+          <div className="mb-6 rounded-2xl border border-border bg-card p-5 shadow-sm animate-on-scroll">
             <div className="relative mb-4">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
                 placeholder="Cari desain berdasarkan nama, kode, atau tipe..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 bg-secondary/50 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all duration-200 placeholder:text-muted-foreground/60"
+                onChange={(event) => setSearchQuery(event.target.value)}
+                className="w-full rounded-xl border border-border bg-secondary/50 py-3 pl-12 pr-4 text-sm placeholder:text-muted-foreground/60 focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/50"
               />
               {searchQuery && (
                 <button
+                  type="button"
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-secondary rounded-full transition-colors"
+                  className="absolute right-3 top-1/2 rounded-full p-1 transition-colors hover:bg-secondary"
                   aria-label="Hapus pencarian"
                 >
-                  <X className="w-4 h-4 text-muted-foreground" />
+                  <X className="h-4 w-4 text-muted-foreground" />
                 </button>
               )}
             </div>
 
-            {/* All filter chips in one row */}
             <div className="flex flex-wrap items-center gap-1.5">
-              <SlidersHorizontal className="w-4 h-4 text-primary flex-shrink-0" />
-              <span className="text-xs text-muted-foreground mr-1">|</span>
-              {typeCategories.map((cat) => (
-                <FilterChip key={`type-${cat.id}`} label={cat.label} isActive={typeFilter === cat.id} onClick={() => setTypeFilter(cat.id)} />
+              <SlidersHorizontal className="h-4 w-4 flex-shrink-0 text-primary" />
+              <span className="mr-1 text-xs text-muted-foreground">|</span>
+              {typeCategories.map((category) => (
+                <FilterChip
+                  key={`type-${category.id}`}
+                  label={category.label}
+                  isActive={typeFilter === category.id}
+                  onClick={() => setTypeFilter(category.id)}
+                />
               ))}
-              <span className="text-xs text-muted-foreground mx-0.5">|</span>
-              {bedroomCategories.map((cat) => (
-                <FilterChip key={`bed-${cat.id}`} label={cat.label} isActive={bedroomFilter === cat.id} onClick={() => setBedroomFilter(cat.id)} />
+              <span className="mx-0.5 text-xs text-muted-foreground">|</span>
+              {bedroomCategories.map((category) => (
+                <FilterChip
+                  key={`bed-${category.id}`}
+                  label={category.label}
+                  isActive={bedroomFilter === category.id}
+                  onClick={() => setBedroomFilter(category.id)}
+                />
               ))}
-              <span className="text-xs text-muted-foreground mx-0.5">|</span>
-              {terasCategories.map((cat) => (
-                <FilterChip key={`teras-${cat.id}`} label={cat.label} isActive={terasFilter === cat.id} onClick={() => setTerasFilter(cat.id)} />
+              <span className="mx-0.5 text-xs text-muted-foreground">|</span>
+              {terasCategories.map((category) => (
+                <FilterChip
+                  key={`teras-${category.id}`}
+                  label={category.label}
+                  isActive={terasFilter === category.id}
+                  onClick={() => setTerasFilter(category.id)}
+                />
               ))}
             </div>
           </div>
 
-          {/* Results Summary */}
           <div className="mb-6 flex flex-wrap items-center justify-between gap-2 px-1">
             <p className="text-sm text-muted-foreground">
               Menampilkan{" "}
-              <span className="font-semibold text-foreground">{totalFilteredDesigns}</span>
-              {" "}dari{" "}
-              <span className="font-semibold text-foreground">{totalDesigns}</span>
-              {" "}desain
+              <span className="font-semibold text-foreground">
+                {totalFilteredDesigns}
+              </span>{" "}
+              dari{" "}
+              <span className="font-semibold text-foreground">
+                {totalDesigns}
+              </span>{" "}
+              desain
             </p>
             {totalPages > 1 && (
               <p className="text-sm text-muted-foreground">
@@ -316,15 +312,16 @@ export default function BankDesainPage() {
             )}
           </div>
 
-          {/* Design Grid */}
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-20">
-              <div className="w-10 h-10 border-3 border-primary border-t-transparent rounded-full animate-spin mb-4" />
-              <p className="text-muted-foreground text-sm">Memuat data desain rumah...</p>
+              <div className="mb-4 h-10 w-10 animate-spin rounded-full border-3 border-primary border-t-transparent" />
+              <p className="text-sm text-muted-foreground">
+                Memuat data desain rumah...
+              </p>
             </div>
           ) : paginatedDesigns.length > 0 ? (
             <>
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
                 {paginatedDesigns.map((design, index) => (
                   <DesignCard
                     key={design.id}
@@ -350,7 +347,6 @@ export default function BankDesainPage() {
       </main>
       <Footer />
 
-      {/* Preview Dialog */}
       <DesignPreviewDialog
         design={previewDesign}
         isOpen={isPreviewOpen}

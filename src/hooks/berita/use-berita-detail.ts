@@ -42,7 +42,7 @@ export function useBeritaDetail(id: number) {
     if (!berita) return [];
     return beritaList
       .filter((b) => b.id !== id && b.kabupaten === berita.kabupaten)
-      .sort((a, b) => new Date(b.rawDate).getTime() - new Date(a.rawDate).getTime())
+      .sort((a, b) => b.rawDate.localeCompare(a.rawDate))
       .slice(0, 5) as BeritaDetailData[];
   }, [berita, beritaList, id]);
 
@@ -50,7 +50,7 @@ export function useBeritaDetail(id: number) {
     if (relatedBerita.length >= 5) return relatedBerita;
     const otherBerita = beritaList
       .filter((b) => b.id !== id && !relatedBerita.find((r) => r.id === b.id))
-      .sort((a, b) => new Date(b.rawDate).getTime() - new Date(a.rawDate).getTime())
+      .sort((a, b) => b.rawDate.localeCompare(a.rawDate))
       .slice(0, 5 - relatedBerita.length) as BeritaDetailData[];
     return [...relatedBerita, ...otherBerita];
   }, [relatedBerita, beritaList, id]);

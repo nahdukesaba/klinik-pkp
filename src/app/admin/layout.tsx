@@ -1,17 +1,7 @@
 import { redirect } from "next/navigation";
 
-import { AdminAuthProvider } from "@/components/admin/AdminAuthGuard";
-import { AdminShell } from "@/components/admin/AdminShell";
+import { AdminAuthProvider, AdminShell } from "@/components/admin";
 import { getSessionUserFromCookies } from "@/lib/admin/security";
-
-import type { Metadata } from "next";
-
-export const metadata: Metadata = {
-  title: "Admin Dashboard - Klinik PKP",
-  description:
-    "Panel administrasi untuk mengelola konten dan data Klinik PKP - BP3KP Sumatera II.",
-  robots: { index: false, follow: false },
-};
 
 export default async function AdminLayout({
   children,
@@ -21,11 +11,19 @@ export default async function AdminLayout({
   const user = await getSessionUserFromCookies();
 
   if (!user) {
-    redirect("/login?redirect=/admin");
+    redirect("/login");
   }
 
   return (
-    <AdminAuthProvider user={user}>
+    <AdminAuthProvider
+      user={{
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        nip: user.nip,
+        role: user.role,
+      }}
+    >
       <AdminShell>{children}</AdminShell>
     </AdminAuthProvider>
   );

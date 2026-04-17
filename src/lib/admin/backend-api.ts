@@ -1,5 +1,13 @@
 import "server-only";
 
+import {
+  buildConfiguredBackendApiUrl,
+  normalizeBackendApiBaseUrl,
+  normalizeBackendPathname,
+  requireBackendApiBaseUrl,
+} from "@/lib/server/backend-config";
+
+/** Tipe detail error dari backend */
 type BackendErrorDetails = Record<string, string | string[]>;
 
 function isBackendErrorDetails(value: unknown): value is BackendErrorDetails {
@@ -16,6 +24,7 @@ function isBackendErrorDetails(value: unknown): value is BackendErrorDetails {
   });
 }
 
+/** Ambil pesan error dari payload response backend. */
 function extractBackendMessage(payload: unknown, status: number) {
   if (payload && typeof payload === "object") {
     if ("error" in payload && typeof payload.error === "string" && payload.error.trim()) {
@@ -31,9 +40,10 @@ function extractBackendMessage(payload: unknown, status: number) {
     }
   }
 
-  return `HTTP ${status}`;
+  return `Terjadi kesalahan (HTTP ${status}).`;
 }
 
+/** Ambil detail error terstruktur dari payload jika tersedia. */
 function extractBackendDetails(payload: unknown) {
   if (
     payload &&
@@ -59,42 +69,34 @@ export class BackendApiError extends Error {
   }
 }
 
-function normalizeApiBaseUrl(value: string) {
-  return value.trim().replace(/\/+$/, "");
-}
-
-function normalizePathname(pathname: string) {
-  return pathname.replace(/^\/+/, "");
-}
-
+/** Ambil base URL backend dari environment variable. */
 export function getBackendApiBaseUrl() {
-  const apiUrl = process.env.API_URL?.trim();
-  if (!apiUrl) {
-    throw new Error("Backend API belum dikonfigurasi.");
-  }
-
-  return normalizeApiBaseUrl(apiUrl);
+  return requireBackendApiBaseUrl();
 }
 
+/** Buat URL langsung ke backend berdasarkan pathname. */
 export function buildBackendApiUrl(pathname: string) {
-  const cleanPath = normalizePathname(pathname);
-  return `${getBackendApiBaseUrl()}/${cleanPath}`;
+  return buildConfiguredBackendApiUrl(pathname);
 }
 
+/** Buat URL proxy melalui Next.js API route. */
 export function buildBackendProxyUrl(origin: string, pathname: string) {
-  const normalizedOrigin = origin.trim().replace(/\/+$/, "");
-  const cleanPath = normalizePathname(pathname);
+  const normalizedOrigin = normalizeBackendApiBaseUrl(origin);
+  const cleanPath = normalizeBackendPathname(pathname);
   return `${normalizedOrigin}/api/ext/${cleanPath}`;
 }
 
+/** Buat header standar untuk request ke backend. */
 export function createBackendHeaders(headers?: HeadersInit) {
-  return new Headers({
-    Accept: "application/json",
-    "ngrok-skip-browser-warning": "true",
-    ...headers,
-  });
+  const requestHeaders = new Headers(headers);
+  if (!requestHeaders.has("Accept")) {
+    requestHeaders.set("Accept", "application/json");
+  }
+
+  return requestHeaders;
 }
 
+/** Fetch JSON dari backend dengan timeout dan error handling. */
 export async function fetchBackendJson<T>(
   pathname: string,
   init: RequestInit & { timeoutMs?: number; origin?: string } = {}
@@ -109,7 +111,7 @@ export async function fetchBackendJson<T>(
       : buildBackendApiUrl(pathname);
   } catch (error) {
     throw new BackendApiError(
-      error instanceof Error ? error.message : "Backend API belum dikonfigurasi.",
+      error instanceof Error ? error.message : "Konfigurasi API_URL belum tersedia.",
       503
     );
   }
@@ -125,10 +127,10 @@ export async function fetchBackendJson<T>(
     });
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") {
-      throw new BackendApiError("Permintaan ke backend melebihi batas waktu.", 504);
+      throw new BackendApiError("Waktu tunggu ke backend habis.", 504);
     }
 
-    throw new BackendApiError("Tidak dapat terhubung ke backend API.", 502);
+    throw new BackendApiError("Layanan backend sedang tidak tersedia.", 502);
   }
 
   const payload = await response.json().catch(() => null);

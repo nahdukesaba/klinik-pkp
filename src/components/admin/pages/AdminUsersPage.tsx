@@ -13,35 +13,49 @@ import {
   StatusBadge,
   deleteAction,
   editAction,
+  type Column,
 } from "@/components/admin";
 import { Button } from "@/components/ui/button";
 import { useAdminUsersPage } from "@/hooks/admin/use-admin-users-page";
 import { formatDateId } from "@/lib/date";
-import type { AdminDirectoryUser, UserRole } from "@/types/admin";
-import type { Column } from "@/components/admin";
+import type { AdminDirectoryUser, AuditEntry, UserRole } from "@/types/admin";
 
-const controlUsersColumns: Column<AdminDirectoryUser>[] = [
+function formatTimestamp(value?: string) {
+  if (!value) {
+    return "-";
+  }
+
+  return formatDateId(value, {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+const userColumns: Column<AdminDirectoryUser>[] = [
   {
     key: "name",
-    label: "User",
+    label: "Pengguna",
     sortable: true,
     render: (item) => (
-      <div className="w-full max-w-[16rem] sm:max-w-none">
+      <div className="max-w-[260px]">
         <p className="font-medium text-foreground break-words">{item.name}</p>
-        <p className="mt-1 text-xs text-muted-foreground break-all">{item.email}</p>
-        <p className="mt-1 break-all font-mono text-[11px] text-muted-foreground/80">
-          {item.nip || "NIP detail tersedia saat edit"}
+        <p className="mt-0.5 text-xs text-muted-foreground break-all">
+          {item.email}
         </p>
       </div>
     ),
   },
   {
-    key: "phone",
-    label: "Telepon",
+    key: "nip",
+    label: "NIP / Telepon",
     render: (item) => (
-      <span className="font-mono text-xs text-muted-foreground">
-        {item.phone || "-"}
-      </span>
+      <div className="space-y-1">
+        <p className="font-mono text-xs text-foreground">{item.nip || "-"}</p>
+        <p className="text-xs text-muted-foreground">{item.phone || "-"}</p>
+      </div>
     ),
   },
   {
@@ -49,6 +63,7 @@ const controlUsersColumns: Column<AdminDirectoryUser>[] = [
     label: "Role",
     sortable: true,
     render: (item) => <RoleBadge role={item.role} />,
+    className: "text-center",
   },
   {
     key: "isActive",
@@ -60,33 +75,137 @@ const controlUsersColumns: Column<AdminDirectoryUser>[] = [
   },
   {
     key: "updatedAt",
-    label: "Update",
+    label: "Diperbarui",
     sortable: true,
     render: (item) => (
       <span className="text-xs text-muted-foreground">
-        {item.updatedAt
-          ? formatDateId(item.updatedAt, {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            })
-          : "-"}
+        {formatTimestamp(item.updatedAt ?? item.createdAt)}
       </span>
     ),
   },
 ];
 
-const roleOptions = [
-  { value: "all", label: "Semua Role" },
-  { value: "admin", label: "Admin" },
-  { value: "user", label: "User" },
-] as const;
+function AuditEntryList({ entries }: { entries: AuditEntry[] }) {
+  return (
+    <section className="rounded-3xl border border-border bg-card p-5 shadow-sm">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold text-foreground">
+            Aktivitas Terbaru
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Ringkasan audit untuk perubahan akun pengguna.
+          </p>
+        </div>
+      </div>
 
-const statusOptions = [
-  { value: "all", label: "Semua Status" },
-  { value: "active", label: "Aktif" },
-  { value: "inactive", label: "Nonaktif" },
-] as const;
+      {entries.length > 0 ? (
+        <div className="grid gap-3">
+          {entries.map((entry) => (
+            <article
+              key={entry.id}
+              className="rounded-2xl border border-border/70 bg-background/70 p-4"
+            >
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-foreground">
+                    {entry.details}
+                  </p>
+                  <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                    {entry.userName} | {entry.module} | {entry.action}
+                  </p>
+                </div>
+                <span className="text-xs text-muted-foreground">
+                  {formatTimestamp(entry.timestamp)}
+                </span>
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-2xl border border-dashed border-border p-6 text-sm text-muted-foreground">
+          Belum ada aktivitas audit untuk modul pengguna.
+        </div>
+      )}
+    </section>
+  );
+}
+
+function FilterBar({
+  roleFilter,
+  setRoleFilter,
+  statusFilter,
+  setStatusFilter,
+}: {
+  roleFilter: "all" | UserRole;
+  setRoleFilter: (value: "all" | UserRole) => void;
+  statusFilter: "all" | "active" | "inactive";
+  setStatusFilter: (value: "all" | "active" | "inactive") => void;
+}) {
+  return (
+    <section className="rounded-3xl border border-border bg-card p-5 shadow-sm">
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            Filter Role
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant={roleFilter === "all" ? "default" : "outline"}
+              onClick={() => setRoleFilter("all")}
+            >
+              Semua
+            </Button>
+            <Button
+              type="button"
+              variant={roleFilter === "admin" ? "default" : "outline"}
+              onClick={() => setRoleFilter("admin")}
+            >
+              Admin
+            </Button>
+            <Button
+              type="button"
+              variant={roleFilter === "user" ? "default" : "outline"}
+              onClick={() => setRoleFilter("user")}
+            >
+              User
+            </Button>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            Filter Status
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant={statusFilter === "all" ? "default" : "outline"}
+              onClick={() => setStatusFilter("all")}
+            >
+              Semua
+            </Button>
+            <Button
+              type="button"
+              variant={statusFilter === "active" ? "default" : "outline"}
+              onClick={() => setStatusFilter("active")}
+            >
+              Aktif
+            </Button>
+            <Button
+              type="button"
+              variant={statusFilter === "inactive" ? "default" : "outline"}
+              onClick={() => setStatusFilter("inactive")}
+            >
+              Nonaktif
+            </Button>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 export default function AdminUsersPage() {
   const {
@@ -118,7 +237,7 @@ export default function AdminUsersPage() {
 
   if (!canManage) {
     return (
-      <AdminAccessDenied description="Modul Control Users hanya dapat diakses oleh role admin." />
+      <AdminAccessDenied description="Modul Control Users hanya dapat dikelola oleh admin." />
     );
   }
 
@@ -126,105 +245,74 @@ export default function AdminUsersPage() {
     <div className="space-y-6 animate-fade-in">
       <AdminPageHeader
         title="Control Users"
-        description="Kelola akun per halaman."
+        description="Kelola akun admin dan user yang dapat mengakses sistem internal."
         icon={<Users className="h-5 w-5" />}
         createLabel="Tambah User"
         onCreate={openCreateDialog}
         actions={
-          <Button variant="outline" onClick={() => void refreshUsers()} className="gap-2">
-            <RefreshCw className="h-4 w-4" />
-            Refresh
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => void refreshUsers()}
+            disabled={usersQuery.isFetching}
+          >
+            <RefreshCw
+              className={usersQuery.isFetching ? "h-4 w-4 animate-spin" : "h-4 w-4"}
+            />
+            Muat Ulang
           </Button>
         }
       />
 
       <AdminStatsGrid
         items={[
+          { label: "Total User", value: stats.totalUsers, icon: <Users className="h-5 w-5" /> },
           {
-            label: "Total Users",
-            value: stats.totalUsers.toLocaleString("id-ID"),
-            icon: <Users className="h-4 w-4" />,
-            tone: "bg-cyan-500/10 text-cyan-700 dark:text-cyan-300",
+            label: "User Halaman Ini",
+            value: stats.pageUsers,
+            icon: <BadgeCheck className="h-5 w-5" />,
+            tone: "bg-teal-500/10 text-teal-600",
           },
           {
-            label: "User di Halaman Ini",
-            value: stats.pageUsers.toLocaleString("id-ID"),
-            icon: <BadgeCheck className="h-4 w-4" />,
-            tone: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+            label: "Aktif Halaman Ini",
+            value: stats.activeOnPage,
+            icon: <Shield className="h-5 w-5" />,
+            tone: "bg-emerald-500/10 text-emerald-600",
           },
           {
-            label: "Admin di Halaman Ini",
-            value: stats.adminsOnPage.toLocaleString("id-ID"),
-            icon: <Shield className="h-4 w-4" />,
-            tone: "bg-blue-500/10 text-blue-700 dark:text-blue-300",
-          },
-          {
-            label: "Nonaktif di Halaman Ini",
-            value: (stats.pageUsers - stats.activeOnPage).toLocaleString("id-ID"),
-            icon: <UserX className="h-4 w-4" />,
-            tone: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
+            label: "Admin Halaman Ini",
+            value: stats.adminsOnPage,
+            icon: <UserX className="h-5 w-5" />,
+            tone: "bg-amber-500/10 text-amber-600",
           },
         ]}
       />
 
-      <section className="rounded-3xl border border-border bg-card p-5 shadow-sm">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <h2 className="text-lg font-semibold text-foreground">Filter</h2>
-          </div>
+      <FilterBar
+        roleFilter={roleFilter}
+        setRoleFilter={setRoleFilter}
+        statusFilter={statusFilter}
+        setStatusFilter={setStatusFilter}
+      />
 
-          <div className="flex flex-col gap-3 lg:items-end">
-            <div className="flex flex-wrap gap-2">
-              {roleOptions.map((option) => (
-                <Button
-                  key={option.value}
-                  type="button"
-                  variant={roleFilter === option.value ? "default" : "outline"}
-                  onClick={() => setRoleFilter(option.value as "all" | UserRole)}
-                  className="h-9 rounded-full px-4"
-                >
-                  {option.label}
-                </Button>
-              ))}
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {statusOptions.map((option) => (
-                <Button
-                  key={option.value}
-                  type="button"
-                  variant={statusFilter === option.value ? "default" : "outline"}
-                  onClick={() =>
-                    setStatusFilter(option.value as "all" | "active" | "inactive")
-                  }
-                  className="h-9 rounded-full px-4"
-                >
-                  {option.label}
-                </Button>
-              ))}
-            </div>
-          </div>
+      {usersQuery.error ? (
+        <AdminErrorAlert message={`Gagal memuat data: ${usersQuery.error.message}`} />
+      ) : null}
+
+      {isHydratingUser ? (
+        <div className="rounded-2xl border border-border bg-card px-4 py-3 text-sm text-muted-foreground shadow-sm">
+          Memuat detail user...
         </div>
-      </section>
-
-      {usersQuery.isError ? (
-        <AdminErrorAlert
-          message={`Gagal memuat data Control Users: ${usersQuery.error.message}`}
-        />
       ) : null}
 
       <AdminDataTable<AdminDirectoryUser>
-        columns={controlUsersColumns}
+        columns={userColumns}
         data={filteredUsers}
-        searchFields={["name", "email", "phone", "role", "nip"]}
-        searchPlaceholder="Cari nama, email, NIP, atau telepon pada halaman ini..."
+        searchFields={["name", "email", "nip", "phone"]}
+        searchPlaceholder="Cari user..."
         actions={[editAction(openEditDialog), deleteAction(handleDelete)]}
-        isLoading={usersQuery.isLoading || isHydratingUser}
-        emptyMessage="Belum ada data user pada halaman atau filter ini."
-        headerActions={
-          <span className="rounded-full border border-border bg-background px-3 py-1 text-xs text-muted-foreground">
-            Halaman {usersMeta.page} dari {usersMeta.totalPages}
-          </span>
-        }
+        isLoading={usersQuery.isLoading}
+        emptyMessage="Belum ada data pengguna."
         pagination={{
           currentPage: usersMeta.page,
           totalPages: usersMeta.totalPages,
@@ -234,59 +322,18 @@ export default function AdminUsersPage() {
         }}
       />
 
-      <section className="rounded-3xl border border-border bg-card p-5 shadow-sm">
-        <h2 className="mb-4 text-lg font-semibold text-foreground">
-          Aktivitas Admin Terbaru
-        </h2>
-
-        {auditEntries.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-border p-5 text-sm text-muted-foreground">
-            Belum ada aktivitas admin yang tercatat pada sesi server saat ini.
-          </div>
-        ) : (
-          <div className="grid gap-3 lg:grid-cols-2">
-            {auditEntries.map((entry) => (
-              <div
-                key={entry.id}
-                className="rounded-2xl border border-border/70 bg-background/60 p-4"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="space-y-1">
-                    <p className="text-sm font-semibold text-foreground">
-                      {entry.details}
-                    </p>
-                    <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                      {entry.action} | {entry.module}
-                    </p>
-                  </div>
-                  <span className="text-xs text-muted-foreground">
-                    {formatDateId(entry.timestamp, {
-                      day: "numeric",
-                      month: "short",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </span>
-                </div>
-                <p className="mt-3 text-xs text-muted-foreground break-words">
-                  Oleh {entry.userName} • IP {entry.ipAddress}
-                </p>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+      <AuditEntryList entries={auditEntries} />
 
       <AdminFormDialog
         open={formOpen}
         onOpenChange={handleFormOpenChange}
-        title={editingUser ? "Edit Control User" : "Tambah Control User"}
-        description="Perubahan akun dikirim langsung ke backend utama."
+        title={editingUser ? "Edit User" : "Tambah User"}
+        description="Lengkapi identitas, role, status akun, dan password pengguna."
         fields={formFields}
         initialValues={initialValues}
         onSubmit={handleSubmit}
-        submitLabel={editingUser ? "Simpan Perubahan" : "Buat User"}
-        isLoading={isSaving || isHydratingUser}
+        submitLabel={editingUser ? "Simpan Perubahan" : "Tambah User"}
+        isLoading={isSaving}
         errors={formErrors}
       />
     </div>

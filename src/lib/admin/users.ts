@@ -13,6 +13,7 @@ import {
   type ApiResponse,
 } from "@/types/api";
 import { BackendApiError, fetchBackendJson } from "./backend-api";
+import { normalizeDisplayName } from "./service";
 
 interface BackendUserRecord {
   id: string;
@@ -40,11 +41,6 @@ export const ADMIN_USERS_PAGE_LIMIT = 10;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
-}
-
-function normalizeDisplayName(value: string) {
-  const sanitized = sanitizeInput(value).replace(/\s+/g, " ").trim();
-  return sanitized || "Admin PKP";
 }
 
 function normalizePhone(value: string | null | undefined) {
@@ -128,7 +124,7 @@ function createAuthorizedHeaders(backendAccessToken: string, headers?: HeadersIn
 function requireBackendAccessToken(backendAccessToken?: string) {
   if (!backendAccessToken) {
     throw new BackendApiError(
-      "Token backend admin tidak tersedia. Silakan login ulang.",
+      "Sesi admin tidak tersedia. Silakan login ulang.",
       503
     );
   }
@@ -158,7 +154,7 @@ export async function listUsersPage(
 
   if (!payload.success || !items) {
     throw new BackendApiError(
-      payload.message || "Format data users backend tidak valid.",
+      payload.message || "Format data pengguna dari backend tidak valid.",
       502,
       payload.details
     );
@@ -185,7 +181,7 @@ export async function getUserDetail(
 
   if (!payload.success || !isRecord(payload.data)) {
     throw new BackendApiError(
-      payload.message || "Detail pengguna backend tidak valid.",
+      payload.message || "Format detail pengguna dari backend tidak valid.",
       502,
       payload.details
     );

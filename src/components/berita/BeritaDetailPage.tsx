@@ -9,16 +9,15 @@
  * @component
  */
 
-import { useParams } from "next/navigation";
-
 import BeritaDetailView from "@/components/berita/BeritaDetailView";
 import { ApiLoadingState, ApiErrorState } from "@/components/shared";
 import { useBeritaDetail } from "@/hooks/berita/use-berita-detail";
 
-export default function BeritaDetailPage() {
-  const params = useParams();
-  const id = Number(params.id);
+interface BeritaDetailPageProps {
+  id: number;
+}
 
+export default function BeritaDetailPage({ id }: BeritaDetailPageProps) {
   const {
     berita,
     relatedBerita,
@@ -47,7 +46,7 @@ export default function BeritaDetailPage() {
     return <ApiErrorState error={error} onRetry={refetch} />;
   }
 
-  // Jika berita tidak ditemukan, notFound() sudah dipanggil di hook
+  // Jika berita tidak ditemukan, hook akan meneruskan ke notFound()
   if (!berita) return null;
 
   return (

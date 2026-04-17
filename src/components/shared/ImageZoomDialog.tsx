@@ -1,32 +1,22 @@
-/**
- * ImageZoomDialog - Reusable Component
- * 
- * Dialog untuk preview gambar dengan fitur zoom pan pinch.
- * Digunakan di berbagai halaman: Bank Desain, Berita, Sosialisasi, dll.
- * 
- * @features
- * - Zoom in/out dengan tombol atau scroll
- * - Pan (geser) gambar saat zoom
- * - Double-click untuk zoom
- * - Navigasi antar gambar dengan arrow keys
- * - Thumbnail untuk quick navigation
- * - Keyboard shortcuts (Arrow Left/Right, Escape)
- */
-
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import Image from "next/image";
 
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  ZoomIn, 
-  ZoomOut, 
+import {
+  ChevronLeft,
+  ChevronRight,
   RotateCcw,
+  ZoomIn,
+  ZoomOut,
 } from "lucide-react";
-import { TransformWrapper, TransformComponent, useControls, ReactZoomPanPinchContentRef } from "react-zoom-pan-pinch";
+import {
+  TransformComponent,
+  TransformWrapper,
+  useControls,
+  type ReactZoomPanPinchContentRef,
+} from "react-zoom-pan-pinch";
 
 import {
   Dialog,
@@ -35,61 +25,51 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-// --- Types & Interfaces ---
-
 export interface ImageZoomDialogProps {
-  /** Array gambar yang akan ditampilkan */
   images: string[];
-  /** Index gambar yang aktif (default: 0) */
   initialIndex?: number;
-  /** Judul dialog */
   title?: string;
-  /** Status dialog open/close */
   isOpen: boolean;
-  /** Callback saat dialog ditutup */
   onClose: () => void;
-  /** Ukuran container image (default: 60vh) */
   imageHeight?: string;
-  /** Tampilkan thumbnail? (default: true jika multiple images) */
   showThumbnails?: boolean;
 }
-
-// --- Zoom Controls Component ---
 
 function ZoomControls() {
   const { zoomIn, zoomOut, resetTransform } = useControls();
 
   return (
-    <div className="absolute top-3 right-3 z-20 flex items-center gap-1">
+    <div className="absolute right-3 top-3 z-20 flex items-center gap-1">
       <button
+        type="button"
         onClick={() => zoomIn(0.5)}
-        className="w-9 h-9 bg-background/90 hover:bg-background rounded-lg flex items-center justify-center text-foreground shadow-md backdrop-blur-sm transition-colors"
+        className="flex h-9 w-9 items-center justify-center rounded-lg bg-background/90 text-foreground shadow-md backdrop-blur-sm transition-colors hover:bg-background"
         title="Perbesar"
         aria-label="Perbesar gambar"
       >
-        <ZoomIn className="w-4 h-4" />
+        <ZoomIn className="h-4 w-4" />
       </button>
       <button
+        type="button"
         onClick={() => zoomOut(0.5)}
-        className="w-9 h-9 bg-background/90 hover:bg-background rounded-lg flex items-center justify-center text-foreground shadow-md backdrop-blur-sm transition-colors"
+        className="flex h-9 w-9 items-center justify-center rounded-lg bg-background/90 text-foreground shadow-md backdrop-blur-sm transition-colors hover:bg-background"
         title="Perkecil"
         aria-label="Perkecil gambar"
       >
-        <ZoomOut className="w-4 h-4" />
+        <ZoomOut className="h-4 w-4" />
       </button>
       <button
+        type="button"
         onClick={() => resetTransform()}
-        className="w-9 h-9 bg-background/90 hover:bg-background rounded-lg flex items-center justify-center text-foreground shadow-md backdrop-blur-sm transition-colors"
+        className="flex h-9 w-9 items-center justify-center rounded-lg bg-background/90 text-foreground shadow-md backdrop-blur-sm transition-colors hover:bg-background"
         title="Reset"
         aria-label="Reset zoom"
       >
-        <RotateCcw className="w-4 h-4" />
+        <RotateCcw className="h-4 w-4" />
       </button>
     </div>
   );
 }
-
-// --- Main Component ---
 
 export function ImageZoomDialog({
   images,
@@ -114,9 +94,9 @@ export function ImageZoomDialog({
   const hasMultipleImages = images.length > 1;
   const shouldShowThumbnails = showThumbnails ?? hasMultipleImages;
 
-  // Navigation handlers
   const nextImage = useCallback(() => {
     if (!hasMultipleImages) return;
+
     setViewerState((current) => ({
       sessionKey: imageSessionKey,
       currentImageIndex:
@@ -133,6 +113,7 @@ export function ImageZoomDialog({
 
   const prevImage = useCallback(() => {
     if (!hasMultipleImages) return;
+
     setViewerState((current) => ({
       sessionKey: imageSessionKey,
       currentImageIndex:
@@ -147,23 +128,22 @@ export function ImageZoomDialog({
     transformRef.current?.resetTransform();
   }, [hasMultipleImages, imageSessionKey, images.length, initialIndex]);
 
-  // Keyboard navigation
   useEffect(() => {
     if (!isOpen) return;
 
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "ArrowLeft") {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "ArrowLeft") {
         prevImage();
-      } else if (e.key === "ArrowRight") {
+      } else if (event.key === "ArrowRight") {
         nextImage();
-      } else if (e.key === "Escape") {
+      } else if (event.key === "Escape") {
         onClose();
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, nextImage, prevImage, onClose]);
+  }, [isOpen, nextImage, onClose, prevImage]);
 
   if (images.length === 0) return null;
 
@@ -171,14 +151,13 @@ export function ImageZoomDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-5xl max-h-[95vh] overflow-hidden bg-card p-0">
-        {/* Header */}
+      <DialogContent className="max-h-[95vh] max-w-5xl overflow-hidden bg-card p-0">
         {title && (
           <DialogHeader className="p-4 pb-2">
-            <DialogTitle className="text-foreground text-lg pr-8">
+            <DialogTitle className="pr-8 text-lg text-foreground">
               {title}
               {hasMultipleImages && (
-                <span className="text-muted-foreground font-normal text-sm ml-2">
+                <span className="ml-2 text-sm font-normal text-muted-foreground">
                   ({currentImageIndex + 1} / {images.length})
                 </span>
               )}
@@ -186,7 +165,6 @@ export function ImageZoomDialog({
           </DialogHeader>
         )}
 
-        {/* Main Image Area */}
         <div className="relative bg-secondary/50">
           <TransformWrapper
             ref={transformRef}
@@ -198,25 +176,27 @@ export function ImageZoomDialog({
             doubleClick={{ mode: "zoomIn", step: 1 }}
             panning={{ velocityDisabled: true }}
           >
-            {/* Zoom Controls */}
             <ZoomControls />
 
-            {/* Zoomable Image */}
             <TransformComponent
               wrapperClass="!w-full"
-              contentClass="!w-full !flex !items-center !justify-center"
-              wrapperStyle={{ 
-                width: "100%", 
+              contentClass="!flex !w-full !items-center !justify-center"
+              wrapperStyle={{
+                width: "100%",
                 height: imageHeight,
-                cursor: "grab"
+                cursor: "grab",
               }}
             >
               <div className="relative w-full" style={{ height: imageHeight }}>
                 <Image
                   src={currentImage}
-                  alt={title ? `${title} - Gambar ${currentImageIndex + 1}` : `Gambar ${currentImageIndex + 1}`}
+                  alt={
+                    title
+                      ? `${title} - Gambar ${currentImageIndex + 1}`
+                      : `Gambar ${currentImageIndex + 1}`
+                  }
                   fill
-                  className="object-contain select-none"
+                  className="select-none object-contain"
                   sizes="(max-width: 1024px) 100vw, 1024px"
                   priority
                   draggable={false}
@@ -225,34 +205,35 @@ export function ImageZoomDialog({
             </TransformComponent>
           </TransformWrapper>
 
-          {/* Navigation Arrows */}
           {hasMultipleImages && (
             <>
               <button
+                type="button"
                 onClick={prevImage}
-                className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-background/90 hover:bg-background rounded-full flex items-center justify-center text-foreground shadow-lg backdrop-blur-sm transition-colors z-10"
+                className="absolute left-3 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-background/90 text-foreground shadow-lg backdrop-blur-sm transition-colors hover:bg-background"
                 aria-label="Gambar sebelumnya"
               >
-                <ChevronLeft className="w-5 h-5" />
+                <ChevronLeft className="h-5 w-5" />
               </button>
               <button
+                type="button"
                 onClick={nextImage}
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-background/90 hover:bg-background rounded-full flex items-center justify-center text-foreground shadow-lg backdrop-blur-sm transition-colors z-10"
+                className="absolute right-3 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-background/90 text-foreground shadow-lg backdrop-blur-sm transition-colors hover:bg-background"
                 aria-label="Gambar selanjutnya"
               >
-                <ChevronRight className="w-5 h-5" />
+                <ChevronRight className="h-5 w-5" />
               </button>
             </>
           )}
         </div>
 
-        {/* Thumbnails */}
         {shouldShowThumbnails && (
-          <div className="p-4 pt-3 border-t border-border">
-            <div className="flex gap-2 justify-center flex-wrap max-h-24 overflow-y-auto">
-              {images.map((img, index) => (
+          <div className="border-t border-border p-4 pt-3">
+            <div className="flex max-h-24 flex-wrap justify-center gap-2 overflow-y-auto">
+              {images.map((image, index) => (
                 <button
-                  key={index}
+                  key={image}
+                  type="button"
                   onClick={() => {
                     setViewerState({
                       sessionKey: imageSessionKey,
@@ -260,15 +241,15 @@ export function ImageZoomDialog({
                     });
                     transformRef.current?.resetTransform();
                   }}
-                  className={`relative w-16 h-12 rounded-md overflow-hidden border-2 transition-all flex-shrink-0 ${
+                  className={`relative h-12 w-16 flex-shrink-0 overflow-hidden rounded-md border-2 transition-all ${
                     index === currentImageIndex
                       ? "border-primary ring-2 ring-primary/30"
-                      : "border-border hover:border-primary/50 opacity-70 hover:opacity-100"
+                      : "border-border opacity-70 hover:border-primary/50 hover:opacity-100"
                   }`}
                   aria-label={`Lihat gambar ${index + 1}`}
                 >
                   <Image
-                    src={img}
+                    src={image}
                     alt={`Thumbnail ${index + 1}`}
                     fill
                     className="object-cover"
@@ -280,10 +261,10 @@ export function ImageZoomDialog({
           </div>
         )}
 
-        {/* Instructions */}
         <div className="px-4 pb-3 text-center">
           <p className="text-xs text-muted-foreground">
-            Gunakan scroll mouse atau tombol untuk zoom • Klik dan geser untuk menggeser gambar • Double-click untuk zoom cepat
+            Gunakan scroll mouse atau tombol untuk zoom, klik dan geser untuk
+            menggeser gambar, lalu double-click untuk zoom cepat.
           </p>
         </div>
       </DialogContent>

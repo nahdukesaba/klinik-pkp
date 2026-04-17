@@ -22,7 +22,7 @@ function createId(prefix: string) {
   return `${prefix}_${crypto.randomUUID()}`;
 }
 
-function normalizeDisplayName(value: string) {
+export function normalizeDisplayName(value: string) {
   const sanitized = sanitizeInput(value).replace(/\s+/g, " ").trim();
   return sanitized || "Admin PKP";
 }

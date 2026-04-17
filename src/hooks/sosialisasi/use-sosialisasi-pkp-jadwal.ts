@@ -31,7 +31,9 @@ export function useSosialisasiPKPJadwal(
   const jadwalKegiatan = upcomingLocations;
 
   const jadwalYears = useMemo(() => {
-    const years = [...new Set(jadwalKegiatan.map((j) => new Date(j.date).getFullYear()))];
+    const years = [
+      ...new Set(jadwalKegiatan.map((j) => Number.parseInt(j.date.slice(0, 4), 10))),
+    ].filter(Number.isFinite);
     return years.sort((a, b) => b - a);
   }, [jadwalKegiatan]);
 
@@ -40,27 +42,18 @@ export function useSosialisasiPKPJadwal(
 
     // Filter by date range if specified
     if (jadwalStartDate && jadwalEndDate) {
-      const startDate = new Date(jadwalStartDate);
-      const endDate = new Date(jadwalEndDate);
       result = result.filter((j) => {
-        const eventDate = new Date(j.date);
-        return eventDate >= startDate && eventDate <= endDate;
+        return j.date >= jadwalStartDate && j.date <= jadwalEndDate;
       });
     } else {
       // Filter by year
       if (jadwalYear !== "all") {
-        result = result.filter((j) => {
-          const year = new Date(j.date).getFullYear().toString();
-          return year === jadwalYear;
-        });
+        result = result.filter((j) => j.date.slice(0, 4) === jadwalYear);
       }
 
       // Filter by month
       if (jadwalMonth !== "all") {
-        result = result.filter((j) => {
-          const month = (new Date(j.date).getMonth() + 1).toString().padStart(2, "0");
-          return month === jadwalMonth;
-        });
+        result = result.filter((j) => j.date.slice(5, 7) === jadwalMonth);
       }
     }
 
@@ -81,7 +74,7 @@ export function useSosialisasiPKPJadwal(
       );
     }
 
-    return result.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    return result.sort((a, b) => a.date.localeCompare(b.date));
   }, [
     jadwalKegiatan,
     jadwalYear,

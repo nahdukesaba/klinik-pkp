@@ -1,14 +1,4 @@
-/**
- * Admin Dashboard â€” Type Definitions
- *
- * Semua tipe yang digunakan oleh komponen dan halaman admin.
- */
-
-// --- Session / Access ---
-
 export type UserRole = "admin" | "user";
-
-// --- User Directory ---
 
 export interface AdminDirectoryUser {
   id: string;
@@ -36,13 +26,15 @@ export interface AdminPaginatedUsers {
   meta: AdminPaginationMeta;
 }
 
-// --- Dashboard Overview ---
-
-export interface DashboardStats {
-  totalUsers: number;
-  usersLoaded: number;
-  adminUsersLoaded: number;
-  totalRecordedActivities: number;
+export interface AuditEntry {
+  id: string;
+  userId: string;
+  userName: string;
+  action: string;
+  module: string;
+  details: string;
+  ipAddress: string;
+  timestamp: string;
 }
 
 export interface RecentActivity {
@@ -54,15 +46,9 @@ export interface RecentActivity {
   timestamp: string;
 }
 
-// --- Audit Trail ---
-
-export interface AuditEntry {
-  id: string;
-  userId: string;
-  userName: string;
-  action: string;
-  module: string;
-  details: string;
-  ipAddress: string;
-  timestamp: string;
+export interface DashboardStats {
+  totalUsers: number;
+  usersLoaded: number;
+  adminUsersLoaded: number;
+  totalRecordedActivities: number;
 }

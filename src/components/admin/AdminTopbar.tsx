@@ -13,6 +13,7 @@ import { usePathname } from "next/navigation";
 
 import { ChevronDown, ChevronLeft, ChevronRight, LogOut, Menu } from "lucide-react";
 
+import { getAdminBreadcrumbs } from "@/components/admin/admin-topbar-breadcrumbs";
 import ThemeToggle from "@/components/shared/ThemeToggle";
 import { cn } from "@/lib/utils";
 
@@ -22,46 +23,6 @@ interface AdminTopbarProps {
   sidebarCollapsed: boolean;
   onSidebarToggle: () => void;
   onMobileMenuToggle: () => void;
-}
-
-/** Derive breadcrumb labels dari pathname */
-function getBreadcrumbs(pathname: string): { label: string; href: string }[] {
-  const segments = pathname.split("/").filter(Boolean);
-  const crumbs: { label: string; href: string }[] = [];
-
-  const labels: Record<string, string> = {
-    admin: "Dashboard",
-    berita: "Berita",
-    sosialisasi: "Sosialisasi",
-    lokasi: "Info Peta",
-    jadwal: "Jadwal Kegiatan",
-    "lokasi-klinik": "Lokasi Klinik",
-    bsps: "Penerimaan BSPS",
-    rusun: "Sebaran Rusun",
-    users: "Control Users",
-    "kawasan-kumuh": "Kawasan Kumuh",
-    "bank-desain": "Bank Desain",
-    create: "Tambah Baru",
-    edit: "Edit",
-  };
-
-  let path = "";
-  for (const [index, segment] of segments.entries()) {
-    path += `/${segment}`;
-    const previousSegment = segments[index - 1];
-    let label = labels[segment] || segment;
-
-    if (segment === "berita" && previousSegment === "sosialisasi") {
-      label = "Berita Sosialisasi";
-    }
-
-    crumbs.push({
-      label,
-      href: path,
-    });
-  }
-
-  return crumbs;
 }
 
 export function AdminTopbar({
@@ -80,7 +41,7 @@ export function AdminTopbar({
   });
   const profileOpen =
     profileMenuState.pathname === pathname && profileMenuState.open;
-  const breadcrumbs = getBreadcrumbs(pathname);
+  const breadcrumbs = getAdminBreadcrumbs(pathname);
   const currentPage = breadcrumbs[breadcrumbs.length - 1]?.label || "Dashboard";
 
   const closeProfileMenu = () => {

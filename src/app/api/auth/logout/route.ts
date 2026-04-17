@@ -1,8 +1,7 @@
 /**
  * Logout API Route
  *
- * Menghapus token dari httpOnly cookies.
- * POST /api/auth/logout
+ * POST /api/auth/logout — Hapus token dari httpOnly cookies.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -16,6 +15,8 @@ import { CSRF_COOKIE_NAME } from "@/lib/admin/security";
 import {
   AUTH_COOKIE_NAME,
   REFRESH_COOKIE_NAME,
+  getAccessTokenCookieOptions,
+  getRefreshTokenCookieOptions,
   verifyToken,
 } from "@/lib/auth";
 
@@ -57,7 +58,7 @@ async function terminateBackendSession(request: NextRequest) {
       signal: AbortSignal.timeout(10_000),
     });
   } catch {
-    // Logout lokal tetap harus berhasil walau backend sedang tidak bisa dijangkau.
+    // Logout lokal tetap harus berhasil walau backend sedang tidak aktif.
   }
 }
 
@@ -65,22 +66,22 @@ export async function POST(request: NextRequest) {
   await terminateBackendSession(request);
 
   const response = NextResponse.json({ success: true });
+  const accessTokenCookieOptions = getAccessTokenCookieOptions();
+  const refreshTokenCookieOptions = getRefreshTokenCookieOptions();
 
-  // Hapus access token cookie
-  response.cookies.set(AUTH_COOKIE_NAME, "", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
+  response.cookies.set(accessTokenCookieOptions.name, "", {
+    httpOnly: accessTokenCookieOptions.httpOnly,
+    secure: accessTokenCookieOptions.secure,
+    sameSite: accessTokenCookieOptions.sameSite,
+    path: accessTokenCookieOptions.path,
     maxAge: 0, // Expire segera
   });
 
-  // Hapus refresh token cookie
-  response.cookies.set(REFRESH_COOKIE_NAME, "", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/api/auth",
+  response.cookies.set(refreshTokenCookieOptions.name, "", {
+    httpOnly: refreshTokenCookieOptions.httpOnly,
+    secure: refreshTokenCookieOptions.secure,
+    sameSite: refreshTokenCookieOptions.sameSite,
+    path: refreshTokenCookieOptions.path,
     maxAge: 0,
   });
 

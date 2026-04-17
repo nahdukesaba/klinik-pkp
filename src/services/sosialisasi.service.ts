@@ -1,7 +1,15 @@
 /**
  * Service API untuk Sosialisasi Klinik PKP.
- * Satu endpoint menghasilkan dua tipe: SosialisasiLocation (peta/jadwal) + BeritaSosialisasi (berita).
- * Status dihitung otomatis: scheduled_at_start < hari ini → "selesai", else "mendatang".
+ *
+ * Satu endpoint menghasilkan tiga turunan data:
+ * - lokasi publik untuk map
+ * - jadwal mendatang
+ * - berita kegiatan selesai yang sudah punya dokumentasi
+ *
+ * Workflow status:
+ * - `mendatang`: kegiatan belum selesai
+ * - `pending`: kegiatan selesai, tetapi dokumentasi belum diunggah
+ * - `selesai`: kegiatan selesai dan dokumentasi sudah tersedia
  */
 
 import {
@@ -9,7 +17,12 @@ import {
   fetchApiListWithMeta,
   type ApiPaginationMeta,
 } from "@/lib/api-client";
-import { formatDateId } from "@/lib/date";
+import {
+  formatDateId,
+  formatTimeRangeId,
+  getDateKey,
+  getMonthKey,
+} from "@/lib/date";
 import { buildImageUrl } from "@/services/rusun.service";
 import type {
   CoordinateApi,
@@ -17,7 +30,11 @@ import type {
   RegionApi,
   VillageApi,
 } from "@/types/api";
-import { extractDistrictName, extractRegionName, extractVillageName } from "@/types/api";
+import {
+  extractDistrictName,
+  extractRegionName,
+  extractVillageName,
+} from "@/types/api";
 
 // --- Tipe API ---
 
@@ -33,13 +50,15 @@ export interface SosialisasiApiItem {
   image_urls: string[];
   coordinate: CoordinateApi;
   scheduled_at_start: string; // RFC 3339
-  scheduled_at_end: string;   // RFC 3339
+  scheduled_at_end: string; // RFC 3339
   village?: VillageApi;
   district?: DistrictApi;
   region?: RegionApi;
 }
 
 // --- Tipe Frontend ---
+
+export type SosialisasiStatus = "selesai" | "mendatang" | "pending";
 
 /** Data lokasi sosialisasi untuk peta dan jadwal */
 export interface SosialisasiLocation {
@@ -52,13 +71,13 @@ export interface SosialisasiLocation {
   kecamatan?: string;
   kelurahan?: string;
   coordinates: [number, number];
-  date: string;       // "YYYY-MM-DD"
-  time: string;       // "HH:mm - HH:mm"
+  date: string; // "YYYY-MM-DD"
+  time: string; // "HH:mm - HH:mm"
   peserta: number;
   alamat: string;
   description: string;
   images: string[];
-  status: "selesai" | "mendatang";
+  status: SosialisasiStatus;
   scheduledAtStart: string;
   scheduledAtEnd: string;
 }
@@ -68,47 +87,34 @@ export interface BeritaSosialisasi {
   id: number;
   title: string;
   image: string;
-  date: string;       // "DD NamaBulan YYYY" (format tampilan Indonesia)
-  rawDate: string;    // "YYYY-MM-DD" (untuk sorting & filter)
-  month: string;      // "YYYY-MM" (untuk filter bulan)
+  date: string; // format tampilan Indonesia
+  rawDate: string; // "YYYY-MM-DD" (untuk sorting & filter)
+  month: string; // "YYYY-MM" (untuk filter bulan)
   description: string;
   kabupaten: string;
   coordinates: [number, number];
+  /** Gambar tambahan selain cover utama */
   images?: string[];
 }
 
 // --- Utilitas ---
 
-/** Status otomatis: scheduled_at_start < hari ini → "selesai", else "mendatang" */
-function computeStatus(scheduledAtStart: string): "selesai" | "mendatang" {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const eventDate = new Date(scheduledAtStart);
-  eventDate.setHours(0, 0, 0, 0);
-
-  return eventDate < today ? "selesai" : "mendatang";
+function hasSosialisasiImages(imageUrls: string[] | null | undefined) {
+  return Array.isArray(imageUrls) && imageUrls.length > 0;
 }
 
-/** Ekstrak rentang waktu: "09:00 - 12:00" dari dua timestamp RFC 3339 */
-function extractTimeRange(start: string, end: string): string {
-  const formatTime = (iso: string) => {
-    const d = new Date(iso);
-    const h = d.getUTCHours().toString().padStart(2, "0");
-    const m = d.getUTCMinutes().toString().padStart(2, "0");
-    return `${h}:${m}`;
-  };
-  return `${formatTime(start)} - ${formatTime(end)}`;
-}
+export function resolveSosialisasiStatus(
+  scheduledAtEnd: string,
+  hasImages: boolean,
+  nowTimestamp: number = Date.now()
+): SosialisasiStatus {
+  const eventEndTimestamp = new Date(scheduledAtEnd).getTime();
 
-/** Ekstrak "YYYY-MM-DD" dari RFC 3339 */
-function extractDateString(iso: string): string {
-  return iso.slice(0, 10);
-}
+  if (!Number.isFinite(eventEndTimestamp) || eventEndTimestamp > nowTimestamp) {
+    return "mendatang";
+  }
 
-/** Ekstrak "YYYY-MM" dari "YYYY-MM-DD" */
-function extractMonthString(dateStr: string): string {
-  return dateStr.slice(0, 7);
+  return hasImages ? "selesai" : "pending";
 }
 
 /** Bangun URL gambar, bypass jika sudah absolut */
@@ -121,16 +127,16 @@ function buildSosialisasiImageUrl(path: string): string {
 
 // --- Transformasi ---
 
-/** Transform API item → SosialisasiLocation (peta & jadwal) */
+/** Transform API item -> SosialisasiLocation (admin/public map/jadwal) */
 export function transformToLocation(item: SosialisasiApiItem): SosialisasiLocation {
   const kabupaten = extractRegionName(item.region);
   const kecamatan = extractDistrictName(item.district) || undefined;
   const kelurahan = extractVillageName(item.village) || undefined;
-
-  const dateStr = extractDateString(item.scheduled_at_start);
-  const timeRange = extractTimeRange(item.scheduled_at_start, item.scheduled_at_end);
-
   const images = (item.image_urls ?? []).map(buildSosialisasiImageUrl);
+  const status = resolveSosialisasiStatus(
+    item.scheduled_at_end,
+    hasSosialisasiImages(item.image_urls)
+  );
 
   return {
     id: Number(item.id),
@@ -145,22 +151,21 @@ export function transformToLocation(item: SosialisasiApiItem): SosialisasiLocati
       item.coordinate?.latitude ?? 0,
       item.coordinate?.longitude ?? 0,
     ],
-    date: dateStr,
-    time: timeRange,
+    date: getDateKey(item.scheduled_at_start),
+    time: formatTimeRangeId(item.scheduled_at_start, item.scheduled_at_end),
     peserta: 0, // Tidak tersedia di API, default 0
     alamat: item.location,
     description: item.description,
     images,
-    status: computeStatus(item.scheduled_at_start),
+    status,
     scheduledAtStart: item.scheduled_at_start,
     scheduledAtEnd: item.scheduled_at_end,
   };
 }
 
-/** Transform API item → BeritaSosialisasi (hanya untuk item yang memenuhi syarat) */
+/** Transform API item -> BeritaSosialisasi (hanya item siap tayang) */
 export function transformToBerita(item: SosialisasiApiItem): BeritaSosialisasi {
   const kabupaten = extractRegionName(item.region);
-  const dateStr = extractDateString(item.scheduled_at_start);
   const images = (item.image_urls ?? []).map(buildSosialisasiImageUrl);
 
   return {
@@ -168,15 +173,40 @@ export function transformToBerita(item: SosialisasiApiItem): BeritaSosialisasi {
     title: item.title,
     image: images[0] ?? "",
     date: formatDateId(item.scheduled_at_start),
-    rawDate: dateStr,
-    month: extractMonthString(dateStr),
+    rawDate: getDateKey(item.scheduled_at_start),
+    month: getMonthKey(item.scheduled_at_start),
     description: item.description,
     kabupaten,
     coordinates: [
       item.coordinate?.latitude ?? 0,
       item.coordinate?.longitude ?? 0,
     ],
-    images: images.length > 1 ? images : undefined,
+    images: images.length > 1 ? images.slice(1) : undefined,
+  };
+}
+
+export function transformLocationToBerita(
+  item: SosialisasiLocation
+): BeritaSosialisasi | null {
+  if (
+    item.status !== "selesai" ||
+    item.images.length === 0 ||
+    item.description.trim() === ""
+  ) {
+    return null;
+  }
+
+  return {
+    id: item.id,
+    title: item.name,
+    image: item.images[0] ?? "",
+    date: formatDateId(item.scheduledAtStart),
+    rawDate: getDateKey(item.scheduledAtStart),
+    month: getMonthKey(item.scheduledAtStart),
+    description: item.description,
+    kabupaten: item.kabupaten,
+    coordinates: item.coordinates,
+    images: item.images.length > 1 ? item.images.slice(1) : undefined,
   };
 }
 
@@ -184,13 +214,17 @@ export function transformToBerita(item: SosialisasiApiItem): BeritaSosialisasi {
 
 /** Hasil dari fetchSosialisasiList, siap dikonsumsi hook */
 export interface SosialisasiResult {
-  /** Semua lokasi dengan status ter-compute */
+  /** Semua lokasi untuk kebutuhan admin */
   locations: SosialisasiLocation[];
-  /** Lokasi yang belum lewat tanggal (jadwal mendatang) */
+  /** Lokasi yang boleh tampil di peta publik (mendatang + selesai) */
+  publicLocations: SosialisasiLocation[];
+  /** Lokasi yang belum selesai */
   upcomingLocations: SosialisasiLocation[];
-  /** Lokasi yang sudah lewat tanggal */
+  /** Lokasi selesai dan sudah punya dokumentasi */
   completedLocations: SosialisasiLocation[];
-  /** Berita yang sudah selesai dan memiliki deskripsi */
+  /** Lokasi selesai tetapi masih menunggu dokumentasi */
+  pendingLocations: SosialisasiLocation[];
+  /** Berita yang sudah siap tayang */
   berita: BeritaSosialisasi[];
   /** Daftar kabupaten unik untuk filter dropdown */
   kabupatenList: string[];
@@ -208,9 +242,67 @@ export interface SosialisasiListParams {
   villageId?: string;
 }
 
+export function buildSosialisasiResultFromLocations(
+  baseLocations: SosialisasiLocation[],
+  nowTimestamp: number = Date.now()
+): SosialisasiResult {
+  const locations: SosialisasiLocation[] = [];
+  const publicLocations: SosialisasiLocation[] = [];
+  const upcomingLocations: SosialisasiLocation[] = [];
+  const completedLocations: SosialisasiLocation[] = [];
+  const pendingLocations: SosialisasiLocation[] = [];
+  const berita: BeritaSosialisasi[] = [];
+  const kabupatenSet = new Set<string>();
+
+  for (const item of baseLocations) {
+    const location: SosialisasiLocation = {
+      ...item,
+      status: resolveSosialisasiStatus(
+        item.scheduledAtEnd,
+        item.images.length > 0,
+        nowTimestamp
+      ),
+    };
+    locations.push(location);
+
+    if (location.status === "mendatang") {
+      publicLocations.push(location);
+      upcomingLocations.push(location);
+    } else if (location.status === "selesai") {
+      publicLocations.push(location);
+      completedLocations.push(location);
+    } else {
+      pendingLocations.push(location);
+    }
+
+    const beritaItem = transformLocationToBerita(location);
+    if (beritaItem) {
+      berita.push(beritaItem);
+    }
+
+    if (location.kabupaten) {
+      kabupatenSet.add(location.kabupaten);
+    }
+  }
+
+  return {
+    locations,
+    publicLocations,
+    upcomingLocations,
+    completedLocations,
+    pendingLocations,
+    berita,
+    kabupatenList: ["Semua Lokasi", ...Array.from(kabupatenSet).sort()],
+  };
+}
+
+function buildSosialisasiResult(items: SosialisasiApiItem[]): SosialisasiResult {
+  return buildSosialisasiResultFromLocations(items.map(transformToLocation));
+}
+
 // --- API ---
 
-/** GET /api/ext/sosialisasi — ambil semua data sosialisasi */
+/** GET /api/ext/sosialisasi -> ambil semua data sosialisasi */
 export async function fetchSosialisasiList(
   params: SosialisasiListParams = {}
 ): Promise<SosialisasiResult> {
@@ -226,98 +318,28 @@ export async function fetchSosialisasiList(
     collectAllPages: false,
   });
 
-  // Single-pass: transformasi + klasifikasi sekaligus
-  const locations: SosialisasiLocation[] = [];
-  const upcomingLocations: SosialisasiLocation[] = [];
-  const completedLocations: SosialisasiLocation[] = [];
-  const berita: BeritaSosialisasi[] = [];
-  const kabupatenSet = new Set<string>();
-
-  for (const item of items) {
-    const location = transformToLocation(item);
-    locations.push(location);
-
-    if (location.status === "mendatang") {
-      upcomingLocations.push(location);
-    } else {
-      completedLocations.push(location);
-    }
-
-    // Transformasi ke berita jika selesai + punya deskripsi
-    if (
-      location.status === "selesai" &&
-      item.description &&
-      item.description.trim() !== ""
-    ) {
-      berita.push(transformToBerita(item));
-    }
-
-    if (location.kabupaten) {
-      kabupatenSet.add(location.kabupaten);
-    }
-  }
-
-  // Bangun daftar kabupaten unik (diawali "Semua Lokasi")
-  const kabupatenList = ["Semua Lokasi", ...Array.from(kabupatenSet).sort()];
-
-  return {
-    locations,
-    upcomingLocations,
-    completedLocations,
-    berita,
-    kabupatenList,
-  };
+  return buildSosialisasiResult(items);
 }
 
 export async function fetchSosialisasiPage(
   params: SosialisasiListParams = {}
 ): Promise<SosialisasiPageResult> {
-  const pageResult = await fetchApiListWithMeta<SosialisasiApiItem>("/sosialisasi", {
-    query: {
-      page: params.page,
-      limit: params.perPage,
-      region_id: params.regionId,
-      district_id: params.districtId,
-      village_id: params.villageId,
-    },
-    errorMessage: "Gagal mengambil data sosialisasi dari server",
-  });
-
-  const locations: SosialisasiLocation[] = [];
-  const upcomingLocations: SosialisasiLocation[] = [];
-  const completedLocations: SosialisasiLocation[] = [];
-  const berita: BeritaSosialisasi[] = [];
-  const kabupatenSet = new Set<string>();
-
-  for (const item of pageResult.items) {
-    const location = transformToLocation(item);
-    locations.push(location);
-
-    if (location.status === "mendatang") {
-      upcomingLocations.push(location);
-    } else {
-      completedLocations.push(location);
+  const pageResult = await fetchApiListWithMeta<SosialisasiApiItem>(
+    "/sosialisasi",
+    {
+      query: {
+        page: params.page,
+        limit: params.perPage,
+        region_id: params.regionId,
+        district_id: params.districtId,
+        village_id: params.villageId,
+      },
+      errorMessage: "Gagal mengambil data sosialisasi dari server",
     }
-
-    if (
-      location.status === "selesai" &&
-      item.description &&
-      item.description.trim() !== ""
-    ) {
-      berita.push(transformToBerita(item));
-    }
-
-    if (location.kabupaten) {
-      kabupatenSet.add(location.kabupaten);
-    }
-  }
+  );
 
   return {
-    locations,
-    upcomingLocations,
-    completedLocations,
-    berita,
-    kabupatenList: ["Semua Lokasi", ...Array.from(kabupatenSet).sort()],
+    ...buildSosialisasiResult(pageResult.items),
     meta: pageResult.meta,
   };
 }

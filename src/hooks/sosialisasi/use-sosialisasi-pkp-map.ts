@@ -5,6 +5,7 @@ import { useState, useRef, useMemo, useCallback, useEffect } from "react";
 import { useCascadingFilter } from "@/hooks/use-cascading-filter";
 import { useDebounce } from "@/hooks/use-debounce";
 import { CURRENT_YEAR } from "@/lib/constants";
+import { formatDateId } from "@/lib/date";
 import { loadLeaflet, cleanupMapContainer, destroyMap, bindMarkerInteraction } from "@/lib/map-utils";
 import { escapeHtml, escapeAttr, sanitizeUrl } from "@/lib/security";
 import { type SosialisasiLocation } from "@/services/sosialisasi.service";
@@ -78,7 +79,9 @@ export function useSosialisasiPKPMap(
 
   // Daftar tahun yang tersedia dari semua lokasi
   const mapYears = useMemo(() => {
-    const years = [...new Set(allLocations.map((loc) => new Date(loc.date).getFullYear()))];
+    const years = [
+      ...new Set(allLocations.map((loc) => Number.parseInt(loc.date.slice(0, 4), 10))),
+    ].filter(Number.isFinite);
     return years.sort((a, b) => b - a);
   }, [allLocations]);
 
@@ -88,9 +91,7 @@ export function useSosialisasiPKPMap(
 
     // Filter by year (default: tahun sekarang)
     if (mapYear !== "all") {
-      result = result.filter(
-        (loc) => new Date(loc.date).getFullYear().toString() === mapYear
-      );
+      result = result.filter((loc) => loc.date.slice(0, 4) === mapYear);
     }
 
     // Filter by status
@@ -206,16 +207,12 @@ export function useSosialisasiPKPMap(
           popupAnchor: [0, -60],
         });
 
-        const formattedDate = new Date(loc.date).toLocaleDateString("id-ID", {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        });
+        const formattedDate = formatDateId(loc.scheduledAtStart);
 
         const imagesHtml =
           loc.images.length > 0
             ? `
-        <div style="display: flex; gap: 8px; margin-top: 12px;">
+        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 12px;">
           ${loc.images
               .slice(0, 3)
               .map(
@@ -223,7 +220,7 @@ export function useSosialisasiPKPMap(
             <img 
               src="${escapeAttr(sanitizeUrl(img))}" 
               alt="${escapeAttr(loc.name)} ${idx + 1}" 
-              style="width: 80px; height: 60px; object-fit: cover; border-radius: 8px; cursor: pointer; transition: all 0.2s; border: 1px solid #e5e7eb;"
+              style="display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 10px; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease; border: 1px solid #e5e7eb; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);"
               data-image-gallery='${escapeAttr(JSON.stringify(loc.images))}'
               data-image-index="${idx}"
               data-image-title="${escapeAttr(loc.name)}"
@@ -246,12 +243,11 @@ export function useSosialisasiPKPMap(
         // Responsive popup - smaller on mobile
         const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
         const popupPadding = isMobile ? "12px" : "16px";
-        const popupMinWidth = isMobile ? "220px" : "280px";
-        const popupMaxWidth = isMobile ? "280px" : "320px";
+        const popupWidth = isMobile ? "min(300px, calc(100vw - 48px))" : "320px";
         const titleFontSize = isMobile ? "14px" : "16px";
 
         const popupContent = `
-        <div style="padding: ${popupPadding}; min-width: ${popupMinWidth}; max-width: ${popupMaxWidth}; font-family: system-ui, -apple-system, sans-serif;">
+        <div style="padding: ${popupPadding}; width: ${popupWidth}; max-width: 100%; font-family: system-ui, -apple-system, sans-serif;">
           <h3 style="font-size: ${titleFontSize}; font-weight: 700; color: #111827; margin: 0 0 10px 0; padding-bottom: 8px; border-bottom: 1px solid #e5e7eb; line-height: 1.3;">${escapeHtml(loc.name)}</h3>
           
           <div style="display: flex; flex-direction: column; gap: 8px;">
@@ -261,7 +257,7 @@ export function useSosialisasiPKPMap(
               <svg style="width: 18px; height: 18px; flex-shrink: 0; color: #0E5B73; margin-top: 2px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
               </svg>
-              <span style="font-size: 13px; color: #374151; line-height: 1.4;">${escapeHtml(loc.alamat)}</span>
+              <span style="display: block; flex: 1; min-width: 0; font-size: 13px; color: #374151; line-height: 1.45; overflow-wrap: anywhere;">${escapeHtml(loc.alamat)}</span>
             </div>
             `
             : ""
@@ -272,30 +268,30 @@ export function useSosialisasiPKPMap(
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
               </svg>
-              <span style="font-size: 13px; color: #374151; line-height: 1.4;">${loc.kelurahan ? `${escapeHtml(loc.kelurahan)}, ` : ""}${loc.kecamatan ? `${escapeHtml(loc.kecamatan)}, ` : ""}${escapeHtml(loc.kabupaten)}</span>
+              <span style="display: block; flex: 1; min-width: 0; font-size: 13px; color: #374151; line-height: 1.45; overflow-wrap: anywhere;">${loc.kelurahan ? `${escapeHtml(loc.kelurahan)}, ` : ""}${loc.kecamatan ? `${escapeHtml(loc.kecamatan)}, ` : ""}${escapeHtml(loc.kabupaten)}</span>
             </div>
             
-            <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="display: flex; align-items: flex-start; gap: 10px;">
               <svg style="width: 18px; height: 18px; flex-shrink: 0; color: #0E5B73;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
               </svg>
-              <span style="font-size: 13px; color: #374151; font-weight: 500;">${escapeHtml(formattedDate)}</span>
+              <span style="display: block; flex: 1; min-width: 0; font-size: 13px; color: #374151; font-weight: 500; line-height: 1.45; overflow-wrap: normal; word-break: normal;">${escapeHtml(formattedDate)}</span>
             </div>
             
-            <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="display: flex; align-items: flex-start; gap: 10px;">
               <svg style="width: 18px; height: 18px; flex-shrink: 0; color: #0E5B73;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
               </svg>
-              <span style="font-size: 13px; color: #374151; font-weight: 500;">${escapeHtml(loc.time)}</span>
+              <span style="display: block; flex: 1; min-width: 0; font-size: 13px; color: #374151; font-weight: 500; line-height: 1.45; overflow-wrap: normal; word-break: normal;">${escapeHtml(loc.time)}</span>
             </div>
             
             ${loc.peserta
             ? `
-            <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="display: flex; align-items: flex-start; gap: 10px;">
               <svg style="width: 18px; height: 18px; flex-shrink: 0; color: #0E5B73;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
               </svg>
-              <span style="font-size: 13px; color: #374151; font-weight: 500;">${escapeHtml(loc.peserta.toString())} peserta</span>
+              <span style="display: block; flex: 1; min-width: 0; font-size: 13px; color: #374151; font-weight: 500; line-height: 1.45; overflow-wrap: normal; word-break: normal;">${escapeHtml(loc.peserta.toString())} peserta</span>
             </div>
             `
             : ""
@@ -315,8 +311,8 @@ export function useSosialisasiPKPMap(
         const marker = L.marker(offsetCoordinates, { icon: markerIcon })
           .addTo(map)
           .bindPopup(popupContent, {
-            maxWidth: isMobile ? 300 : 380,
-            minWidth: isMobile ? 220 : 280,
+            maxWidth: isMobile ? 320 : 380,
+            minWidth: isMobile ? 0 : 280,
             className: "custom-popup",
           });
 

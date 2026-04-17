@@ -15,4 +15,14 @@ export { GridPagination } from "./GridPagination";
 export { MapLegend } from "./MapLegend";
 export { DateRangeFilterGroup } from "./DateRangeFilterGroup";
 export { ApiLoadingState, ApiErrorState } from "./ApiStates";
+export {
+  AuthCardSkeleton,
+  BankDesainPageSkeleton,
+  BeritaDetailSkeleton,
+  InformasiPageSkeleton,
+  LokasiKlinikPageSkeleton,
+  MapDashboardLoading,
+  MapLazySectionSkeleton,
+  SosialisasiPageSkeleton,
+} from "./LoadingSkeletons";
 export { YearFilterSelect } from "./YearFilterSelect";

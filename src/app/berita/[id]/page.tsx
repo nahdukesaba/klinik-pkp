@@ -11,13 +11,13 @@ interface PageProps {
   params: Promise<{ id: string }>;
 }
 
-/** Hanya izinkan ID berupa alphanumeric dan dash */
-const VALID_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
+/** Route tujuan menggunakan ID numerik, jadi hanya angka yang valid. */
+const VALID_ID_PATTERN = /^\d+$/;
 
 export default async function BeritaDetailRedirectPage({ params }: PageProps) {
   const { id } = await params;
 
-  // Validasi format ID untuk mencegah path traversal (e.g. ../../admin)
+  // Tolak ID yang tidak numerik sebelum diteruskan ke route kanonis.
   if (!VALID_ID_PATTERN.test(id)) {
     notFound();
   }

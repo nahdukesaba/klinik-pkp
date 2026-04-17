@@ -1,12 +1,5 @@
 /** @type {import('next').NextConfig} */
 
-// URL backend API (server-side only, TIDAK terexpose ke browser).
-// Rewrites meneruskan /api/ext/* → BACKEND_API_URL/*
-// PENTING: Hanya gunakan API_URL (tanpa NEXT_PUBLIC_ prefix)
-// agar URL backend tidak masuk ke client bundle.
-const BACKEND_API_URL =
-  process.env.API_URL ?? "http://localhost:8000/api/v1";
-
 const nextConfig = {
   // Hapus header X-Powered-By (information disclosure)
   poweredByHeader: false,
@@ -22,8 +15,9 @@ const nextConfig = {
         hostname: 'cdnjs.cloudflare.com',
       },
       {
-        protocol: 'https',
-        hostname: '*.ngrok-free.dev',
+        protocol: 'http',
+        hostname: '103.197.190.87',
+        port: '3000',
       },
     ],
   },
@@ -45,15 +39,9 @@ const nextConfig = {
     ],
   },
 
-  // --- API Proxy via Rewrites (menghindari CORS) ---
-  // Browser request: /api/ext/rusun → Backend: BACKEND_API_URL/rusun
-  // Ini terjadi di level server sehingga tidak ada CORS issue.
-  rewrites: async () => [
-    {
-      source: '/api/ext/:path*',
-      destination: `${BACKEND_API_URL}/:path*`,
-    },
-  ],
+  // Proxy /api/ext/* ditangani oleh src/app/api/ext/[...path]/route.ts
+  // (bukan next.config rewrite) agar bisa mengembalikan 502 yang benar
+  // saat backend tidak bisa dijangkau, bukan 404 yang menyesatkan.
   // Security Headers — defense-in-depth
   headers: async () => [
     {

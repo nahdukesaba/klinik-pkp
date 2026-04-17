@@ -22,8 +22,9 @@ const rateLimitStore = new Map<
   { count: number; resetTime: number }
 >();
 
-const RATE_LIMIT_MAX = 60; // max requests
+const RATE_LIMIT_MAX = 240; // max requests
 const RATE_LIMIT_WINDOW = 60_000; // per 1 menit
+const RATE_LIMITED_API_PREFIXES = ["/api/ext/", "/api/auth/"];
 
 // Hoist RegExp ke module-level.
 // Ref: vercel-react-best-practices/js-hoist-regexp
@@ -67,6 +68,33 @@ function isRateLimited(ip: string): boolean {
   return entry.count > RATE_LIMIT_MAX;
 }
 
+function getClientAddress(request: NextRequest): string | null {
+  const forwardedFor = request.headers
+    .get("x-forwarded-for")
+    ?.split(",")[0]
+    ?.trim();
+  const realIp = request.headers.get("x-real-ip")?.trim();
+  const clientAddress = forwardedFor || realIp;
+
+  return clientAddress && clientAddress.length > 0 ? clientAddress : null;
+}
+
+function shouldApplyRateLimit(
+  request: NextRequest,
+  pathname: string,
+  isDev: boolean
+) {
+  if (isDev) {
+    return false;
+  }
+
+  if (RATE_LIMITED_API_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
+    return true;
+  }
+
+  return pathname.startsWith("/api/") && !["GET", "HEAD", "OPTIONS"].includes(request.method);
+}
+
 // --- Proxy Handler ---
 
 /**
@@ -97,34 +125,37 @@ function isAllowedApiPath(pathname: string): boolean {
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const isDev = process.env.NODE_ENV === "development";
 
-  // ---- Rate Limiting (berlaku untuk SEMUA request termasuk /api/ext/) ----
-  const ip =
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    request.headers.get("x-real-ip") ??
-    "unknown";
-
-  if (isRateLimited(ip)) {
-    return new NextResponse("Too Many Requests", { status: 429 });
+  // ---- Rate Limiting ----
+  // Hindari false-positive di development dan saat IP client tidak tersedia.
+  const clientAddress = getClientAddress(request);
+  if (
+    clientAddress &&
+    shouldApplyRateLimit(request, pathname, isDev) &&
+    isRateLimited(clientAddress)
+  ) {
+    return new NextResponse("Too Many Requests", {
+      status: 429,
+      headers: {
+        "Retry-After": String(Math.ceil(RATE_LIMIT_WINDOW / 1000)),
+      },
+    });
   }
 
-  // ---- API Proxy: validasi path + tambah ngrok header ----
-  // Request /api/ext/* di-rewrite ke backend oleh next.config.mjs.
+  // ---- API Proxy: validasi path publik yang boleh diteruskan ----
+  // Request /api/ext/* diteruskan oleh route handler server-side.
   // Hanya path yang ada di ALLOWED_API_PATHS yang diizinkan.
   if (pathname.startsWith("/api/ext/")) {
     if (!isAllowedApiPath(pathname)) {
       return new NextResponse("Forbidden", { status: 403 });
     }
 
-    const headers = new Headers(request.headers);
-    headers.set("ngrok-skip-browser-warning", "true");
-    return NextResponse.next({ request: { headers } });
+    return NextResponse.next();
   }
 
   // ---- Generate Nonce for CSP ----
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
-  const isDev = process.env.NODE_ENV === "development";
-
   // ---- Content Security Policy ----
   // CSP adalah pertahanan utama terhadap:
   // - XSS (Cross-Site Scripting)
@@ -136,7 +167,7 @@ export function proxy(request: NextRequest) {
   // sehingga Next.js script chunks dari origin sendiri akan diblokir browser.
   // Nonce tetap digunakan untuk inline scripts (mis. next-themes).
   //
-  // API calls melewati /api/ext rewrite (same-origin), jadi tidak perlu
+  // API calls melewati /api/ext route handler (same-origin), jadi tidak perlu
   // whitelist domain external di connect-src.
 
   const cspHeader = `

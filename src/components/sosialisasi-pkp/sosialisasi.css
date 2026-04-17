@@ -11,6 +11,12 @@
   border-radius: 16px;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
   border: 1px solid rgba(0, 0, 0, 0.05);
+  max-width: calc(100vw - 32px);
+}
+
+.sosialisasi-map .leaflet-popup-content {
+  min-width: 0 !important;
+  max-width: min(320px, calc(100vw - 48px)) !important;
 }
 
 .sosialisasi-map .leaflet-popup-tip {
@@ -42,6 +48,10 @@
   font-family: system-ui, -apple-system, sans-serif;
   border-radius: 16px;
   box-shadow: 0 2px 16px 0 rgba(0, 0, 0, 0.08);
+}
+
+.sosialisasi-map .leaflet-popup-content img[data-image-gallery] {
+  max-width: 100%;
 }
 
 /* Map Legend */

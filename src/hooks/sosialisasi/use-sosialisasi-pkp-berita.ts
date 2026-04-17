@@ -26,7 +26,9 @@ export function useSosialisasiPKPBerita(
   const [beritaSearch, setBeritaSearch] = useState<string>("");
 
   const beritaYears = useMemo(() => {
-    const years = [...new Set(rawBerita.map((b) => new Date(b.rawDate).getFullYear()))];
+    const years = [
+      ...new Set(rawBerita.map((b) => Number.parseInt(b.rawDate.slice(0, 4), 10))),
+    ].filter(Number.isFinite);
     return years.sort((a, b) => b - a);
   }, [rawBerita]);
 
@@ -35,27 +37,18 @@ export function useSosialisasiPKPBerita(
 
     // Filter by date range if specified
     if (beritaStartDate && beritaEndDate) {
-      const startDate = new Date(beritaStartDate);
-      const endDate = new Date(beritaEndDate);
       result = result.filter((b) => {
-        const eventDate = new Date(b.rawDate);
-        return eventDate >= startDate && eventDate <= endDate;
+        return b.rawDate >= beritaStartDate && b.rawDate <= beritaEndDate;
       });
     } else {
       // Filter by year
       if (beritaYear !== "all") {
-        result = result.filter((b) => {
-          const year = new Date(b.rawDate).getFullYear().toString();
-          return year === beritaYear;
-        });
+        result = result.filter((b) => b.rawDate.slice(0, 4) === beritaYear);
       }
 
       // Filter by month
       if (beritaMonth !== "all") {
-        result = result.filter((b) => {
-          const month = (new Date(b.rawDate).getMonth() + 1).toString().padStart(2, "0");
-          return month === beritaMonth;
-        });
+        result = result.filter((b) => b.rawDate.slice(5, 7) === beritaMonth);
       }
     }
 
@@ -70,7 +63,7 @@ export function useSosialisasiPKPBerita(
       );
     }
 
-    return result.sort((a, b) => new Date(b.rawDate).getTime() - new Date(a.rawDate).getTime());
+    return result.sort((a, b) => b.rawDate.localeCompare(a.rawDate));
   }, [rawBerita, beritaYear, beritaMonth, beritaStartDate, beritaEndDate, beritaSearch]);
 
   // Wrap resetFilters in useCallback for stable reference.

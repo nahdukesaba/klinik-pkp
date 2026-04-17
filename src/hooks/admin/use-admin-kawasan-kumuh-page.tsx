@@ -1,26 +1,19 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useMemo } from "react";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 
-import { useAdminAuth, type AdminFormValues, type FormFieldDef } from "@/components/admin";
+import { type AdminFormValues, type FormFieldDef } from "@/components/admin";
 import { useAdminLocationOptions } from "@/hooks/use-admin-location-options";
-import { useToast } from "@/hooks/use-toast";
 import { getNumberFormValue, getStringFormValue } from "@/lib/admin/form";
-import { canManageContent } from "@/lib/admin/roles";
-import {
-  AdminApiError,
-  adminFetch,
-  normalizeAdminFieldErrors,
-} from "@/lib/admin-client";
 import { QUERY_CONFIG } from "@/lib/constants";
 import {
   fetchKumuhPage,
   type KawasanKumuhData,
 } from "@/services/kawasan-kumuh.service";
 
-import { useAdminCreateIntent } from "./use-admin-create-intent";
+import { useAdminCrud } from "./use-admin-crud";
 
 const KUMUH_PAGE_LIMIT = 10;
 
@@ -42,48 +35,48 @@ function buildKumuhPayload(values: AdminFormValues) {
   };
 }
 
+function kumuhToFormValues(item: KawasanKumuhData): AdminFormValues {
+  return {
+    regionId: item.regionId,
+    districtId: item.districtId,
+    areaName: item.name,
+    environments: item.lingkunganText,
+    villages: item.villagesText,
+    totalArea: String(item.luas),
+    totalPopulation: String(item.penduduk),
+    slumValue: String(item.slumValue),
+    yearInspected: String(item.yearInspected),
+    latitude: String(item.lat),
+    longitude: String(item.lng),
+  };
+}
+
 export function useAdminKawasanKumuhPage() {
-  const { user } = useAdminAuth();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  const [formOpen, setFormOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<KawasanKumuhData | null>(null);
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-  const [draftValues, setDraftValues] = useState<AdminFormValues>({});
-  const [isSaving, setIsSaving] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-
-  const canManage = canManageContent(user.role);
-  const { regionOptions, districtOptions } = useAdminLocationOptions(
-    getStringFormValue(draftValues, "regionId"),
-    undefined,
-    formOpen && canManage
-  );
-
-  const openCreateDialog = useCallback(() => {
-    setEditingItem(null);
-    setFormErrors({});
-    setDraftValues({});
-    setFormOpen(true);
-  }, []);
-
-  useAdminCreateIntent({
-    enabled: canManage,
-    onCreate: openCreateDialog,
+  const crud = useAdminCrud<KawasanKumuhData>({
+    queryKey: "admin-kawasan-kumuh",
+    resourcePath: "/api/admin/resources/kumuh",
+    label: "kawasan",
+    buildPayload: buildKumuhPayload,
+    getDeleteLabel: (item) => item.name,
   });
 
+  const { regionOptions, districtOptions } = useAdminLocationOptions(
+    getStringFormValue(crud.draftValues, "regionId"),
+    undefined,
+    crud.formOpen && crud.canManage
+  );
+
   const kumuhQuery = useQuery({
-    queryKey: ["admin-kawasan-kumuh", currentPage],
+    queryKey: ["admin-kawasan-kumuh", crud.currentPage],
     queryFn: () =>
       fetchKumuhPage({
-        page: currentPage,
+        page: crud.currentPage,
         perPage: KUMUH_PAGE_LIMIT,
       }),
     staleTime: QUERY_CONFIG.staleTime,
     gcTime: QUERY_CONFIG.gcTime,
     placeholderData: (previousData) => previousData,
-    enabled: canManage,
+    enabled: crud.canManage,
   });
 
   const formFields = useMemo<FormFieldDef[]>(
@@ -165,20 +158,8 @@ export function useAdminKawasanKumuhPage() {
     [districtOptions, regionOptions]
   );
 
-  const initialValues = editingItem
-    ? {
-        regionId: editingItem.regionId,
-        districtId: editingItem.districtId,
-        areaName: editingItem.name,
-        environments: editingItem.lingkunganText,
-        villages: editingItem.villagesText,
-        totalArea: String(editingItem.luas),
-        totalPopulation: String(editingItem.penduduk),
-        slumValue: String(editingItem.slumValue),
-        yearInspected: String(editingItem.yearInspected),
-        latitude: String(editingItem.lat),
-        longitude: String(editingItem.lng),
-      }
+  const initialValues = crud.editingItem
+    ? kumuhToFormValues(crud.editingItem)
     : undefined;
 
   const kumuhList = kumuhQuery.data?.items ?? [];
@@ -195,140 +176,25 @@ export function useAdminKawasanKumuhPage() {
     [kumuhList, kumuhMeta?.totalRecords]
   );
 
-  const refreshKumuh = useCallback(async () => {
-    await queryClient.invalidateQueries({ queryKey: ["admin-kawasan-kumuh"] });
-  }, [queryClient]);
-
-  const openEditDialog = useCallback((item: KawasanKumuhData) => {
-    setEditingItem(item);
-    setFormErrors({});
-    setDraftValues({
-      regionId: item.regionId,
-      districtId: item.districtId,
-      areaName: item.name,
-      environments: item.lingkunganText,
-      villages: item.villagesText,
-      totalArea: String(item.luas),
-      totalPopulation: String(item.penduduk),
-      slumValue: String(item.slumValue),
-      yearInspected: String(item.yearInspected),
-      latitude: String(item.lat),
-      longitude: String(item.lng),
-    });
-    setFormOpen(true);
-  }, []);
-
-  const handleSubmit = useCallback(
-    async (values: AdminFormValues) => {
-      setIsSaving(true);
-      setFormErrors({});
-
-      try {
-        const payload = buildKumuhPayload(values);
-
-        if (editingItem) {
-          await adminFetch(`/api/admin/resources/kumuh/${editingItem.id}`, {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(payload),
-          });
-        } else {
-          await adminFetch("/api/admin/resources/kumuh", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(payload),
-          });
-        }
-
-        await refreshKumuh();
-        setFormOpen(false);
-        setEditingItem(null);
-        setDraftValues({});
-        toast({
-          title: editingItem
-            ? "Data kawasan diperbarui"
-            : "Data kawasan ditambahkan",
-          description: "Perubahan kawasan kumuh berhasil disimpan.",
-        });
-      } catch (error) {
-        if (error instanceof AdminApiError) {
-          setFormErrors(normalizeAdminFieldErrors(error.details));
-        }
-
-        toast({
-          title: "Gagal menyimpan data kawasan",
-          description:
-            error instanceof Error
-              ? error.message
-              : "Terjadi kesalahan saat menyimpan data kawasan.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsSaving(false);
-      }
-    },
-    [editingItem, refreshKumuh, toast]
-  );
-
-  const handleDelete = useCallback(
-    async (item: KawasanKumuhData) => {
-      if (!window.confirm(`Hapus kawasan "${item.name}"?`)) {
-        return;
-      }
-
-      try {
-        await adminFetch(`/api/admin/resources/kumuh/${item.id}`, {
-          method: "DELETE",
-        });
-        await refreshKumuh();
-        toast({
-          title: "Data kawasan dihapus",
-          description: "Data kawasan kumuh berhasil dihapus.",
-        });
-      } catch (error) {
-        toast({
-          title: "Gagal menghapus kawasan",
-          description:
-            error instanceof Error ? error.message : "Permintaan tidak berhasil.",
-          variant: "destructive",
-        });
-      }
-    },
-    [refreshKumuh, toast]
-  );
-
-  const handleFormOpenChange = useCallback((open: boolean) => {
-    setFormOpen(open);
-
-    if (!open) {
-      setEditingItem(null);
-      setFormErrors({});
-      setDraftValues({});
-    }
-  }, []);
-
   return {
-    canManage,
-    formOpen,
-    editingItem,
-    formErrors,
-    isSaving,
+    canManage: crud.canManage,
+    formOpen: crud.formOpen,
+    editingItem: crud.editingItem,
+    formErrors: crud.formErrors,
+    isSaving: crud.isSaving,
     kumuhQuery,
     kumuhList,
     kumuhMeta,
     stats,
     formFields,
     initialValues,
-    setDraftValues,
-    openCreateDialog,
-    openEditDialog,
-    handleSubmit,
-    handleDelete,
-    handleFormOpenChange,
-    setCurrentPage,
+    setDraftValues: crud.setDraftValues,
+    openCreateDialog: crud.openCreateDialog,
+    openEditDialog: (item: KawasanKumuhData) =>
+      crud.openEditDialog(item, kumuhToFormValues),
+    handleSubmit: crud.handleSubmit,
+    handleDelete: crud.handleDelete,
+    handleFormOpenChange: crud.handleFormOpenChange,
+    setCurrentPage: crud.setCurrentPage,
   };
 }

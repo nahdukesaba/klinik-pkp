@@ -1,4 +1,4 @@
-/** API Client — terpusat untuk fetch data dari backend via Next.js rewrite. */
+/** API Client — terpusat untuk fetch data dari backend via proxy Next.js. */
 
 import { getApiUrl } from "@/lib/constants";
 import {
@@ -180,12 +180,13 @@ async function apiFetch<T>(
   } =
     options ?? {};
 
-  const headers: HeadersInit = {
-    "Content-Type": "application/json",
-    // Header untuk melewati warning page ngrok free tier
-    "ngrok-skip-browser-warning": "true",
-    ...fetchOptions.headers,
-  };
+  const headers = new Headers(fetchOptions.headers);
+  if (!headers.has("Accept")) {
+    headers.set("Accept", "application/json");
+  }
+  if (fetchOptions.body != null && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
 
   const url = getApiUrl(endpoint);
 
@@ -251,7 +252,7 @@ async function apiFetch<T>(
 
 // --- Public API Client ---
 
-/** API client menggunakan proxy rewrite Next.js: /api/ext/* → backend. */
+/** API client menggunakan proxy route handler Next.js: /api/ext/* -> backend. */
 export const apiClient = {
   /** GET request ke endpoint API */
   get: <T>(endpoint: string, options?: ApiRequestOptions) =>

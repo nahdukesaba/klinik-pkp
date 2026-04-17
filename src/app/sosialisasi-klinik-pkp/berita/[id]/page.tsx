@@ -1,45 +1,25 @@
 /**
  * Route: /sosialisasi-klinik-pkp/berita/[id]
  *
- * FILE INI HANYA UNTUK ROUTING!
- * Logic ada di hooks/berita/use-berita-detail
- * UI ada di components/berita/BeritaDetailView
+ * Routing bertugas memvalidasi params lebih awal.
+ * UI + data fetching tetap berada di komponen client.
  */
 
-"use client";
+import { notFound } from "next/navigation";
 
-import dynamic from "next/dynamic";
+import BeritaDetailPage from "@/components/berita/BeritaDetailPage";
 
-// Skeleton loading untuk BeritaDetailPage
-function BeritaDetailSkeleton() {
-  return (
-    <div className="min-h-screen bg-background">
-      <div className="pt-24 pb-16">
-        <div className="container mx-auto px-4 max-w-4xl">
-          <div className="animate-pulse">
-            <div className="h-8 w-24 bg-muted rounded mb-6" />
-            <div className="aspect-video bg-muted rounded-2xl mb-6" />
-            <div className="h-10 w-3/4 bg-muted rounded mb-4" />
-            <div className="h-6 w-1/2 bg-muted rounded mb-6" />
-            <div className="space-y-3">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="h-4 bg-muted rounded w-full" />
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+interface PageProps {
+  params: Promise<{ id: string }>;
 }
 
-// Lazy load BeritaDetailPage
-const BeritaDetailPage = dynamic(
-  () => import("@/components/berita/BeritaDetailPage"),
-  {
-    loading: () => <BeritaDetailSkeleton />,
-    ssr: false,
-  }
-);
+export default async function BeritaDetailRoute({ params }: PageProps) {
+  const { id } = await params;
+  const parsedId = Number(id);
 
-export default BeritaDetailPage;
+  if (!Number.isInteger(parsedId) || parsedId < 1) {
+    notFound();
+  }
+
+  return <BeritaDetailPage id={parsedId} />;
+}

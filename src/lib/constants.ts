@@ -12,7 +12,7 @@ export const QUERY_CONFIG = {
 
 /**
  * Base URL untuk API request dari client-side.
- * Request melewati Next.js rewrites /api/ext → backend (same-origin, no CORS).
+ * Request melewati route handler /api/ext -> backend (same-origin, no CORS).
  * Konfigurasi backend URL: set API_URL di .env.local
  */
 export const API_BASE_URL = "/api/ext";

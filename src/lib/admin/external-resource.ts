@@ -90,7 +90,7 @@ async function parseProxyResponsePayload(response: Response) {
   if (!text) {
     return response.ok
       ? { success: true }
-      : { error: "Permintaan ke backend tidak berhasil." };
+      : { error: "Permintaan tidak berhasil." };
   }
 
   try {
@@ -111,7 +111,7 @@ export async function proxyExternalAdminResource(params: {
   try {
     getBackendApiBaseUrl();
   } catch {
-    return createProxyTransportError(503, "Backend API belum dikonfigurasi.");
+    return createProxyTransportError(503, "Konfigurasi API_URL belum tersedia.");
   }
 
   const resourcePath = buildExternalResourcePath(params.resource, params.id);
@@ -146,11 +146,11 @@ export async function proxyExternalAdminResource(params: {
     if (error instanceof DOMException && error.name === "AbortError") {
       return createProxyTransportError(
         504,
-        "Permintaan ke backend melebihi batas waktu."
+        "Waktu tunggu ke backend habis."
       );
     }
 
-    return createProxyTransportError(502, "Tidak dapat terhubung ke backend API.");
+    return createProxyTransportError(502, "Layanan backend sedang tidak tersedia.");
   }
 
   const payload = await parseProxyResponsePayload(response);

@@ -11,7 +11,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { Loader2 } from "lucide-react";
+import { Loader2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -109,6 +109,29 @@ function buildFormStateKey(
     .join("|");
 
   return `${fieldSignature}|${initialValueSignature}`;
+}
+
+function mergeFiles(currentFiles: File[], nextFiles: File[], allowMultiple: boolean) {
+  if (!allowMultiple) {
+    return nextFiles.slice(0, 1);
+  }
+
+  const merged = [...currentFiles];
+
+  for (const nextFile of nextFiles) {
+    const alreadyExists = merged.some(
+      (currentFile) =>
+        currentFile.name === nextFile.name &&
+        currentFile.size === nextFile.size &&
+        currentFile.lastModified === nextFile.lastModified
+    );
+
+    if (!alreadyExists) {
+      merged.push(nextFile);
+    }
+  }
+
+  return merged;
 }
 
 function AdminFormDialogBody({
@@ -210,12 +233,14 @@ function AdminFormDialogBody({
                   accept={field.accept}
                   multiple={field.multiple}
                   required={field.required && fileValue.length === 0}
-                  onChange={(event) =>
+                  onChange={(event) => {
+                    const nextFiles = Array.from(event.target.files ?? []);
                     handleChange(
                       field.name,
-                      Array.from(event.target.files ?? [])
-                    )
-                  }
+                      mergeFiles(fileValue, nextFiles, Boolean(field.multiple))
+                    );
+                    event.currentTarget.value = "";
+                  }}
                   className={cn(
                     "cursor-pointer",
                     errors[field.name] &&
@@ -227,9 +252,41 @@ function AdminFormDialogBody({
                     <p className="text-xs font-medium text-foreground">
                       {fileValue.length} file dipilih
                     </p>
-                    <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-                      {fileValue.map((file) => file.name).join(", ")}
-                    </p>
+                    <div className="mt-2 space-y-2">
+                      {fileValue.map((file, index) => (
+                        <div
+                          key={`${file.name}-${file.lastModified}-${index}`}
+                          className="flex items-center justify-between gap-3 rounded-md border border-border/70 bg-background/80 px-2.5 py-2"
+                        >
+                          <div className="min-w-0">
+                            <p className="truncate text-xs font-medium text-foreground">
+                              {file.name}
+                            </p>
+                            <p className="text-[11px] text-muted-foreground">
+                              {(file.size / (1024 * 1024)).toFixed(2)} MB
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleChange(
+                                field.name,
+                                fileValue.filter((_, fileIndex) => fileIndex !== index)
+                              )
+                            }
+                            className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive"
+                            aria-label={`Hapus ${file.name}`}
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    {field.multiple && (
+                      <p className="mt-2 text-[11px] text-muted-foreground">
+                        Pilih file lagi kapan pun untuk menambahkan gambar lainnya.
+                      </p>
+                    )}
                   </div>
                 )}
               </div>

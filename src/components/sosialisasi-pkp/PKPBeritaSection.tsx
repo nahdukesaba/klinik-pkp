@@ -26,6 +26,7 @@ import {
 import { DateRangeFilterGroup } from "@/components/shared/DateRangeFilterGroup";
 import { GridPagination } from "@/components/shared/GridPagination";
 import { Input } from "@/components/ui/input";
+import { formatDateId } from "@/lib/date";
 import { type BeritaSosialisasi } from "@/services/sosialisasi.service";
 
 // --- Types ---
@@ -70,8 +71,6 @@ function BeritaCard({
   onImageClick?: (images: string[], index: number, title: string) => void;
   onViewOnMap?: (coordinates: [number, number]) => void;
 }) {
-  const eventDate = new Date(berita.rawDate);
-
   /** Handler klik "Lihat di Peta" */
   const handleViewOnMap = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -82,7 +81,7 @@ function BeritaCard({
   /** Handler klik gambar untuk zoom */
   const handleImageClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    onImageClick?.([berita.image], 0, berita.title);
+    onImageClick?.([berita.image, ...(berita.images ?? [])], 0, berita.title);
   };
 
   return (
@@ -122,9 +121,11 @@ function BeritaCard({
           <div className="flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-0.5 bg-primary/10 rounded-md">
             <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-primary" />
             <span className="text-[10px] sm:text-xs text-primary font-medium">
-              {eventDate.getDate()}{" "}
-              {eventDate.toLocaleDateString("id-ID", { month: "short" })}{" "}
-              {eventDate.getFullYear()}
+              {formatDateId(berita.rawDate, {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              })}
             </span>
           </div>
           <span className="px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-xs font-medium rounded-md bg-green-100 text-green-800">

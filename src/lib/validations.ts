@@ -27,6 +27,23 @@ export const loginSchema = z.object({
     .max(128, "Password terlalu panjang"),
 });
 
+// --- Lupa Password ---
+
+export const forgotPasswordSchema = z.object({
+  email: z
+    .string()
+    .min(1, "Email wajib diisi")
+    .email("Format email tidak valid")
+    .max(255, "Email terlalu panjang")
+    .transform(sanitizeEmail),
+
+  nip: z
+    .string()
+    .min(1, "NIP wajib diisi")
+    .transform(sanitizeNip)
+    .refine((val: string) => /^\d{18}$/.test(val), "NIP harus 18 digit"),
+});
+
 const phoneSchema = z
   .string()
   .max(50, "Nomor telepon terlalu panjang")

@@ -53,7 +53,7 @@ async function fetchExternalCollectionCount(path: string) {
   const meta = extractApiPaginationMeta(payload.data);
 
   if (!payload.success || !items) {
-    throw new Error(payload.message ?? "Format data backend tidak valid.");
+    throw new Error(payload.message ?? "Format data dari backend tidak valid.");
   }
 
   return meta.totalRecords ?? items.length;
@@ -72,7 +72,7 @@ export async function getExternalDashboardStats(): Promise<ExternalStatsSummary>
   try {
     getBackendApiBaseUrl();
   } catch {
-    summary.failedResources.push("Konfigurasi backend");
+    summary.failedResources.push("Konfigurasi API");
     return summary;
   }
 

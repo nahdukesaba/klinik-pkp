@@ -15,23 +15,22 @@ export default function Footer() {
     .join(", ");
 
   return (
-    <footer className="bg-card border-t border-border">
+    <footer className="border-t border-border bg-card">
       <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
-          {/* Bagian Brand */}
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4 lg:gap-12">
           <div className="lg:col-span-1">
-            <Link href="/" className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-full overflow-hidden flex items-center justify-center shadow-lg bg-white">
+            <Link href="/" className="mb-4 flex items-center gap-3">
+              <div className="relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-white shadow-lg">
                 <Image
                   src="/logo-bp3kp.png"
                   alt="Logo BP3KP Sumatera II"
-                  width={48}
-                  height={48}
-                  className="object-contain w-full h-full"
+                  fill
+                  sizes="48px"
+                  className="object-contain"
                 />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   BP3KP Sumatera II
                 </p>
                 <h3 className="text-lg font-bold text-foreground">
@@ -44,9 +43,8 @@ export default function Footer() {
             </p>
           </div>
 
-          {/* Tautan Cepat */}
           <div>
-            <h4 className="font-semibold text-foreground mb-4">Layanan</h4>
+            <h4 className="mb-4 font-semibold text-foreground">Layanan</h4>
             <ul className="space-y-3">
               {QUICK_LINKS.map((link) => (
                 <li key={link.href}>
@@ -61,9 +59,8 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Tautan Informasi */}
           <div>
-            <h4 className="font-semibold text-foreground mb-4">Informasi</h4>
+            <h4 className="mb-4 font-semibold text-foreground">Informasi</h4>
             <ul className="space-y-3">
               {INFO_LINKS.map((link) => (
                 <li key={link.href}>
@@ -75,7 +72,7 @@ export default function Footer() {
                       className="inline-flex items-start gap-1 break-words text-sm text-muted-foreground transition-colors hover:text-primary"
                     >
                       {link.label}
-                      <ExternalLink className="w-3 h-3" />
+                      <ExternalLink className="h-3 w-3" />
                     </a>
                   ) : (
                     <Link
@@ -90,16 +87,15 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Info Kontak */}
           <div>
-            <h4 className="font-semibold text-foreground mb-4">Kontak</h4>
+            <h4 className="mb-4 font-semibold text-foreground">Kontak</h4>
             <ul className="space-y-3">
               <li>
                 <a
                   href={`mailto:${klinikData.email}`}
                   className="flex items-start gap-3 break-words text-sm text-muted-foreground transition-colors hover:text-primary"
                 >
-                  <Mail className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                  <Mail className="mt-0.5 h-4 w-4 flex-shrink-0" />
                   <span className="break-all">{klinikData.email}</span>
                 </a>
               </li>
@@ -108,19 +104,19 @@ export default function Footer() {
                   href={`tel:${phoneHref}`}
                   className="flex items-start gap-3 break-words text-sm text-muted-foreground transition-colors hover:text-primary"
                 >
-                  <Phone className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                  <Phone className="mt-0.5 h-4 w-4 flex-shrink-0" />
                   <span>{klinikData.phone}</span>
                 </a>
               </li>
               <li>
                 <div className="flex items-start gap-3 text-sm text-muted-foreground">
-                  <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                  <MapPin className="mt-0.5 h-4 w-4 flex-shrink-0" />
                   <span className="break-words">{klinikData.address}</span>
                 </div>
               </li>
               <li>
                 <div className="flex items-start gap-3 text-sm text-muted-foreground">
-                  <Clock className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                  <Clock className="mt-0.5 h-4 w-4 flex-shrink-0" />
                   <span className="break-words">{weekdayHours}</span>
                 </div>
               </li>
@@ -128,26 +124,11 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Bar Bawah */}
-        <div className="mt-12 pt-8 border-t border-border">
+        <div className="mt-12 border-t border-border pt-8">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <p className="text-center text-sm text-muted-foreground md:text-left">
-              © {currentYear} Klinik PKP BP3KP Sumatera II
+              (c) {currentYear} Klinik PKP BP3KP Sumatera II
             </p>
-            <div className="flex flex-wrap items-center justify-center gap-4 md:justify-end">
-              <Link
-                href="/informasi/kebijakan-privasi"
-                className="text-sm text-muted-foreground hover:text-primary transition-colors"
-              >
-                Kebijakan Privasi
-              </Link>
-              <Link
-                href="/informasi/syarat-ketentuan"
-                className="text-sm text-muted-foreground hover:text-primary transition-colors"
-              >
-                Syarat & Ketentuan
-              </Link>
-            </div>
           </div>
         </div>
       </div>

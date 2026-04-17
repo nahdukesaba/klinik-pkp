@@ -1,28 +1,21 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useMemo } from "react";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 
-import { useAdminAuth, type AdminFormValues, type FormFieldDef } from "@/components/admin";
+import { type AdminFormValues, type FormFieldDef } from "@/components/admin";
 import { useAdminLocationOptions } from "@/hooks/use-admin-location-options";
-import { useToast } from "@/hooks/use-toast";
 import {
   getFileFormValue,
   getNumberFormValue,
   getStringFormValue,
   validateFileField,
 } from "@/lib/admin/form";
-import { canManageContent } from "@/lib/admin/roles";
-import {
-  AdminApiError,
-  adminFetch,
-  normalizeAdminFieldErrors,
-} from "@/lib/admin-client";
 import { QUERY_CONFIG } from "@/lib/constants";
 import { fetchRusunPage, type RusunData } from "@/services/rusun.service";
 
-import { useAdminCreateIntent } from "./use-admin-create-intent";
+import { useAdminCrud } from "./use-admin-crud";
 
 const RUSUN_PAGE_LIMIT = 10;
 
@@ -54,49 +47,61 @@ function buildRusunFormData(values: AdminFormValues) {
   return formData;
 }
 
+function rusunToFormValues(item: RusunData): AdminFormValues {
+  return {
+    regionId: item.regionId,
+    districtId: item.districtId,
+    villageId: item.villageId,
+    name: item.name,
+    address: item.address,
+    tower: String(item.tower),
+    unitType: item.type,
+    floor: String(item.floors),
+    unitCount: String(item.units),
+    yearGiven: item.yearGiven,
+    latitude: String(item.lat),
+    longitude: String(item.lng),
+    images: [],
+  };
+}
+
 export function useAdminRusunPage() {
-  const { user } = useAdminAuth();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  const [formOpen, setFormOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<RusunData | null>(null);
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-  const [draftValues, setDraftValues] = useState<AdminFormValues>({});
-  const [isSaving, setIsSaving] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-
-  const canManage = canManageContent(user.role);
-  const { regionOptions, districtOptions, villageOptions } =
-    useAdminLocationOptions(
-      getStringFormValue(draftValues, "regionId"),
-      getStringFormValue(draftValues, "districtId"),
-      formOpen && canManage
-    );
-
-  const openCreateDialog = useCallback(() => {
-    setEditingItem(null);
-    setFormErrors({});
-    setDraftValues({});
-    setFormOpen(true);
-  }, []);
-
-  useAdminCreateIntent({
-    enabled: canManage,
-    onCreate: openCreateDialog,
+  const crud = useAdminCrud<RusunData>({
+    queryKey: "admin-rusun",
+    resourcePath: "/api/admin/resources/rusun",
+    label: "rusun",
+    buildPayload: buildRusunFormData,
+    getDeleteLabel: (item) => item.name,
+    validate: (values, editingItem) => {
+      const error = validateFileField(values, {
+        field: "images",
+        label: "Gambar rusun",
+        maxSizeMb: 2,
+        required: !editingItem,
+        acceptImagesOnly: true,
+      });
+      return error ? { field: "images", message: error } : undefined;
+    },
   });
 
+  const { regionOptions, districtOptions, villageOptions } =
+    useAdminLocationOptions(
+      getStringFormValue(crud.draftValues, "regionId"),
+      getStringFormValue(crud.draftValues, "districtId"),
+      crud.formOpen && crud.canManage
+    );
+
   const rusunQuery = useQuery({
-    queryKey: ["admin-rusun", currentPage],
+    queryKey: ["admin-rusun", crud.currentPage],
     queryFn: () =>
       fetchRusunPage({
-        page: currentPage,
+        page: crud.currentPage,
         perPage: RUSUN_PAGE_LIMIT,
       }),
     staleTime: QUERY_CONFIG.staleTime,
     gcTime: QUERY_CONFIG.gcTime,
     placeholderData: (previousData) => previousData,
-    enabled: canManage,
+    enabled: crud.canManage,
   });
 
   const formFields = useMemo<FormFieldDef[]>(
@@ -182,31 +187,17 @@ export function useAdminRusunPage() {
         type: "file",
         accept: "image/*",
         multiple: true,
-        required: !editingItem,
-        helperText: editingItem
+        required: !crud.editingItem,
+        helperText: crud.editingItem
           ? "Opsional. Unggah gambar baru jika ingin mengganti gambar lama. Maksimal 2 MB per gambar."
           : "Unggah minimal satu gambar rusun. Maksimal 2 MB per gambar.",
       },
     ],
-    [districtOptions, editingItem, regionOptions, villageOptions]
+    [crud.editingItem, districtOptions, regionOptions, villageOptions]
   );
 
-  const initialValues = editingItem
-    ? {
-        regionId: editingItem.regionId,
-        districtId: editingItem.districtId,
-        villageId: editingItem.villageId,
-        name: editingItem.name,
-        address: editingItem.address,
-        tower: String(editingItem.tower),
-        unitType: editingItem.type,
-        floor: String(editingItem.floors),
-        unitCount: String(editingItem.units),
-        yearGiven: editingItem.yearGiven,
-        latitude: String(editingItem.lat),
-        longitude: String(editingItem.lng),
-        images: [],
-      }
+  const initialValues = crud.editingItem
+    ? rusunToFormValues(crud.editingItem)
     : undefined;
 
   const rusunList = rusunQuery.data?.items ?? [];
@@ -220,152 +211,25 @@ export function useAdminRusunPage() {
     [rusunList, rusunMeta?.totalRecords]
   );
 
-  const refreshRusun = useCallback(async () => {
-    await queryClient.invalidateQueries({ queryKey: ["admin-rusun"] });
-  }, [queryClient]);
-
-  const openEditDialog = useCallback((item: RusunData) => {
-    setEditingItem(item);
-    setFormErrors({});
-    setDraftValues({
-      regionId: item.regionId,
-      districtId: item.districtId,
-      villageId: item.villageId,
-      name: item.name,
-      address: item.address,
-      tower: String(item.tower),
-      unitType: item.type,
-      floor: String(item.floors),
-      unitCount: String(item.units),
-      yearGiven: item.yearGiven,
-      latitude: String(item.lat),
-      longitude: String(item.lng),
-      images: [],
-    });
-    setFormOpen(true);
-  }, []);
-
-  const handleSubmit = useCallback(
-    async (values: AdminFormValues) => {
-      setIsSaving(true);
-      setFormErrors({});
-
-      try {
-        const imageValidationError = validateFileField(values, {
-          field: "images",
-          label: "Gambar rusun",
-          maxSizeMb: 2,
-          required: !editingItem,
-          acceptImagesOnly: true,
-        });
-
-        if (imageValidationError) {
-          setFormErrors({ images: imageValidationError });
-          toast({
-            title: "Upload belum valid",
-            description: imageValidationError,
-            variant: "destructive",
-          });
-          return;
-        }
-
-        const formData = buildRusunFormData(values);
-
-        if (editingItem) {
-          await adminFetch(`/api/admin/resources/rusun/${editingItem.id}`, {
-            method: "PUT",
-            body: formData,
-          });
-        } else {
-          await adminFetch("/api/admin/resources/rusun", {
-            method: "POST",
-            body: formData,
-          });
-        }
-
-        await refreshRusun();
-        setFormOpen(false);
-        setEditingItem(null);
-        setDraftValues({});
-        toast({
-          title: editingItem ? "Data rusun diperbarui" : "Data rusun ditambahkan",
-          description: "Perubahan data rusun berhasil disimpan.",
-        });
-      } catch (error) {
-        if (error instanceof AdminApiError) {
-          setFormErrors(normalizeAdminFieldErrors(error.details));
-        }
-
-        toast({
-          title: "Gagal menyimpan data rusun",
-          description:
-            error instanceof Error
-              ? error.message
-              : "Terjadi kesalahan saat menyimpan data rusun.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsSaving(false);
-      }
-    },
-    [editingItem, refreshRusun, toast]
-  );
-
-  const handleDelete = useCallback(
-    async (item: RusunData) => {
-      if (!window.confirm(`Hapus data rusun "${item.name}"?`)) {
-        return;
-      }
-
-      try {
-        await adminFetch(`/api/admin/resources/rusun/${item.id}`, {
-          method: "DELETE",
-        });
-        await refreshRusun();
-        toast({
-          title: "Data rusun dihapus",
-          description: "Data rusun berhasil dihapus.",
-        });
-      } catch (error) {
-        toast({
-          title: "Gagal menghapus data rusun",
-          description:
-            error instanceof Error ? error.message : "Permintaan tidak berhasil.",
-          variant: "destructive",
-        });
-      }
-    },
-    [refreshRusun, toast]
-  );
-
-  const handleFormOpenChange = useCallback((open: boolean) => {
-    setFormOpen(open);
-
-    if (!open) {
-      setEditingItem(null);
-      setFormErrors({});
-      setDraftValues({});
-    }
-  }, []);
-
   return {
-    canManage,
-    formOpen,
-    editingItem,
-    formErrors,
-    isSaving,
+    canManage: crud.canManage,
+    formOpen: crud.formOpen,
+    editingItem: crud.editingItem,
+    formErrors: crud.formErrors,
+    isSaving: crud.isSaving,
     rusunQuery,
     rusunList,
     rusunMeta,
     stats,
     formFields,
     initialValues,
-    setDraftValues,
-    openCreateDialog,
-    openEditDialog,
-    handleSubmit,
-    handleDelete,
-    handleFormOpenChange,
-    setCurrentPage,
+    setDraftValues: crud.setDraftValues,
+    openCreateDialog: crud.openCreateDialog,
+    openEditDialog: (item: RusunData) =>
+      crud.openEditDialog(item, rusunToFormValues),
+    handleSubmit: crud.handleSubmit,
+    handleDelete: crud.handleDelete,
+    handleFormOpenChange: crud.handleFormOpenChange,
+    setCurrentPage: crud.setCurrentPage,
   };
 }

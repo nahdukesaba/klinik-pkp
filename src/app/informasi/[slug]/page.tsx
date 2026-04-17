@@ -9,54 +9,38 @@
 import dynamic from "next/dynamic";
 import { notFound } from "next/navigation";
 
+import { InformasiPageSkeleton } from "@/components/shared";
+
 // Lazy load komponen untuk performa lebih baik
 const BahanBangunanPage = dynamic(
   () => import("@/components/informasi/BahanBangunanPage"),
-  { loading: () => <PageSkeleton /> }
+  { loading: () => <InformasiPageSkeleton /> }
 );
 
 const FaqPage = dynamic(
   () => import("@/components/informasi/FaqPage"),
-  { loading: () => <PageSkeleton /> }
+  { loading: () => <InformasiPageSkeleton /> }
 );
 
 const KontakPage = dynamic(
   () => import("@/components/informasi/KontakPage"),
-  { loading: () => <PageSkeleton /> }
+  { loading: () => <InformasiPageSkeleton /> }
 );
 
 const PeraturanPage = dynamic(
   () => import("@/components/informasi/PeraturanPage"),
-  { loading: () => <PageSkeleton /> }
+  { loading: () => <InformasiPageSkeleton /> }
 );
 
 const PerizinanPage = dynamic(
   () => import("@/components/informasi/PerizinanPage"),
-  { loading: () => <PageSkeleton /> }
+  { loading: () => <InformasiPageSkeleton /> }
 );
 
 const TentangPage = dynamic(
   () => import("@/components/informasi/TentangPage"),
-  { loading: () => <PageSkeleton /> }
+  { loading: () => <InformasiPageSkeleton /> }
 );
-
-// Loading skeleton
-function PageSkeleton() {
-  return (
-    <div className="min-h-screen bg-background animate-pulse">
-      <div className="h-16 bg-muted" />
-      <div className="container mx-auto px-4 py-24">
-        <div className="h-8 bg-muted rounded w-1/3 mx-auto mb-4" />
-        <div className="h-4 bg-muted rounded w-2/3 mx-auto mb-12" />
-        <div className="grid md:grid-cols-3 gap-6">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-48 bg-muted rounded-2xl" />
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // Map slug ke komponen
 const pageComponents: Record<string, React.ComponentType> = {

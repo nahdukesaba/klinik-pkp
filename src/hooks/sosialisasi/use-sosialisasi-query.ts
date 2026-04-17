@@ -9,10 +9,14 @@
 
 "use client";
 
+import { useMemo } from "react";
+
 import { useQuery } from "@tanstack/react-query";
 
+import { useCurrentTime } from "@/hooks/use-current-time";
 import { QUERY_CONFIG } from "@/lib/constants";
 import {
+  buildSosialisasiResultFromLocations,
   fetchSosialisasiList,
   type SosialisasiResult,
   type SosialisasiLocation,
@@ -22,11 +26,13 @@ import {
 export type { SosialisasiLocation, BeritaSosialisasi };
 
 export interface SosialisasiRawData {
-  /** Semua lokasi dengan status ter-compute berdasarkan tanggal */
+  /** Lokasi yang boleh tampil di peta publik */
   locations: SosialisasiLocation[];
+  /** Lokasi yang selesai tetapi masih menunggu dokumentasi */
+  pendingLocations: SosialisasiLocation[];
   /** Lokasi yang belum lewat tanggal (untuk section jadwal) */
   upcomingLocations: SosialisasiLocation[];
-  /** Lokasi yang sudah lewat tanggal */
+  /** Lokasi yang sudah selesai dan siap tampil */
   completedLocations: SosialisasiLocation[];
   /** Berita yang sudah selesai dan memiliki deskripsi */
   berita: BeritaSosialisasi[];
@@ -46,27 +52,52 @@ export interface SosialisasiRawData {
 // Ref: vercel-react-best-practices/rerender-memo-with-default-value
 const EMPTY_RESULT: SosialisasiResult = {
   locations: [],
+  publicLocations: [],
   upcomingLocations: [],
   completedLocations: [],
+  pendingLocations: [],
   berita: [],
   kabupatenList: ["Semua Lokasi"],
 };
 
 export function useSosialisasiQuery(): SosialisasiRawData {
+  const currentTime = useCurrentTime();
   const query = useQuery<SosialisasiResult>({
     queryKey: ["sosialisasi"],
     queryFn: () => fetchSosialisasiList(),
     ...QUERY_CONFIG,
+    refetchInterval: 30_000,
+    refetchIntervalInBackground: true,
   });
 
-  const result = query.data ?? EMPTY_RESULT;
+  const result = useMemo(() => {
+    if (!query.data) {
+      return EMPTY_RESULT;
+    }
+
+    return buildSosialisasiResultFromLocations(
+      query.data.locations,
+      currentTime
+    );
+  }, [currentTime, query.data]);
+  const upcomingKabupatenList = [
+    "Semua Lokasi",
+    ...Array.from(
+      new Set(
+        result.upcomingLocations
+          .map((item) => item.kabupaten)
+          .filter((item) => item.trim() !== "")
+      )
+    ).sort(),
+  ];
 
   return {
-    locations: result.locations,
+    locations: result.publicLocations,
+    pendingLocations: result.pendingLocations,
     upcomingLocations: result.upcomingLocations,
     completedLocations: result.completedLocations,
     berita: result.berita,
-    kabupatenList: result.kabupatenList,
+    kabupatenList: upcomingKabupatenList,
     isLoading: query.isLoading,
     isError: query.isError,
     error: query.error,

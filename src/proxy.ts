@@ -5,16 +5,6 @@
 
 import { NextRequest, NextResponse } from "next/server";
 
-import { AUTH_COOKIE_NAME } from "@/lib/auth";
-
-// --- Protected Routes Configuration ---
-
-/** Routes yang membutuhkan authentication */
-const PROTECTED_ROUTES = ["/dashboard", "/admin"];
-
-/** Routes yang hanya bisa diakses oleh user yang BELUM login */
-const AUTH_ROUTES = ["/login"];
-
 // --- Rate Limiting Store (in-memory, per server instance) ---
 
 const rateLimitStore = new Map<
@@ -143,11 +133,11 @@ export function proxy(request: NextRequest) {
     });
   }
 
-  // ---- API Proxy: validasi path publik yang boleh diteruskan ----
-  // Request /api/ext/* diteruskan oleh route handler server-side.
-  // Hanya path yang ada di ALLOWED_API_PATHS yang diizinkan.
-  if (pathname.startsWith("/api/ext/")) {
-    if (!isAllowedApiPath(pathname)) {
+  // ---- API Requests ----
+  // Request API tidak membutuhkan CSP nonce atau security header halaman HTML.
+  // Biarkan proxy fokus pada rate limiting + allowlist path publik.
+  if (pathname.startsWith("/api/")) {
+    if (pathname.startsWith("/api/ext/") && !isAllowedApiPath(pathname)) {
       return new NextResponse("Forbidden", { status: 403 });
     }
 
@@ -199,25 +189,6 @@ export function proxy(request: NextRequest) {
     "Content-Security-Policy",
     contentSecurityPolicyHeaderValue
   );
-
-  // ---- Route Protection ----
-  const authToken = request.cookies.get(AUTH_COOKIE_NAME)?.value;
-
-  // Redirect ke login jika mengakses protected route tanpa token
-  if (PROTECTED_ROUTES.some((route) => pathname.startsWith(route))) {
-    if (!authToken) {
-      const loginUrl = new URL("/login", request.url);
-      loginUrl.searchParams.set("redirect", pathname);
-      return NextResponse.redirect(loginUrl);
-    }
-  }
-
-  // Redirect ke dashboard jika sudah login tapi mengakses halaman login
-  if (AUTH_ROUTES.some((route) => pathname.startsWith(route))) {
-    if (authToken) {
-      return NextResponse.redirect(new URL("/admin", request.url));
-    }
-  }
 
   // ---- Build Response with Security Headers ----
   const response = NextResponse.next({
@@ -278,8 +249,10 @@ export function proxy(request: NextRequest) {
  */
 export const config = {
   matcher: [
+    "/api/:path*",
     {
-      source: "/((?!_next/static|_next/image|favicon\\.ico).*)",
+      source:
+        "/((?!_next/static|_next/image|favicon\\.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|txt|xml|woff|woff2|css|js|map)$).*)",
       missing: [
         { type: "header", key: "next-router-prefetch" },
         { type: "header", key: "purpose", value: "prefetch" },

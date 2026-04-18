@@ -20,6 +20,7 @@ export class AdminApiError extends Error {
 
 let csrfTokenCache: string | null = null;
 let csrfTokenPromise: Promise<string> | null = null;
+let adminSessionRefreshPromise: Promise<boolean> | null = null;
 
 function isCsrfErrorPayload(payload: unknown) {
   if (!payload || typeof payload !== "object") {
@@ -68,6 +69,25 @@ async function getCsrfToken(forceRefresh = false) {
   return csrfTokenPromise;
 }
 
+async function refreshAdminSession() {
+  if (adminSessionRefreshPromise) {
+    return adminSessionRefreshPromise;
+  }
+
+  adminSessionRefreshPromise = fetch("/api/auth/refresh", {
+    method: "POST",
+    credentials: "include",
+    cache: "no-store",
+  })
+    .then((response) => response.ok)
+    .catch(() => false)
+    .finally(() => {
+      adminSessionRefreshPromise = null;
+    });
+
+  return adminSessionRefreshPromise;
+}
+
 export function warmUpAdminCsrfToken() {
   void getCsrfToken();
 }
@@ -96,11 +116,13 @@ export async function adminFetch<T>(
   init: RequestInit = {},
   options: {
     retryOnForbidden?: boolean;
+    retryOnUnauthorized?: boolean;
   } = {}
 ): Promise<T> {
   const method = (init.method ?? "GET").toUpperCase();
   const headers = new Headers(init.headers);
   const retryOnForbidden = options.retryOnForbidden ?? true;
+  const retryOnUnauthorized = options.retryOnUnauthorized ?? true;
 
   if (!SAFE_METHODS.has(method)) {
     headers.set("X-CSRF-Token", await getCsrfToken());
@@ -117,6 +139,21 @@ export async function adminFetch<T>(
   const payload = await response.json().catch(() => null);
 
   if (!response.ok) {
+    if (response.status === 401 && retryOnUnauthorized) {
+      const refreshed = await refreshAdminSession();
+
+      if (refreshed) {
+        return adminFetch<T>(
+          input,
+          init,
+          {
+            ...options,
+            retryOnUnauthorized: false,
+          }
+        );
+      }
+    }
+
     if (
       !SAFE_METHODS.has(method) &&
       response.status === 403 &&

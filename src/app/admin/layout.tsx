@@ -22,6 +22,7 @@ export default async function AdminLayout({
         email: user.email,
         nip: user.nip,
         role: user.role,
+        accessTokenExpiresAt: user.accessTokenExpiresAt,
       }}
     >
       <AdminShell>{children}</AdminShell>

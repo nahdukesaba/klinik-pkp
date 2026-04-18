@@ -9,6 +9,11 @@ import type {
 
 import { appendAuditEntry, listStoredAuditEntries } from "./audit-log";
 import {
+  ADMIN_CACHE_TAGS,
+  createCachedAdminReader,
+  revalidateAdminTags,
+} from "./cache";
+import {
   normalizeAdminRole,
   type AdminSessionUser,
 } from "./security";
@@ -86,6 +91,10 @@ export async function createAuditEntry(params: {
   };
 
   await appendAuditEntry(entry);
+  revalidateAdminTags([
+    ADMIN_CACHE_TAGS.auditLog,
+    ADMIN_CACHE_TAGS.dashboardOverview,
+  ]);
 }
 
 export async function recordSuccessfulLogin(
@@ -105,7 +114,7 @@ export async function listAuditEntries(limit = 20) {
   return listStoredAuditEntries(limit);
 }
 
-export async function getDashboardOverview(options?: {
+async function readDashboardOverview(options?: {
   includeAudit?: boolean;
   backendAccessToken?: string;
   origin?: string;
@@ -143,4 +152,25 @@ export async function getDashboardOverview(options?: {
     usersMeta: usersPage.meta,
     recentActivities: auditEntries.slice(0, 8).map(toRecentActivity),
   };
+}
+
+const getCachedDashboardOverview = createCachedAdminReader(
+  "admin-dashboard-overview",
+  readDashboardOverview,
+  {
+    revalidate: 60,
+    tags: [
+      ADMIN_CACHE_TAGS.dashboardOverview,
+      ADMIN_CACHE_TAGS.usersDirectory,
+      ADMIN_CACHE_TAGS.auditLog,
+    ],
+  }
+);
+
+export async function getDashboardOverview(options?: {
+  includeAudit?: boolean;
+  backendAccessToken?: string;
+  origin?: string;
+}) {
+  return getCachedDashboardOverview(options);
 }

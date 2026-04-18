@@ -57,8 +57,8 @@ export function buildSosialisasiFormFields(params: {
         multiple: true,
         required: true,
         helperText: editingItem
-          ? `Unggah 1 sampai 3 gambar baru. Gambar saat ini: ${editingItem.images.length}. Maksimal 2 MB per gambar dan file bisa ditambahkan beberapa kali sebelum disimpan.`
-          : "Unggah 1 sampai 3 gambar. Maksimal 2 MB per gambar dan file bisa ditambahkan beberapa kali sebelum disimpan.",
+          ? `Unggah 1 sampai 4 gambar baru. Gambar saat ini: ${editingItem.images.length}. Maksimal 2 MB per gambar dan total request backend efektif 4 MB.`
+          : "Unggah 1 sampai 4 gambar. Maksimal 2 MB per gambar dan total request backend efektif 4 MB.",
       },
     ] satisfies FormFieldDef[];
   }
@@ -134,7 +134,7 @@ export function buildSosialisasiFormFields(params: {
       accept: "image/*",
       multiple: true,
       helperText:
-        "Maksimal 3 gambar, masing-masing maksimal 2 MB. File bisa ditambahkan beberapa kali sebelum disimpan.",
+        "Maksimal 4 gambar, masing-masing maksimal 2 MB, dengan total request backend efektif 4 MB.",
     },
   ] satisfies FormFieldDef[];
 }

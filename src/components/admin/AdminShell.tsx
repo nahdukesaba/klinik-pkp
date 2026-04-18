@@ -22,40 +22,28 @@ interface AdminShellProps {
 export function AdminShell({ children }: AdminShellProps) {
   const pathname = usePathname();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [mobileMenuState, setMobileMenuState] = useState<{
-    open: boolean;
-    pathname: string;
-  }>({
-    open: false,
-    pathname,
-  });
-  const mobileMenuOpen =
-    mobileMenuState.pathname === pathname && mobileMenuState.open;
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const toggleSidebar = useCallback(() => {
     setSidebarCollapsed((prev) => !prev);
   }, []);
 
   const toggleMobileMenu = useCallback(() => {
-    setMobileMenuState((current) => ({
-      pathname,
-      open: current.pathname === pathname ? !current.open : true,
-    }));
-  }, [pathname]);
+    setMobileMenuOpen((current) => !current);
+  }, []);
 
   const closeMobileMenu = useCallback(() => {
-    setMobileMenuState({
-      pathname,
-      open: false,
-    });
+    setMobileMenuOpen(false);
+  }, []);
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
   }, [pathname]);
 
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 1024) {
-        setMobileMenuState((current) =>
-          current.open ? { ...current, open: false } : current
-        );
+        setMobileMenuOpen(false);
       }
     };
 

@@ -1,9 +1,15 @@
 import "server-only";
 
+import { cache } from "react";
+
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
-import { AUTH_COOKIE_NAME, verifyToken } from "@/lib/auth";
+import {
+  AUTH_COOKIE_NAME,
+  getTokenExpiryTimestampMs,
+  verifyToken,
+} from "@/lib/auth";
 import type { UserRole } from "@/types/admin";
 
 import {
@@ -21,6 +27,7 @@ export interface AdminSessionUser {
   email: string;
   nip: string;
   role: UserRole;
+  accessTokenExpiresAt?: number;
   backendAccessToken?: string;
   backendRefreshToken?: string;
 }
@@ -38,6 +45,7 @@ function mapPayloadToSessionUser(payload: {
   email: string;
   nip: string;
   role: string;
+  exp?: number;
   backendAccessToken?: string;
   backendRefreshToken?: string;
 }) {
@@ -51,12 +59,13 @@ function mapPayloadToSessionUser(payload: {
     email: payload.email,
     nip: payload.nip,
     role: payload.role,
+    accessTokenExpiresAt: getTokenExpiryTimestampMs(payload),
     backendAccessToken: payload.backendAccessToken,
     backendRefreshToken: payload.backendRefreshToken,
   } satisfies AdminSessionUser;
 }
 
-export async function getSessionUserFromCookies() {
+export const getSessionUserFromCookies = cache(async function getSessionUserFromCookies() {
   const cookieStore = await cookies();
   const token = cookieStore.get(AUTH_COOKIE_NAME)?.value;
 
@@ -70,7 +79,7 @@ export async function getSessionUserFromCookies() {
   }
 
   return mapPayloadToSessionUser(payload);
-}
+});
 
 export async function getSessionUserFromRequest(request: NextRequest) {
   const token = request.cookies.get(AUTH_COOKIE_NAME)?.value;

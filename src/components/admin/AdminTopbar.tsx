@@ -7,7 +7,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { usePathname } from "next/navigation";
 
@@ -32,24 +32,17 @@ export function AdminTopbar({
 }: AdminTopbarProps) {
   const pathname = usePathname();
   const { user, logout } = useAdminAuth();
-  const [profileMenuState, setProfileMenuState] = useState<{
-    open: boolean;
-    pathname: string;
-  }>({
-    open: false,
-    pathname,
-  });
-  const profileOpen =
-    profileMenuState.pathname === pathname && profileMenuState.open;
+  const [profileOpen, setProfileOpen] = useState(false);
   const breadcrumbs = getAdminBreadcrumbs(pathname);
   const currentPage = breadcrumbs[breadcrumbs.length - 1]?.label || "Dashboard";
 
   const closeProfileMenu = () => {
-    setProfileMenuState({
-      pathname,
-      open: false,
-    });
+    setProfileOpen(false);
   };
+
+  useEffect(() => {
+    setProfileOpen(false);
+  }, [pathname]);
 
   return (
     <header
@@ -65,6 +58,7 @@ export function AdminTopbar({
       <div className="flex items-center gap-4">
         {/* Mobile menu toggle */}
         <button
+          type="button"
           onClick={onMobileMenuToggle}
           className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-border bg-card shadow-sm transition-colors hover:bg-muted lg:hidden"
           aria-label="Toggle menu"
@@ -73,6 +67,7 @@ export function AdminTopbar({
         </button>
 
         <button
+          type="button"
           onClick={onSidebarToggle}
           className="hidden h-10 w-10 items-center justify-center rounded-2xl border border-border bg-card text-foreground/75 shadow-sm transition-colors hover:bg-muted hover:text-foreground lg:inline-flex"
           aria-label={sidebarCollapsed ? "Perluas sidebar" : "Kecilkan sidebar"}
@@ -121,15 +116,8 @@ export function AdminTopbar({
         {/* Profile dropdown */}
         <div className="relative">
           <button
-            onClick={() =>
-              setProfileMenuState((current) => ({
-                pathname,
-                open:
-                  current.pathname === pathname
-                    ? !current.open
-                    : true,
-              }))
-            }
+            type="button"
+            onClick={() => setProfileOpen((current) => !current)}
             className="flex items-center gap-2 rounded-lg p-1.5 transition-colors hover:bg-muted"
           >
             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
@@ -169,6 +157,7 @@ export function AdminTopbar({
                 </div>
                 <div className="py-1">
                   <button
+                    type="button"
                     onClick={() => {
                       closeProfileMenu();
                       logout();

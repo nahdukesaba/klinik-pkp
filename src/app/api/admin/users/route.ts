@@ -4,6 +4,7 @@ import {
   authorizeAdminRequest,
   getRequestIpAddress,
 } from "@/lib/admin/security";
+import { ADMIN_CACHE_TAGS, revalidateAdminTags } from "@/lib/admin/cache";
 import { createAuditEntry } from "@/lib/admin/service";
 import {
   ADMIN_USERS_PAGE_LIMIT,
@@ -104,6 +105,11 @@ export async function POST(request: NextRequest) {
       // Perubahan utama sudah berhasil di backend. Audit tidak boleh
       // membatalkan respons sukses ke client.
     }
+
+    revalidateAdminTags([
+      ADMIN_CACHE_TAGS.usersDirectory,
+      ADMIN_CACHE_TAGS.dashboardOverview,
+    ]);
 
     return NextResponse.json(result, { status: 201 });
   } catch (error) {

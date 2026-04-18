@@ -23,6 +23,9 @@ const nextConfig = {
   },
   // Turbopack is enabled by default in Next.js 16
   experimental: {
+    // Upload admin (bank desain, rusun, sosialisasi) melewati proxy/middleware.
+    // Samakan dengan batas efektif body backend agar validasi UI dan perilaku proxy konsisten.
+    proxyClientMaxBodySize: 4 * 1024 * 1024,
     // Otomatis transform barrel imports ke direct imports saat build.
     // Mengurangi cold start 200-800ms per library (lucide-react: ~1583 modules).
     // Ref: vercel-react-best-practices/bundle-barrel-imports

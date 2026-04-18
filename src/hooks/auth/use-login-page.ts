@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -22,7 +22,6 @@ function resolveRedirectTarget(candidate: string | null) {
 }
 
 export function useLoginPage() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTarget = resolveRedirectTarget(searchParams.get("redirect"));
 
@@ -36,8 +35,7 @@ export function useLoginPage() {
 
   useEffect(() => {
     warmUpAdminCsrfToken();
-    void router.prefetch(redirectTarget);
-  }, [redirectTarget, router]);
+  }, []);
 
   const handleLogin = useCallback(
     async (event: React.FormEvent) => {
@@ -95,8 +93,11 @@ export function useLoginPage() {
           description: `Selamat datang, ${data.user?.name ?? "Admin"}.`,
         });
 
-        router.replace(redirectTarget);
-        router.refresh();
+        if (document.activeElement instanceof HTMLElement) {
+          document.activeElement.blur();
+        }
+
+        window.location.replace(redirectTarget);
       } catch (error) {
         toast({
           title: "Login gagal",
@@ -110,7 +111,7 @@ export function useLoginPage() {
         setIsLoading(false);
       }
     },
-    [email, isLoading, nip, password, redirectTarget, router, toast]
+    [email, isLoading, nip, password, redirectTarget, toast]
   );
 
   const togglePassword = useCallback(() => {

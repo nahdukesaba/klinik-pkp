@@ -25,7 +25,11 @@ import { useAdminCreateIntent } from "@/hooks/admin/use-admin-create-intent";
 import { useCurrentTime } from "@/hooks/use-current-time";
 import { useAdminLocationOptions } from "@/hooks/use-admin-location-options";
 import { useToast } from "@/hooks/use-toast";
-import { getStringFormValue, validateFileField } from "@/lib/admin/form";
+import {
+  getStringFormValue,
+  validateFileField,
+  validateTotalFileSize,
+} from "@/lib/admin/form";
 import { canManageContent } from "@/lib/admin/roles";
 import {
   AdminApiError,
@@ -193,7 +197,7 @@ export function useAdminSosialisasiPage(view: SosialisasiAdminView) {
         const imageValidationError = validateFileField(values, {
           field: "images",
           label: view === "berita" ? "Gambar berita" : "Gambar kegiatan",
-          maxFiles: 3,
+          maxFiles: 4,
           maxSizeMb: 2,
           required: view === "berita",
           acceptImagesOnly: true,
@@ -204,6 +208,20 @@ export function useAdminSosialisasiPage(view: SosialisasiAdminView) {
           toast({
             title: "Upload belum valid",
             description: imageValidationError,
+            variant: "destructive",
+          });
+          return;
+        }
+
+        const totalUploadError = validateTotalFileSize(values, {
+          fields: [{ field: "images", label: "Gambar kegiatan" }],
+          maxTotalSizeMb: 4,
+        });
+        if (totalUploadError) {
+          setFormErrors({ images: totalUploadError });
+          toast({
+            title: "Upload belum valid",
+            description: totalUploadError,
             variant: "destructive",
           });
           return;

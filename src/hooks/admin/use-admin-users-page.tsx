@@ -26,16 +26,17 @@ import { useAdminCreateIntent } from "./use-admin-create-intent";
 
 const USERS_PAGE_LIMIT = 10;
 
-function buildControlUsersPayload(values: AdminFormValues) {
-  const password = getStringFormValue(values, "password");
+function buildControlUsersPayload(
+  values: AdminFormValues,
+  options?: { allowPassword?: boolean }
+) {
   const role = getStringFormValue(values, "role") === "admin" ? "admin" : "user";
 
-  return {
+  const payload = {
     name: getStringFormValue(values, "name"),
     email: getStringFormValue(values, "email"),
     nip: sanitizeNip(getStringFormValue(values, "nip")).slice(0, 18),
     phone: getStringFormValue(values, "phone"),
-    password,
     role,
     isActive: getStringFormValue(values, "isActive") !== "inactive",
   } satisfies {
@@ -43,9 +44,17 @@ function buildControlUsersPayload(values: AdminFormValues) {
     email: string;
     nip: string;
     phone: string;
-    password: string;
     role: UserRole;
     isActive: boolean;
+  };
+
+  if (!options?.allowPassword) {
+    return payload;
+  }
+
+  return {
+    ...payload,
+    password: getStringFormValue(values, "password"),
   };
 }
 
@@ -186,18 +195,18 @@ export function useAdminUsersPage() {
         ],
         defaultValue: "active",
       },
-      {
-        name: "password",
-        label: editingUser ? "Password Baru" : "Password",
-        type: "password",
-        required: !editingUser,
-        placeholder: editingUser
-          ? "Kosongkan jika tidak ingin mengganti password"
-          : "Minimal 8 karakter",
-        helperText: editingUser
-          ? "Biarkan kosong untuk mempertahankan password saat ini."
-          : "Password akan dikirim ke backend saat user dibuat.",
-      },
+      ...(!editingUser
+        ? [
+            {
+              name: "password",
+              label: "Password",
+              type: "password" as const,
+              required: true,
+              placeholder: "Minimal 8 karakter",
+              helperText: "Password hanya diisi saat membuat user baru.",
+            },
+          ]
+        : []),
     ],
     [editingUser]
   );
@@ -210,7 +219,6 @@ export function useAdminUsersPage() {
         phone: editingUser.phone,
         role: editingUser.role,
         isActive: editingUser.isActive ? "active" : "inactive",
-        password: "",
       }
     : {
         name: "",
@@ -263,7 +271,9 @@ export function useAdminUsersPage() {
       setFormErrors({});
 
       try {
-        const payload = buildControlUsersPayload(values);
+        const payload = buildControlUsersPayload(values, {
+          allowPassword: !editingUser,
+        });
 
         if (editingUser) {
           await adminFetch(`/api/admin/users/${editingUser.id}`, {

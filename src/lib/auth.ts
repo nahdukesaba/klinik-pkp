@@ -55,6 +55,12 @@ export interface TokenPayload extends JWTPayload {
   backendRefreshToken?: string;
 }
 
+export function getTokenExpiryTimestampMs(
+  payload: Pick<TokenPayload, "exp"> | null | undefined
+) {
+  return typeof payload?.exp === "number" ? payload.exp * 1000 : undefined;
+}
+
 // --- Operasi JWT ---
 
 function buildTokenPayload(

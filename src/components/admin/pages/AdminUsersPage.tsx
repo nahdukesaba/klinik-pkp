@@ -328,7 +328,11 @@ export default function AdminUsersPage() {
         open={formOpen}
         onOpenChange={handleFormOpenChange}
         title={editingUser ? "Edit User" : "Tambah User"}
-        description="Lengkapi identitas, role, status akun, dan password pengguna."
+        description={
+          editingUser
+            ? "Perbarui identitas, role, dan status akun pengguna. Password tidak dapat diubah dari halaman ini."
+            : "Lengkapi identitas, role, status akun, dan password pengguna."
+        }
         fields={formFields}
         initialValues={initialValues}
         onSubmit={handleSubmit}

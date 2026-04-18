@@ -76,6 +76,7 @@ export function useAdminRusunPage() {
       const error = validateFileField(values, {
         field: "images",
         label: "Gambar rusun",
+        maxFiles: 1,
         maxSizeMb: 2,
         required: !editingItem,
         acceptImagesOnly: true,
@@ -186,11 +187,11 @@ export function useAdminRusunPage() {
         label: "Gambar Rusun",
         type: "file",
         accept: "image/*",
-        multiple: true,
+        multiple: false,
         required: !crud.editingItem,
         helperText: crud.editingItem
-          ? "Opsional. Unggah gambar baru jika ingin mengganti gambar lama. Maksimal 2 MB per gambar."
-          : "Unggah minimal satu gambar rusun. Maksimal 2 MB per gambar.",
+          ? "Opsional. Unggah 1 gambar baru jika ingin mengganti gambar lama. Maksimal 2 MB."
+          : "Unggah 1 gambar rusun. Maksimal 2 MB.",
       },
     ],
     [crud.editingItem, districtOptions, regionOptions, villageOptions]

@@ -53,6 +53,25 @@ export function validateFileField(
   return undefined;
 }
 
+export function validateTotalFileSize(
+  values: AdminFormValues,
+  options: {
+    fields: Array<{ field: string; label: string }>;
+    maxTotalSizeMb: number;
+  }
+) {
+  const maxTotalBytes = options.maxTotalSizeMb * 1024 * 1024;
+  const files = options.fields.flatMap(({ field }) => getFileFormValue(values, field));
+  const totalBytes = files.reduce((sum, file) => sum + file.size, 0);
+
+  if (totalBytes > maxTotalBytes) {
+    const labels = options.fields.map((item) => item.label.toLowerCase()).join(" + ");
+    return `Total ukuran ${labels} melebihi batas ${options.maxTotalSizeMb} MB.`;
+  }
+
+  return undefined;
+}
+
 function pad(value: number) {
   return value.toString().padStart(2, "0");
 }

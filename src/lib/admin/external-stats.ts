@@ -6,6 +6,10 @@ import {
   type ApiResponse,
 } from "@/types/api";
 
+import {
+  ADMIN_CACHE_TAGS,
+  createCachedAdminReader,
+} from "./cache";
 import { fetchBackendJson, getBackendApiBaseUrl } from "./backend-api";
 
 interface ExternalStatsSummary {
@@ -59,7 +63,7 @@ async function fetchExternalCollectionCount(path: string) {
   return meta.totalRecords ?? items.length;
 }
 
-export async function getExternalDashboardStats(): Promise<ExternalStatsSummary> {
+async function readExternalDashboardStats(): Promise<ExternalStatsSummary> {
   const summary: ExternalStatsSummary = {
     totalBsps: 0,
     totalRusun: 0,
@@ -94,4 +98,17 @@ export async function getExternalDashboardStats(): Promise<ExternalStatsSummary>
   }
 
   return summary;
+}
+
+const getCachedExternalDashboardStats = createCachedAdminReader(
+  "admin-external-stats",
+  readExternalDashboardStats,
+  {
+    revalidate: 60,
+    tags: [ADMIN_CACHE_TAGS.externalStats],
+  }
+);
+
+export async function getExternalDashboardStats(): Promise<ExternalStatsSummary> {
+  return getCachedExternalDashboardStats();
 }

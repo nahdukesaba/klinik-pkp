@@ -4,6 +4,7 @@ import {
   authorizeAdminRequest,
   getRequestIpAddress,
 } from "@/lib/admin/security";
+import { ADMIN_CACHE_TAGS, revalidateAdminTags } from "@/lib/admin/cache";
 import { createAuditEntry } from "@/lib/admin/service";
 import {
   deleteUser,
@@ -64,6 +65,13 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     return createJsonErrorResponse("Payload pengguna tidak valid.", 400);
   }
 
+  if (typeof body.password === "string" && body.password.trim() !== "") {
+    return createJsonErrorResponse(
+      "Password pengguna yang sudah ada tidak dapat diubah dari Control Users.",
+      403
+    );
+  }
+
   const validation = validateForm(adminUserUpdateSchema, body);
   if (!validation.success) {
     return createValidationErrorResponse(
@@ -96,6 +104,11 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       // Update backend sudah berhasil. Gagal audit tidak perlu
       // mengubah respons sukses utama.
     }
+
+    revalidateAdminTags([
+      ADMIN_CACHE_TAGS.usersDirectory,
+      ADMIN_CACHE_TAGS.dashboardOverview,
+    ]);
 
     return NextResponse.json(result);
   } catch (error) {
@@ -131,6 +144,11 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     } catch {
       // Delete backend sudah berhasil. Audit hanyalah side effect.
     }
+
+    revalidateAdminTags([
+      ADMIN_CACHE_TAGS.usersDirectory,
+      ADMIN_CACHE_TAGS.dashboardOverview,
+    ]);
 
     return NextResponse.json({ success: true });
   } catch (error) {

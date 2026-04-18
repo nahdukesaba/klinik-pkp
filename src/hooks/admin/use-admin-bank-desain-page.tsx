@@ -8,6 +8,7 @@ import { type AdminFormValues, type FormFieldDef } from "@/components/admin";
 import {
   getFileFormValue,
   getStringFormValue,
+  validateTotalFileSize,
   validateFileField,
 } from "@/lib/admin/form";
 import { QUERY_CONFIG } from "@/lib/constants";
@@ -55,6 +56,13 @@ function buildBankDesainFormData(values: AdminFormValues) {
   return formData;
 }
 
+function isPdfFile(file: File) {
+  return (
+    file.type === "application/pdf" ||
+    file.name.toLowerCase().endsWith(".pdf")
+  );
+}
+
 function desainToFormValues(item: BankDesainData): AdminFormValues {
   return {
     name: item.title,
@@ -82,6 +90,7 @@ export function useAdminBankDesainPage() {
       const imageError = validateFileField(values, {
         field: "images",
         label: "Gambar desain",
+        maxFiles: 8,
         maxSizeMb: 2,
         required: !editingItem,
         acceptImagesOnly: true,
@@ -91,10 +100,30 @@ export function useAdminBankDesainPage() {
       const fileError = validateFileField(values, {
         field: "files",
         label: "File dokumen",
-        maxSizeMb: 5,
+        maxFiles: 1,
+        maxSizeMb: 10,
         required: !editingItem,
       });
       if (fileError) return { field: "files", message: fileError };
+
+      const documentFiles = getFileFormValue(values, "files");
+      if (documentFiles.some((file) => !isPdfFile(file))) {
+        return {
+          field: "files",
+          message: "File dokumen harus berupa PDF.",
+        };
+      }
+
+      const totalUploadError = validateTotalFileSize(values, {
+        fields: [
+          { field: "images", label: "Gambar desain" },
+          { field: "files", label: "File dokumen" },
+        ],
+        maxTotalSizeMb: 4,
+      });
+      if (totalUploadError) {
+        return { field: "files", message: totalUploadError };
+      }
 
       return undefined;
     },
@@ -164,19 +193,19 @@ export function useAdminBankDesainPage() {
         multiple: true,
         required: !crud.editingItem,
         helperText: crud.editingItem
-          ? "Opsional. Unggah gambar baru jika ingin mengganti gambar lama. Maksimal 2 MB per gambar."
-          : "Unggah gambar desain rumah. Maksimal 2 MB per gambar.",
+          ? "Opsional. Unggah gambar baru jika ingin mengganti gambar lama. Maksimal 8 gambar, 2 MB per gambar, dengan total request backend efektif 4 MB."
+          : "Unggah gambar desain rumah. Maksimal 8 gambar, 2 MB per gambar, dengan total request backend efektif 4 MB.",
       },
       {
         name: "files",
         label: "File Dokumen",
         type: "file",
-        accept: ".pdf,.zip,.rar,.dwg,.jpg,.png",
-        multiple: true,
+        accept: ".pdf,application/pdf",
+        multiple: false,
         required: !crud.editingItem,
         helperText: crud.editingItem
-          ? "Opsional. Unggah dokumen baru jika ingin mengganti file lama. Maksimal 5 MB per file."
-          : "Unggah file blueprint atau dokumen desain. Maksimal 5 MB per file.",
+          ? "Opsional. Unggah 1 file PDF baru jika ingin mengganti dokumen lama. Maksimal 10 MB per PDF, tetapi total request backend efektif 4 MB."
+          : "Unggah 1 file PDF dokumen desain. Maksimal 10 MB per PDF, tetapi total request backend efektif 4 MB.",
       },
     ],
     [crud.editingItem]

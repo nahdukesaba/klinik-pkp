@@ -3,13 +3,14 @@ import { NextRequest } from "next/server";
 import {
   type ExternalAdminResource,
   proxyExternalAdminResource,
-  readExternalResourceBody,
+  readExternalJsonBody,
   resolveExternalAdminResource,
 } from "@/lib/admin/external-resource";
 import {
   authorizeAdminRequest,
   getRequestIpAddress,
 } from "@/lib/admin/security";
+import { ADMIN_CACHE_TAGS, revalidateAdminTag } from "@/lib/admin/cache";
 import { createAuditEntry } from "@/lib/admin/service";
 import {
   createJsonErrorResponse,
@@ -35,17 +36,26 @@ export async function POST(request: NextRequest, context: RouteContext) {
     return createJsonErrorResponse("Resource admin tidak ditemukan.", 404);
   }
 
-  const body = await readExternalResourceBody(request, config.bodyMode);
-  if (!body) {
+  const body =
+    config.bodyMode === "form-data"
+      ? request.body
+      : await readExternalJsonBody(request);
+  if (!body && config.bodyMode !== "form-data") {
     return createJsonErrorResponse("Payload permintaan tidak valid.", 400);
+  }
+  if (config.bodyMode === "form-data" && !body) {
+    return createJsonErrorResponse("Payload upload tidak valid.", 400);
   }
 
   const result = await proxyExternalAdminResource({
     resource: resource as ExternalAdminResource,
     method: "POST",
     body,
+    contentType:
+      config.bodyMode === "form-data"
+        ? request.headers.get("content-type") ?? undefined
+        : undefined,
     accessToken: auth.user.backendAccessToken,
-    origin: request.nextUrl.origin,
   });
 
   if (!result.ok) {
@@ -64,6 +74,8 @@ export async function POST(request: NextRequest, context: RouteContext) {
     // Operasi utama sudah sukses di backend. Audit tidak perlu
     // membatalkan respons berhasil.
   }
+
+  revalidateAdminTag(ADMIN_CACHE_TAGS.externalStats);
 
   return createJsonResponse(result.payload, result.status);
 }

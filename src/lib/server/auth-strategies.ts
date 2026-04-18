@@ -396,3 +396,113 @@ export async function authenticateAgainstExternalBackendDedup(
   pendingExternalAuth.set(key, requestPromise);
   return requestPromise;
 }
+
+export async function refreshExternalBackendSession(params: {
+  backendRefreshToken: string;
+  origin: string;
+}): Promise<ExternalAuthResult> {
+  const backendAuthUrls = resolveBackendAuthUrls(params.origin);
+
+  if (!backendAuthUrls.length) {
+    return {
+      ok: false,
+      status: 503,
+      error: "Layanan autentikasi belum tersedia.",
+    };
+  }
+
+  for (const backendAuthUrl of backendAuthUrls) {
+    let response: Response;
+
+    try {
+      response = await fetch(backendAuthUrl, {
+        method: "PUT",
+        headers: {
+          Accept: "application/json",
+          Cookie: `refresh_token=${encodeURIComponent(params.backendRefreshToken)}`,
+        },
+        signal: AbortSignal.timeout(15_000),
+      });
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        return {
+          ok: false,
+          status: 504,
+          error: "Waktu tunggu refresh sesi habis. Silakan coba lagi.",
+        };
+      }
+
+      return {
+        ok: false,
+        status: 502,
+        error: "Layanan autentikasi sedang tidak tersedia.",
+      };
+    }
+
+    const contentType = response.headers.get("content-type") ?? "";
+    const payload = contentType.includes("application/json")
+      ? await response.json().catch(() => null)
+      : null;
+
+    if (!response.ok) {
+      return {
+        ok: false,
+        status: normalizeAuthFailureStatus(response.status),
+        error: extractAuthFailureMessage(payload, response.status),
+        details: extractAuthFailureDetails(payload),
+      };
+    }
+
+    const backendAccessToken =
+      payload?.data?.access_token ??
+      payload?.access_token ??
+      payload?.data?.token ??
+      payload?.token;
+
+    if (
+      typeof backendAccessToken !== "string" ||
+      backendAccessToken.trim() === ""
+    ) {
+      return {
+        ok: false,
+        status: 502,
+        error: "Refresh sesi berhasil, tetapi access token tidak tersedia.",
+      };
+    }
+
+    try {
+      const backendUser = await fetchAuthenticatedBackendUser(
+        backendAccessToken,
+        params.origin
+      );
+      const rotatedRefreshToken =
+        extractCookieValue(getSetCookieHeaders(response), "refresh_token") ??
+        params.backendRefreshToken;
+
+      return {
+        ok: true,
+        user: backendUser,
+        backendAccessToken,
+        backendRefreshToken: rotatedRefreshToken,
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        status:
+          error instanceof BackendApiError && error.status >= 500
+            ? error.status
+            : 502,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Gagal memuat profil pengguna setelah refresh sesi.",
+      };
+    }
+  }
+
+  return {
+    ok: false,
+    status: 502,
+    error: "Layanan autentikasi tidak tersedia.",
+  };
+}

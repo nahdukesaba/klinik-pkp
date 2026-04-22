@@ -8,20 +8,42 @@
 
 import { useCallback, useMemo, useState } from "react";
 
-import { useBspsQuery, useBspsYearsQuery } from "@/hooks/penerimaan-bsps/use-bsps-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
+
 import { useCascadingFilter } from "@/hooks/use-cascading-filter";
 import { useDebounce } from "@/hooks/use-debounce";
-import { CURRENT_YEAR } from "@/lib/constants";
+import { CURRENT_YEAR, CURRENT_YEAR_NUM, QUERY_CONFIG } from "@/lib/constants";
 import { sanitizeInput } from "@/lib/security";
-
-const CURRENT_YEAR_NUM = parseInt(CURRENT_YEAR, 10);
+import { fetchBspsList } from "@/services/bsps.service";
 
 export function usePenerimaanBsps() {
   const [yearFilter, setYearFilter] = useState<string>(CURRENT_YEAR);
   const yearParam = yearFilter === "all" ? undefined : (parseInt(yearFilter, 10) || CURRENT_YEAR_NUM);
 
-  const { data: rawData, isLoading, isError, error, refetch } = useBspsQuery(yearParam);
-  const availableYears = useBspsYearsQuery();
+  const dataQuery = useQuery({
+    queryKey: ["bsps", yearParam ?? "all"],
+    queryFn: () => fetchBspsList(yearParam),
+    placeholderData: keepPreviousData,
+    ...QUERY_CONFIG,
+  });
+  const yearsQuery = useQuery({
+    queryKey: ["bsps-years"],
+    queryFn: () => fetchBspsList(),
+    staleTime: 30 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    retry: 2,
+    refetchOnWindowFocus: false,
+    select: (data) => {
+      const years = [...new Set(data.map((item) => item.yearGiven))];
+      if (!years.includes(CURRENT_YEAR_NUM)) {
+        years.push(CURRENT_YEAR_NUM);
+      }
+
+      return years.sort((left, right) => right - left);
+    },
+  });
+  const rawData = dataQuery.data ?? [];
+  const availableYears = yearsQuery.data ?? [CURRENT_YEAR_NUM];
 
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -67,10 +89,10 @@ export function usePenerimaanBsps() {
   }, [cascading.filterActions]);
 
   return {
-    isLoading,
-    isError,
-    error,
-    refetch,
+    isLoading: dataQuery.isLoading,
+    isError: dataQuery.isError,
+    error: dataQuery.error,
+    refetch: dataQuery.refetch,
     filteredDesa,
     kabupatenList: cascading.filterLists.kabupatenList,
     kecamatanList: cascading.filterLists.kecamatanList,

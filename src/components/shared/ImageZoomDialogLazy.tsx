@@ -30,7 +30,10 @@ export function ImageZoomDialogLazy(props: ImageZoomDialogProps) {
   return (
     <Suspense
       fallback={
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div
+          data-ui-dialog-overlay="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+        >
           <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
         </div>
       }

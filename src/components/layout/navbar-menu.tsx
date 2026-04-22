@@ -83,7 +83,7 @@ export function DesktopMenuItem({
 
       {isOpen && item.subItems && (
         <div className="absolute left-0 top-full z-50 pt-2 animate-fade-in">
-          <div className="w-[min(18rem,calc(100vw-2rem))] rounded-xl border border-border bg-card py-2 shadow-xl">
+          <div className="w-[min(14rem,calc(100vw-2rem))] rounded-xl border border-border bg-card py-2 shadow-xl">
             {item.subItems.map((subItem) => (
               <div
                 key={subItem.label}
@@ -131,7 +131,7 @@ export function DesktopMenuItem({
 
                 {activeSubMenu === subItem.label && subItem.subItems && (
                   <div className="absolute left-full top-0 z-50 ml-1 animate-fade-in">
-                    <div className="w-[min(16rem,calc(100vw-2rem))] rounded-xl border border-border bg-card py-2 shadow-xl">
+                    <div className="w-[min(13rem,calc(100vw-2rem))] rounded-xl border border-border bg-card py-2 shadow-xl">
                       {subItem.subItems.map((nestedItem) => (
                         <Link
                           key={nestedItem.href}

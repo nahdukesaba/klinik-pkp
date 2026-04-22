@@ -7,7 +7,7 @@ import {
   getBackendApiBaseUrl,
 } from "@/lib/admin/backend-api";
 import { sanitizeEmail, sanitizeNip } from "@/lib/security";
-import type { ApiResponse } from "@/types/api";
+import type { ApiResponse } from "@/lib/api-client";
 
 // ---------------------------------------------------------------------------
 // Tipe bersama

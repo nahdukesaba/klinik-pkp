@@ -1,9 +1,9 @@
 import { headers } from "next/headers";
 
-
 import { QueryProvider } from "@/components/providers/QueryProvider";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { UiInteractivityGuard } from "@/components/providers/UiInteractivityGuard";
+import WhatsAppFloatingButton from "@/components/shared/WhatsAppFloatingButton";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
@@ -50,6 +50,7 @@ export default async function RootLayout({
             <TooltipProvider>
               <UiInteractivityGuard />
               {children}
+              <WhatsAppFloatingButton />
               <Toaster />
             </TooltipProvider>
           </QueryProvider>

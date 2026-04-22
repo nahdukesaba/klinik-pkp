@@ -11,9 +11,9 @@ import { Loader2 } from "lucide-react";
 import { Navbar } from "@/components/layout";
 import {
   RusunHeader,
-  RusunSidebar,
   RusunMapContainer,
-} from "@/components/sebaran-rusun";
+  RusunSidebar,
+} from "@/components/sebaran-rusun/RusunComponents";
 import { ApiErrorState } from "@/components/shared";
 import { MapSkeleton } from "@/components/ui/skeleton";
 import { useSebaranRusun } from "@/hooks/sebaran-rusun/use-sebaran-rusun";
@@ -69,6 +69,7 @@ export default function SebaranRusunPage() {
             <>
               {sidebarOpen && (
                 <div
+                  data-ui-route-overlay="rusun-sidebar"
                   className="lg:hidden fixed inset-0 bg-black/50 z-30"
                   onClick={() => setSidebarOpen(false)}
                 />

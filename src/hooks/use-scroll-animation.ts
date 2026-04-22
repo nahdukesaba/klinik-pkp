@@ -6,11 +6,14 @@ export const useScrollAnimation = () => {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const observedElements = new WeakSet<Element>();
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             entry.target.classList.add("visible");
+            observer.unobserve(entry.target);
           }
         });
       },
@@ -20,10 +23,36 @@ export const useScrollAnimation = () => {
       }
     );
 
-    const elements = ref.current?.querySelectorAll(".animate-on-scroll");
-    elements?.forEach((el) => observer.observe(el));
+    const observeAnimatedElements = () => {
+      const elements = ref.current?.querySelectorAll(".animate-on-scroll") ?? [];
 
-    return () => observer.disconnect();
+      elements.forEach((element) => {
+        if (observedElements.has(element)) {
+          return;
+        }
+
+        observedElements.add(element);
+        observer.observe(element);
+      });
+    };
+
+    observeAnimatedElements();
+
+    const mutationObserver = new MutationObserver(() => {
+      observeAnimatedElements();
+    });
+
+    if (ref.current) {
+      mutationObserver.observe(ref.current, {
+        childList: true,
+        subtree: true,
+      });
+    }
+
+    return () => {
+      observer.disconnect();
+      mutationObserver.disconnect();
+    };
   }, []);
 
   return ref;

@@ -22,11 +22,34 @@ interface AdminShellProps {
 export function AdminShell({ children }: AdminShellProps) {
   const pathname = usePathname();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const toggleSidebar = useCallback(() => {
     setSidebarCollapsed((prev) => !prev);
   }, []);
+
+  return (
+    <AdminShellContent
+      key={pathname}
+      sidebarCollapsed={sidebarCollapsed}
+      onSidebarToggle={toggleSidebar}
+    >
+      {children}
+    </AdminShellContent>
+  );
+}
+
+interface AdminShellContentProps {
+  children: React.ReactNode;
+  sidebarCollapsed: boolean;
+  onSidebarToggle: () => void;
+}
+
+function AdminShellContent({
+  children,
+  sidebarCollapsed,
+  onSidebarToggle,
+}: AdminShellContentProps) {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const toggleMobileMenu = useCallback(() => {
     setMobileMenuOpen((current) => !current);
@@ -35,10 +58,6 @@ export function AdminShell({ children }: AdminShellProps) {
   const closeMobileMenu = useCallback(() => {
     setMobileMenuOpen(false);
   }, []);
-
-  useEffect(() => {
-    setMobileMenuOpen(false);
-  }, [pathname]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -59,6 +78,7 @@ export function AdminShell({ children }: AdminShellProps) {
       {/* Mobile overlay */}
       {mobileMenuOpen && (
         <div
+          data-ui-route-overlay="admin-mobile-menu"
           className="fixed inset-0 z-30 bg-black/50 lg:hidden animate-fade-in"
           onClick={closeMobileMenu}
         />
@@ -80,7 +100,7 @@ export function AdminShell({ children }: AdminShellProps) {
       {/* Topbar */}
       <AdminTopbar
         sidebarCollapsed={sidebarCollapsed}
-        onSidebarToggle={toggleSidebar}
+        onSidebarToggle={onSidebarToggle}
         onMobileMenuToggle={toggleMobileMenu}
       />
 

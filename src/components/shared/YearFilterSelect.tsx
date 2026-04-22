@@ -21,7 +21,7 @@
 
 "use client";
 
-import { memo } from "react";
+import { memo, useMemo } from "react";
 
 import {
   Select,
@@ -29,6 +29,7 @@ import {
   SelectItem,
   SelectTrigger,
 } from "@/components/ui/select";
+import { getSortedUniqueYears } from "@/lib/date";
 
 interface YearFilterSelectProps {
   /** Daftar tahun yang tersedia (descending) */
@@ -50,6 +51,8 @@ export const YearFilterSelect = memo(function YearFilterSelect({
   showAllOption = true,
   className = "",
 }: YearFilterSelectProps) {
+  const normalizedYears = useMemo(() => getSortedUniqueYears(years), [years]);
+
   return (
     <Select value={selectedYear} onValueChange={onYearChange}>
       <SelectTrigger
@@ -60,14 +63,14 @@ export const YearFilterSelect = memo(function YearFilterSelect({
         </span>
       </SelectTrigger>
       <SelectContent className="bg-popover z-[9999]">
-        {showAllOption && (
-          <SelectItem value="all">Semua Tahun</SelectItem>
-        )}
-        {years.map((y) => (
+        {normalizedYears.map((y) => (
           <SelectItem key={y} value={String(y)}>
             {y}
           </SelectItem>
         ))}
+        {showAllOption && (
+          <SelectItem value="all">Semua Tahun</SelectItem>
+        )}
       </SelectContent>
     </Select>
   );

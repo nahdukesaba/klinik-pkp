@@ -30,7 +30,7 @@
 
 "use client";
 
-import type { ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 
 import { Calendar } from "lucide-react";
 
@@ -42,6 +42,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { MONTHS_LIST } from "@/lib/constants";
+import { getSortedUniqueYears } from "@/lib/date";
 
 // --- Types ---
 
@@ -94,6 +95,7 @@ export function DateRangeFilterGroup({
   extraFiltersDesktop,
   compact = false,
 }: DateRangeFilterGroupProps) {
+  const normalizedYears = useMemo(() => getSortedUniqueYears(years), [years]);
   /** Handler: pilih year → reset date range */
   const handleYearChange = (v: string) => {
     setYear(v);
@@ -135,10 +137,10 @@ export function DateRangeFilterGroup({
               <SelectValue placeholder="Tahun" />
             </SelectTrigger>
             <SelectContent className="bg-popover z-[9999]">
-              <SelectItem value="all">Semua Tahun</SelectItem>
-              {years.map((y) => (
+              {normalizedYears.map((y) => (
                 <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
               ))}
+              <SelectItem value="all">Semua Tahun</SelectItem>
             </SelectContent>
           </Select>
 
@@ -204,10 +206,10 @@ export function DateRangeFilterGroup({
             <SelectValue placeholder="Tahun" />
           </SelectTrigger>
           <SelectContent className="bg-popover z-[9999]">
-            <SelectItem value="all">Semua Tahun</SelectItem>
-            {years.map((y) => (
+            {normalizedYears.map((y) => (
               <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
             ))}
+            <SelectItem value="all">Semua Tahun</SelectItem>
           </SelectContent>
         </Select>
 

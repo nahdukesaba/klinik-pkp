@@ -7,14 +7,14 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { usePathname } from "next/navigation";
 
 import { ChevronDown, ChevronLeft, ChevronRight, LogOut, Menu } from "lucide-react";
 
-import { getAdminBreadcrumbs } from "@/components/admin/admin-topbar-breadcrumbs";
 import ThemeToggle from "@/components/shared/ThemeToggle";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
 import { useAdminAuth } from "./AdminAuthGuard";
@@ -25,6 +25,50 @@ interface AdminTopbarProps {
   onMobileMenuToggle: () => void;
 }
 
+interface AdminBreadcrumb {
+  label: string;
+  href: string;
+}
+
+const breadcrumbLabels: Record<string, string> = {
+  admin: "Dashboard",
+  berita: "Berita",
+  sosialisasi: "Sosialisasi",
+  lokasi: "Info Peta",
+  jadwal: "Jadwal Kegiatan",
+  "lokasi-klinik": "Lokasi Klinik",
+  bsps: "Penerimaan BSPS",
+  rusun: "Sebaran Rusun",
+  users: "Control Users",
+  "kawasan-kumuh": "Kawasan Kumuh",
+  "bank-desain": "Bank Desain",
+  create: "Tambah Baru",
+  edit: "Edit",
+};
+
+function getAdminBreadcrumbs(pathname: string): AdminBreadcrumb[] {
+  const segments = pathname.split("/").filter(Boolean);
+  const breadcrumbs: AdminBreadcrumb[] = [];
+  let currentPath = "";
+
+  for (const [index, segment] of segments.entries()) {
+    currentPath += `/${segment}`;
+    const previousSegment = segments[index - 1];
+    let label = breadcrumbLabels[segment] || segment;
+
+    if (segment === "berita" && previousSegment === "sosialisasi") {
+      label = "Berita Sosialisasi";
+    }
+
+    breadcrumbs.push({
+      label,
+      href: currentPath,
+    });
+  }
+
+  return breadcrumbs;
+}
+
 export function AdminTopbar({
   sidebarCollapsed,
   onSidebarToggle,
@@ -32,17 +76,28 @@ export function AdminTopbar({
 }: AdminTopbarProps) {
   const pathname = usePathname();
   const { user, logout } = useAdminAuth();
-  const [profileOpen, setProfileOpen] = useState(false);
+  const [profileMenuState, setProfileMenuState] = useState({
+    open: false,
+    pathname: "",
+  });
   const breadcrumbs = getAdminBreadcrumbs(pathname);
   const currentPage = breadcrumbs[breadcrumbs.length - 1]?.label || "Dashboard";
+  const profileOpen =
+    profileMenuState.open && profileMenuState.pathname === pathname;
 
   const closeProfileMenu = () => {
-    setProfileOpen(false);
+    setProfileMenuState((current) => ({
+      ...current,
+      open: false,
+    }));
   };
 
-  useEffect(() => {
-    setProfileOpen(false);
-  }, [pathname]);
+  const handleProfileOpenChange = (open: boolean) => {
+    setProfileMenuState({
+      open,
+      pathname,
+    });
+  };
 
   return (
     <header
@@ -114,64 +169,65 @@ export function AdminTopbar({
         <div className="w-px h-6 bg-border mx-1 hidden sm:block" />
 
         {/* Profile dropdown */}
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() => setProfileOpen((current) => !current)}
-            className="flex items-center gap-2 rounded-lg p-1.5 transition-colors hover:bg-muted"
+        <Popover
+          modal={false}
+          open={profileOpen}
+          onOpenChange={handleProfileOpenChange}
+        >
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              className="flex items-center gap-2 rounded-lg p-1.5 transition-colors hover:bg-muted"
+              aria-label="Buka menu profil admin"
+            >
+              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                <span className="text-xs font-bold text-primary">
+                  {user?.name?.charAt(0).toUpperCase() ?? "A"}
+                </span>
+              </div>
+              <div className="hidden md:block text-left">
+                <p className="text-xs font-semibold text-foreground leading-tight">
+                  {user?.name ?? "Admin"}
+                </p>
+                <p className="text-[10px] text-muted-foreground leading-tight">
+                  {user?.email ?? "admin@bp3kp.go.id"}
+                </p>
+              </div>
+              <ChevronDown className="w-3.5 h-3.5 text-muted-foreground hidden md:block" />
+            </button>
+          </PopoverTrigger>
+
+          <PopoverContent
+            align="end"
+            sideOffset={10}
+            className="w-[min(18rem,calc(100vw-1.5rem))] overflow-hidden rounded-xl border border-border bg-popover p-0 shadow-xl"
           >
-            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-              <span className="text-xs font-bold text-primary">
-                {user?.name?.charAt(0).toUpperCase() ?? "A"}
-              </span>
-            </div>
-            <div className="hidden md:block text-left">
-              <p className="text-xs font-semibold text-foreground leading-tight">
+            <div className="border-b border-border px-4 py-3">
+              <p className="text-sm font-semibold text-foreground">
                 {user?.name ?? "Admin"}
               </p>
-              <p className="text-[10px] text-muted-foreground leading-tight">
+              <p className="break-all text-xs text-muted-foreground">
                 {user?.email ?? "admin@bp3kp.go.id"}
               </p>
+              <span className="mt-1.5 inline-flex items-center rounded bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase text-primary">
+                {user?.role ?? "admin"}
+              </span>
             </div>
-            <ChevronDown className="w-3.5 h-3.5 text-muted-foreground hidden md:block" />
-          </button>
-
-          {/* Dropdown menu */}
-          {profileOpen && (
-            <>
-              <div
-                className="fixed inset-0 z-40"
-                onClick={closeProfileMenu}
-              />
-              <div className="absolute right-0 top-full z-50 mt-2 w-[min(18rem,calc(100vw-1.5rem))] overflow-hidden rounded-xl border border-border bg-popover shadow-xl animate-scale-in">
-                <div className="px-4 py-3 border-b border-border">
-                  <p className="text-sm font-semibold text-foreground">
-                    {user?.name ?? "Admin"}
-                  </p>
-                  <p className="text-xs text-muted-foreground break-all">
-                    {user?.email ?? "admin@bp3kp.go.id"}
-                  </p>
-                  <span className="inline-flex items-center mt-1.5 px-2 py-0.5 rounded text-[10px] font-semibold bg-primary/10 text-primary uppercase">
-                    {user?.role ?? "admin"}
-                  </span>
-                </div>
-                <div className="py-1">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      closeProfileMenu();
-                      logout();
-                    }}
-                    className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-destructive hover:bg-destructive/10 transition-colors"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    Keluar
-                  </button>
-                </div>
-              </div>
-            </>
-          )}
-        </div>
+            <div className="py-1">
+              <button
+                type="button"
+                onClick={() => {
+                  closeProfileMenu();
+                  logout();
+                }}
+                className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-destructive transition-colors hover:bg-destructive/10"
+              >
+                <LogOut className="w-4 h-4" />
+                Keluar
+              </button>
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
     </header>
   );

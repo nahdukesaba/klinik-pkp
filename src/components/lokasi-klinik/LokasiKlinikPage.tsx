@@ -13,6 +13,7 @@ import { MapSkeleton } from "@/components/ui/skeleton";
 import { klinikData } from "@/content/lokasi-klinik";
 import { useLazyMount } from "@/hooks/use-lazy-mount";
 import { useScrollAnimation } from "@/hooks/use-scroll-animation";
+import { buildTelHref } from "@/lib/contact";
 import { loadLeaflet, destroyMap, cleanupMapContainer, buildSafePopup } from "@/lib/map-utils";
 import { escapeAttr } from "@/lib/security";
 
@@ -268,7 +269,7 @@ export default function LokasiKlinikPage() {
                 </div>
                 <div className="space-y-3 ml-0 sm:ml-[4.5rem]">
                   <a
-                    href={`tel:${klinikData.phone}`}
+                    href={buildTelHref(klinikData.phone)}
                     className="flex items-center gap-3 text-muted-foreground hover:text-primary transition-colors"
                   >
                     <Phone className="w-4 h-4" />

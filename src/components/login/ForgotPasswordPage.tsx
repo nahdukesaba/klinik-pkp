@@ -14,6 +14,7 @@ export default function ForgotPasswordPage() {
   const {
     isLoading,
     isSubmitted,
+    canSubmit,
     email,
     nip,
     formErrors,
@@ -28,7 +29,7 @@ export default function ForgotPasswordPage() {
       backHref="/login"
       backLabel="Kembali ke Login"
       title="Lupa Password"
-      subtitle="Ajukan permintaan reset password ke administrator"
+      subtitle="Masukkan email dan NIP yang terdaftar untuk meminta reset password"
     >
       {isSubmitted ? (
         <div className="space-y-3 py-2 text-center">
@@ -39,12 +40,11 @@ export default function ForgotPasswordPage() {
           </div>
           <div className="space-y-1">
             <p className="text-sm font-medium text-foreground">
-              Permintaan Terkirim
+              Permintaan Diterima
             </p>
             <p className="text-xs leading-relaxed text-muted-foreground">
-              Permintaan reset password Anda telah dikirim ke administrator.
-              Jika data Anda valid, Anda akan menerima email berisi tautan
-              untuk mengatur ulang password.
+              Jika email dan NIP cocok dengan data akun yang terdaftar,
+              instruksi reset password akan dikirim ke email Anda.
             </p>
           </div>
           <Link
@@ -122,16 +122,15 @@ export default function ForgotPasswordPage() {
 
           <div className="rounded-lg border border-border bg-muted/50 px-3 py-2.5">
             <p className="text-[11px] leading-relaxed text-muted-foreground">
-              Permintaan reset akan dikirim ke administrator untuk diverifikasi.
-              Setelah disetujui, Anda akan menerima email berisi tautan reset
-              password.
+              Gunakan email dan NIP yang terdaftar. Demi keamanan, sistem hanya
+              menampilkan status verifikasi secara umum.
             </p>
           </div>
 
           <Button
             type="submit"
             className="h-10 w-full bg-gradient-to-r from-primary to-accent text-sm font-semibold transition-opacity hover:opacity-90"
-            disabled={isLoading}
+            disabled={!canSubmit}
           >
             {isLoading ? (
               "Mengirim..."

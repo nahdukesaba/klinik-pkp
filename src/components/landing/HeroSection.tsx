@@ -7,41 +7,119 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { ArrowRight, Building2, MapPin, Users, Gift } from "lucide-react";
+import {
+  ArrowRight,
+  BadgeAlert,
+  BookOpenText,
+  MapPin,
+  MessageCircleQuestionMark,
+  Palette,
+} from "lucide-react";
+
+import { klinikData } from "@/content/lokasi-klinik";
+import { buildWhatsAppUrl } from "@/lib/contact";
+
+import type { LucideIcon } from "lucide-react";
 
 interface FeatureCardProps {
-  icon: React.ReactNode;
+  icon: LucideIcon;
   title: string;
   description: string;
   delay: string;
   href: string;
+  external?: boolean;
 }
 
-function FeatureCard({ icon, title, description, delay, href }: FeatureCardProps) {
-  return (
-    <Link
-      href={href}
-      className="block p-4 sm:p-6 bg-card/80 backdrop-blur-sm rounded-2xl border border-border shadow-lg hover:shadow-xl hover:border-primary/30 transition-all duration-300 group animate-slide-up cursor-pointer"
-      style={{ animationDelay: delay }}
-    >
-      <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-4 group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-300 group-hover:scale-110">
-        {icon}
+const heroFeatureCards: FeatureCardProps[] = [
+  {
+    icon: Palette,
+    title: "Bank Desain",
+    description: "Akses referensi desain hunian untuk kebutuhan pembangunan.",
+    delay: "0s",
+    href: "/bank-desain",
+  },
+  {
+    icon: BookOpenText,
+    title: "Sosialisasi",
+    description: "Lihat kegiatan, materi, dan agenda sosialisasi Klinik PKP.",
+    delay: "0.1s",
+    href: "/sosialisasi-klinik-pkp",
+  },
+  {
+    icon: MessageCircleQuestionMark,
+    title: "Konsultasi",
+    description: "Mulai konsultasi langsung dengan tim Klinik PKP melalui WhatsApp.",
+    delay: "0.2s",
+    href: buildWhatsAppUrl(
+      klinikData.phone,
+      "Halo Klinik PKP, saya ingin berkonsultasi terkait layanan perumahan dan kawasan permukiman."
+    ),
+    external: true,
+  },
+  {
+    icon: BadgeAlert,
+    title: "Aduan",
+    description: "Sampaikan aduan atau laporan Anda ke kanal WhatsApp resmi.",
+    delay: "0.3s",
+    href: buildWhatsAppUrl(
+      klinikData.phone,
+      "Halo Klinik PKP, saya ingin menyampaikan aduan terkait layanan perumahan dan kawasan permukiman."
+    ),
+    external: true,
+  },
+];
+
+function FeatureCard({
+  icon: Icon,
+  title,
+  description,
+  delay,
+  href,
+  external = false,
+}: FeatureCardProps) {
+  const cardClassName =
+    "group block h-full cursor-pointer rounded-2xl border border-border bg-card/80 p-4 shadow-lg backdrop-blur-sm transition-all duration-300 animate-slide-up hover:border-primary/30 hover:shadow-xl sm:p-6";
+
+  const cardContent = (
+    <>
+      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors duration-300 group-hover:scale-110 group-hover:bg-primary group-hover:text-primary-foreground">
+        <Icon className="h-6 w-6" />
       </div>
-      <h3 className="font-semibold text-foreground mb-2 group-hover:text-primary transition-colors">
+      <h3 className="mb-2 font-semibold text-foreground transition-colors group-hover:text-primary">
         {title}
       </h3>
       <p className="text-sm text-muted-foreground">{description}</p>
-      <div className="mt-3 flex items-center text-xs text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="mt-3 flex items-center text-xs text-primary opacity-0 transition-opacity group-hover:opacity-100">
         <span>Lihat Detail</span>
-        <ArrowRight className="w-3 h-3 ml-1 group-hover:translate-x-1 transition-transform" />
+        <ArrowRight className="ml-1 h-3 w-3 transition-transform group-hover:translate-x-1" />
       </div>
+    </>
+  );
+
+  if (external) {
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={cardClassName}
+        style={{ animationDelay: delay }}
+      >
+        {cardContent}
+      </a>
+    );
+  }
+
+  return (
+    <Link href={href} className={cardClassName} style={{ animationDelay: delay }}>
+      {cardContent}
     </Link>
   );
 }
 
 export default function HeroSection() {
   return (
-    <section className="relative min-h-screen flex items-center pt-20 overflow-hidden">
+    <section className="relative flex min-h-[100svh] items-center overflow-hidden pb-12 pt-24 sm:pb-16 lg:pt-28">
       {/* Background Image - Sumatera Map */}
       <div className="absolute inset-0">
         <Image
@@ -62,32 +140,32 @@ export default function HeroSection() {
       <div className="absolute bottom-1/4 left-10 w-96 h-96 bg-accent-2/20 rounded-full blur-3xl" />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-radial from-primary/5 to-transparent rounded-full" />
 
-      <div className="container mx-auto px-4 relative z-10">
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 2xl:gap-28 items-center">
+      <div className="container relative z-10 mx-auto px-4 sm:px-6">
+        <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)] lg:gap-16 xl:gap-20 2xl:gap-24">
           {/* Left Content */}
-          <div className="space-y-8">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl 2xl:text-7xl font-bold text-foreground leading-tight animate-slide-up">
+          <div className="space-y-6 sm:space-y-8">
+            <h1 className="text-4xl font-bold leading-tight text-foreground animate-slide-up sm:text-5xl lg:text-6xl 2xl:text-7xl">
               Klinik Perumahan &
               <span className="text-primary block mt-2">Kawasan Permukiman</span>
-              <span className="text-lg md:text-xl lg:text-2xl font-medium text-muted-foreground block mt-4">
+              <span className="mt-4 block text-lg font-medium text-muted-foreground sm:text-xl lg:text-2xl">
                 BP3KP Sumatera II
               </span>
             </h1>
 
             <p
-              className="text-lg text-muted-foreground max-w-xl animate-slide-up"
+              className="max-w-2xl text-base text-muted-foreground animate-slide-up sm:text-lg"
               style={{ animationDelay: "0.1s" }}
             >
               Klinik PKP merupakan layanan informasi, konsultasi, serta pendampingan dan bantuan teknis yang diselenggarakan oleh Balai Pelaksana Penyediaan Perumahan dan Kawasan Permukiman (Balai P3KP).
             </p>
 
             <div
-              className="flex flex-col sm:flex-row gap-4 animate-slide-up"
+              className="flex flex-col gap-4 animate-slide-up sm:flex-row"
               style={{ animationDelay: "0.2s" }}
             >
               <Link
                 href="/lokasi-klinik"
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-primary text-primary-foreground font-semibold rounded-xl hover:bg-primary-hover transition-all shadow-lg hover:shadow-xl hover:shadow-primary/20 group"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-8 py-4 font-semibold text-primary-foreground shadow-lg transition-all hover:bg-primary-hover hover:shadow-xl hover:shadow-primary/20 sm:w-auto"
               >
                 <MapPin className="w-5 h-5" />
                 Lihat Lokasi Klinik
@@ -97,36 +175,11 @@ export default function HeroSection() {
           </div>
 
           {/* Right Content - Feature Cards */}
-          <div className="relative">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FeatureCard
-                icon={<MapPin className="w-6 h-6" />}
-                title="Sebaran Rusun"
-                description="Lihat lokasi rusun di wilayah Sumatera"
-                delay="0s"
-                href="/sebaran-rusun"
-              />
-              <FeatureCard
-                icon={<Building2 className="w-6 h-6" />}
-                title="Kawasan Kumuh"
-                description="Profil dan penanganan kawasan kumuh"
-                delay="0.1s"
-                href="/kawasan-kumuh"
-              />
-              <FeatureCard
-                icon={<Gift className="w-6 h-6" />}
-                title="Penerima BSPS"
-                description="Bantuan stimulan perumahan swadaya"
-                delay="0.2s"
-                href="/penerimaan-bsps"
-              />
-              <FeatureCard
-                icon={<Users className="w-6 h-6" />}
-                title="Sosialisasi"
-                description="Kegiatan edukasi dan sosialisasi"
-                delay="0.3s"
-                href="/sosialisasi-klinik-pkp"
-              />
+          <div className="relative mx-auto w-full max-w-2xl lg:max-w-none">
+            <div className="grid grid-cols-1 gap-4 min-[480px]:grid-cols-2">
+              {heroFeatureCards.map((card) => (
+                <FeatureCard key={card.title} {...card} />
+              ))}
             </div>
           </div>
         </div>

@@ -4,14 +4,8 @@
  * Orkestrasi logic halaman Sosialisasi Klinik PKP.
  *
  * Pattern: Single Source of Truth
- * - useSosialisasiData() = Variabel A (data mentah, 1x load)
- * - map/jadwal/berita   = Variabel B (derived, masing-masing filter sendiri)
- *
- * Data flow:
- *   useSosialisasiData() → rawData (immutable)
- *     ├── useSosialisasiPKPMap(rawData.locations)      → filteredMapLocations
- *     ├── useSosialisasiPKPJadwal(rawData.upcoming)    → filteredJadwal
- *     └── useSosialisasiPKPBerita(rawData.berita)      → filteredBerita
+ * - useSosialisasiQuery() = data mentah, 1x load
+ * - map, jadwal, berita   = derived state dengan filter masing-masing
  */
 
 "use client";
@@ -27,15 +21,19 @@ import { useLazyMount } from "@/hooks/use-lazy-mount";
 export function useSosialisasiPKPPage(
   onImageClick?: (images: string[], index: number, title: string) => void
 ) {
-  // Variabel A: 1x load semua data mentah
   const rawData = useSosialisasiQuery();
 
-  // Variabel B: masing-masing hook filter dari data mentah
-  const jadwal = useSosialisasiPKPJadwal(rawData.upcomingLocations, rawData.kabupatenList);
+  const jadwal = useSosialisasiPKPJadwal(
+    rawData.upcomingLocations,
+    rawData.upcomingKabupatenList
+  );
   const berita = useSosialisasiPKPBerita(rawData.berita);
   const mapLazy = useLazyMount();
-
-  const map = useSosialisasiPKPMap(rawData.locations, mapLazy.isMounted, onImageClick);
+  const map = useSosialisasiPKPMap(
+    rawData.locations,
+    mapLazy.isMounted,
+    onImageClick
+  );
 
   const flyToLocation = useCallback((coordinates: [number, number]) => {
     const [lat, lng] = coordinates;

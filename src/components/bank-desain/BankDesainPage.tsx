@@ -19,12 +19,11 @@ import {
   X,
 } from "lucide-react";
 
-import { DesignPreviewDialog } from "@/components/bank-desain/DesignPreviewDialog";
 import { Footer, Navbar } from "@/components/layout";
-import { ApiErrorState } from "@/components/shared";
+import { ApiErrorState, ImageZoomDialog } from "@/components/shared";
 import { GridPagination } from "@/components/shared/GridPagination";
 import { useBankDesainPage } from "@/hooks/bank-desain/use-bank-desain-page";
-import type { BankDesainData } from "@/hooks/bank-desain/use-bank-desain-query";
+import type { BankDesainData } from "@/services/bank-desain.service";
 
 interface DesignCardProps {
   design: BankDesainData;
@@ -56,6 +55,7 @@ const DesignCard = memo(function DesignCard({
           fill
           className="object-cover transition-transform duration-500 group-hover:scale-105"
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          loading={index === 0 ? "eager" : "lazy"}
         />
       </div>
 
@@ -173,6 +173,30 @@ function FilterChip({ label, isActive, onClick }: FilterChipProps) {
     >
       {label}
     </button>
+  );
+}
+
+function DesignPreviewDialog({
+  design,
+  isOpen,
+  onClose,
+}: {
+  design: BankDesainData | null;
+  isOpen: boolean;
+  onClose: () => void;
+}) {
+  if (!design) {
+    return null;
+  }
+
+  return (
+    <ImageZoomDialog
+      images={design.previewImages}
+      title={design.title}
+      isOpen={isOpen}
+      onClose={onClose}
+      imageHeight="60vh"
+    />
   );
 }
 

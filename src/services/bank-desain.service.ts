@@ -5,7 +5,7 @@ import {
   fetchApiListWithMeta,
   type ApiPaginatedResult,
 } from "@/lib/api-client";
-import { buildImageUrl } from "@/services/rusun.service";
+import { buildImageUrl } from "@/lib/constants";
 
 // --- Tipe API ---
 

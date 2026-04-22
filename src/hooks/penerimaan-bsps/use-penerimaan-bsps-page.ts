@@ -5,7 +5,7 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import { usePenerimaanBsps } from "@/hooks/penerimaan-bsps/use-penerimaan-bsps";
 import { usePenerimaanMap } from "@/hooks/penerimaan-bsps/use-penerimaan-map";
@@ -18,6 +18,7 @@ import {
   bspsRequirements,
   bspsStatusColors,
   bspsStatusLabels,
+  type BspsData,
 } from "@/services/bsps.service";
 
 const STEPS = bspsProcessSteps;
@@ -29,12 +30,17 @@ export function usePenerimaanBspsPage() {
   const ref = useScrollAnimation();
   const mapLazy = useLazyMount();
   const filterLogic = usePenerimaanBsps();
-
-  const { mapRef, isMapReady } = usePenerimaanMap(filterLogic.filteredDesa, mapLazy.isMounted);
+  const { mapRef, isMapReady, selectedDesaId, focusDesa } = usePenerimaanMap(
+    filterLogic.filteredDesa,
+    mapLazy.isMounted
+  );
 
   const [hoveredStep, setHoveredStep] = useState<number | null>(null);
 
-  // Memoize filter state/actions/lists untuk mencegah re-render child
+  const handleDesaCardClick = useCallback((desa: BspsData) => {
+    focusDesa(desa);
+  }, [focusDesa]);
+
   const filterState = useMemo(() => ({
     searchQuery: filterLogic.searchQuery,
     kabupatenFilter: filterLogic.kabupatenFilter,
@@ -96,6 +102,8 @@ export function usePenerimaanBspsPage() {
     filterLists,
     mapRef,
     isMapReady,
+    selectedDesaId,
+    handleDesaCardClick,
     processSteps: {
       steps: STEPS,
       hoveredStep,

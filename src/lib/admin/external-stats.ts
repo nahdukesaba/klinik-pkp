@@ -4,7 +4,7 @@ import {
   extractApiCollectionItems,
   extractApiPaginationMeta,
   type ApiResponse,
-} from "@/types/api";
+} from "@/lib/api-client";
 
 import {
   ADMIN_CACHE_TAGS,

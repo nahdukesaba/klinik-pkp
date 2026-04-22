@@ -6,10 +6,9 @@ import { useQuery } from "@tanstack/react-query";
 
 import { type AdminFormValues, type FormFieldDef } from "@/components/admin";
 import {
+  buildUploadFieldHelperText,
   getFileFormValue,
   getStringFormValue,
-  validateTotalFileSize,
-  validateFileField,
 } from "@/lib/admin/form";
 import { QUERY_CONFIG } from "@/lib/constants";
 import {
@@ -55,14 +54,6 @@ function buildBankDesainFormData(values: AdminFormValues) {
 
   return formData;
 }
-
-function isPdfFile(file: File) {
-  return (
-    file.type === "application/pdf" ||
-    file.name.toLowerCase().endsWith(".pdf")
-  );
-}
-
 function desainToFormValues(item: BankDesainData): AdminFormValues {
   return {
     name: item.title,
@@ -86,47 +77,6 @@ export function useAdminBankDesainPage() {
     label: "desain",
     buildPayload: buildBankDesainFormData,
     getDeleteLabel: (item) => item.title,
-    validate: (values, editingItem) => {
-      const imageError = validateFileField(values, {
-        field: "images",
-        label: "Gambar desain",
-        maxFiles: 8,
-        maxSizeMb: 2,
-        required: !editingItem,
-        acceptImagesOnly: true,
-      });
-      if (imageError) return { field: "images", message: imageError };
-
-      const fileError = validateFileField(values, {
-        field: "files",
-        label: "File dokumen",
-        maxFiles: 1,
-        maxSizeMb: 10,
-        required: !editingItem,
-      });
-      if (fileError) return { field: "files", message: fileError };
-
-      const documentFiles = getFileFormValue(values, "files");
-      if (documentFiles.some((file) => !isPdfFile(file))) {
-        return {
-          field: "files",
-          message: "File dokumen harus berupa PDF.",
-        };
-      }
-
-      const totalUploadError = validateTotalFileSize(values, {
-        fields: [
-          { field: "images", label: "Gambar desain" },
-          { field: "files", label: "File dokumen" },
-        ],
-        maxTotalSizeMb: 4,
-      });
-      if (totalUploadError) {
-        return { field: "files", message: totalUploadError };
-      }
-
-      return undefined;
-    },
   });
 
   const desainQuery = useQuery({
@@ -191,10 +141,15 @@ export function useAdminBankDesainPage() {
         type: "file",
         accept: "image/*",
         multiple: true,
-        required: !crud.editingItem,
-        helperText: crud.editingItem
-          ? "Opsional. Unggah gambar baru jika ingin mengganti gambar lama. Maksimal 8 gambar, 2 MB per gambar, dengan total request backend efektif 4 MB."
-          : "Unggah gambar desain rumah. Maksimal 8 gambar, 2 MB per gambar, dengan total request backend efektif 4 MB.",
+        required: true,
+        helperText: buildUploadFieldHelperText({
+          subject: "1 sampai 4 gambar desain",
+          mode: crud.editingItem ? "edit" : "create",
+          requiresReuploadOnEdit: true,
+          validationLabel: "format gambar",
+          maxSizeMb: 2,
+          totalUploadMb: 4,
+        }),
       },
       {
         name: "files",
@@ -202,10 +157,14 @@ export function useAdminBankDesainPage() {
         type: "file",
         accept: ".pdf,application/pdf",
         multiple: false,
-        required: !crud.editingItem,
-        helperText: crud.editingItem
-          ? "Opsional. Unggah 1 file PDF baru jika ingin mengganti dokumen lama. Maksimal 10 MB per PDF, tetapi total request backend efektif 4 MB."
-          : "Unggah 1 file PDF dokumen desain. Maksimal 10 MB per PDF, tetapi total request backend efektif 4 MB.",
+        required: true,
+        helperText: buildUploadFieldHelperText({
+          subject: "1 dokumen PDF desain",
+          mode: crud.editingItem ? "edit" : "create",
+          requiresReuploadOnEdit: true,
+          validationLabel: "format PDF",
+          maxSizeMb: 10,
+        }),
       },
     ],
     [crud.editingItem]

@@ -23,6 +23,16 @@ export function getApiUrl(endpoint: string): string {
   return `${API_BASE_URL}/${cleanEndpoint}`;
 }
 
+/**
+ * Bangun URL gambar dari path relatif API.
+ * "rusun/1/file.jpg" → /api/ext/uploads/rusun/1/file.jpg
+ */
+export function buildImageUrl(path: string): string {
+  const clean = path.startsWith("/") ? path.slice(1) : path;
+  const withUploads = clean.startsWith("uploads/") ? clean : `uploads/${clean}`;
+  return `${API_BASE_URL}/${withUploads}`;
+}
+
 // --- Date & Time Constants ---
 
 /** Tahun sekarang sebagai number — dipakai untuk fallback tahun di filter */

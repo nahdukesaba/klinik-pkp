@@ -1,12 +1,13 @@
-import { ApiError, fetchApiList } from "@/lib/api-client";
+import {
+  ApiError,
+  fetchApiList,
+  type DistrictApi,
+  type RegionApi,
+  type VillageApi,
+} from "@/lib/api-client";
 import { fetchBspsList } from "@/services/bsps.service";
 import { fetchRusunList } from "@/services/rusun.service";
 import { fetchSosialisasiList } from "@/services/sosialisasi.service";
-import type {
-  DistrictApi,
-  RegionApi,
-  VillageApi,
-} from "@/types/api";
 
 export interface RegionOption {
   id: string;

@@ -19,8 +19,7 @@ export default function NotFoundPage() {
           Halaman Tidak Ditemukan
         </h2>
         <p className="text-muted-foreground max-w-md mx-auto mb-8">
-          Maaf, halaman yang Anda cari tidak dapat ditemukan. Mungkin halaman
-          telah dipindahkan atau dihapus.
+          Maaf, halaman yang Anda cari tidak dapat ditemukan.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">

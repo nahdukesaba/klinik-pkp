@@ -4,16 +4,11 @@ import {
   fetchApiList,
   fetchApiListWithMeta,
   type ApiPaginatedResult,
+  type CoordinateApi,
+  type DistrictApi,
+  type RegionApi,
 } from "@/lib/api-client";
-import type {
-  CoordinateApi,
-  DistrictApi,
-  RegionApi,
-} from "@/types/api";
 
-// --- Tipe API ---
-
-/** Struktur data kawasan kumuh dari API (snake_case) */
 export interface KumuhApiItem {
   id: string;
   district_id: string;
@@ -30,9 +25,6 @@ export interface KumuhApiItem {
   region?: RegionApi;
 }
 
-// --- Tipe Frontend ---
-
-/** Data kawasan kumuh untuk UI (camelCase) */
 export interface KawasanKumuhData {
   id: string;
   districtId: string;
@@ -46,16 +38,11 @@ export interface KawasanKumuhData {
   villagesText: string;
   lat: number;
   lng: number;
-  /** Luas kawasan dalam hektar */
   luas: number;
-  /** Total penduduk */
   penduduk: number;
-  /** Status tingkat kekumuhan */
   status: "berat" | "sedang" | "ringan";
   slumValue: number;
-  /** Legalitas lahan (tidak tersedia di API, default "Legal") */
   legalitasLahan: "Legal" | "Tidak Legal";
-  /** Tahun inspeksi kawasan */
   yearInspected: number;
 }
 
@@ -67,41 +54,28 @@ export interface KumuhListParams {
   districtId?: string;
 }
 
-// --- Konstanta UI ---
-
-/** Warna status kawasan kumuh untuk peta dan legenda */
 export const kawasanStatusColors: Record<string, { fill: string; label: string }> = {
   berat: { fill: "#dc2626", label: "Kumuh Berat" },
   sedang: { fill: "#f59e0b", label: "Kumuh Sedang" },
   ringan: { fill: "#22c55e", label: "Kumuh Ringan" },
 };
 
-// --- Transformasi ---
-
-/**
- * Status kekumuhan berdasarkan slum_value:
- * >= 71: berat | 40–70: sedang | < 40: ringan
- */
-function deriveSlumStatus(slumValue: number): "berat" | "sedang" | "ringan" {
+function deriveSlumStatus(
+  slumValue: number
+): "berat" | "sedang" | "ringan" {
   if (slumValue >= 71) return "berat";
   if (slumValue >= 40) return "sedang";
   return "ringan";
 }
 
-/** Transform data API → format frontend */
 export function transformKumuhItem(item: KumuhApiItem): KawasanKumuhData {
   const kabupaten = item.region?.name ?? "";
   const kecamatan = item.district?.name ?? "";
-
-  // Parse environments dari string comma-separated ke array
   const lingkungan = item.environments
-    ? item.environments.split(",").map((s) => s.trim()).filter(Boolean)
+    ? item.environments.split(",").map((entry) => entry.trim()).filter(Boolean)
     : [];
-
-  // villages berisi nama-nama desa/kelurahan (comma-separated)
-  // Kita ambil item pertama sebagai "kelurahan" utama
   const villageNames = item.villages
-    ? item.villages.split(",").map((s) => s.trim()).filter(Boolean)
+    ? item.villages.split(",").map((entry) => entry.trim()).filter(Boolean)
     : [];
 
   return {
@@ -126,22 +100,17 @@ export function transformKumuhItem(item: KumuhApiItem): KawasanKumuhData {
   };
 }
 
-// --- API ---
-
-/** GET /api/ext/kumuh — ambil data kawasan kumuh, opsional filter tahun */
 export async function fetchKumuhList(
   input?: number | KumuhListParams
 ): Promise<KawasanKumuhData[]> {
-  const params =
-    typeof input === "number"
-      ? { year: input }
-      : input ?? {};
+  const params = typeof input === "number" ? { year: input } : input ?? {};
+  const limit = params.perPage ?? 1000;
 
   return fetchApiList<KumuhApiItem, KawasanKumuhData>("/kumuh", {
     query: {
       year_inspected: params.year,
       page: params.page,
-      limit: params.perPage,
+      limit,
       region_id: params.regionId,
       district_id: params.districtId,
     },
@@ -151,13 +120,26 @@ export async function fetchKumuhList(
   });
 }
 
+export async function fetchKumuhAvailableYears(): Promise<number[]> {
+  const items = await fetchApiList<KumuhApiItem, KawasanKumuhData>("/kumuh", {
+    query: {
+      page: 1,
+      limit: 1000,
+    },
+    transform: transformKumuhItem,
+    errorMessage: "Gagal mengambil daftar tahun kawasan kumuh dari server",
+    collectAllPages: true,
+  });
+
+  return [...new Set(items.map((item) => item.yearInspected))]
+    .filter((year) => Number.isFinite(year))
+    .sort((left, right) => right - left);
+}
+
 export async function fetchKumuhPage(
   input?: number | KumuhListParams
 ): Promise<ApiPaginatedResult<KawasanKumuhData>> {
-  const params =
-    typeof input === "number"
-      ? { year: input }
-      : input ?? {};
+  const params = typeof input === "number" ? { year: input } : input ?? {};
 
   return fetchApiListWithMeta<KumuhApiItem, KawasanKumuhData>("/kumuh", {
     query: {

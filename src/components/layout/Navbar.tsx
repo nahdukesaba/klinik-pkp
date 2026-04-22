@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -19,19 +19,23 @@ import {
 import ThemeToggle from "@/components/shared/ThemeToggle";
 
 export default function Navbar() {
-  const [openMenu, setOpenMenu] = useState<string | null>(null);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
 
-  useEffect(() => {
-    setOpenMenu(null);
-    setIsMobileMenuOpen(false);
-  }, [pathname]);
+  return <NavbarContent key={pathname} pathname={pathname} />;
+}
+
+interface NavbarContentProps {
+  pathname: string;
+}
+
+function NavbarContent({ pathname }: NavbarContentProps) {
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-lg border-b border-border">
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16 lg:h-20">
+    <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-card/95 backdrop-blur-lg">
+      <div className="container mx-auto px-4 sm:px-6">
+        <div className="flex h-16 items-center justify-between lg:h-20">
           {/* Logo */}
           <Link href="/" className="flex min-w-0 items-center gap-2 sm:gap-3">
             <div className="relative w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 rounded-full overflow-hidden flex items-center justify-center shadow-lg bg-white flex-shrink-0">
@@ -55,7 +59,7 @@ export default function Navbar() {
           </Link>
 
           {/* Menu Desktop */}
-          <div className="hidden lg:flex items-center gap-1 pl-8">
+          <div className="hidden items-center gap-1 pl-6 lg:flex xl:pl-8">
             {menuItems.map((item) => (
               <DesktopMenuItem
                 key={item.label}
@@ -79,7 +83,7 @@ export default function Navbar() {
             </Link>
             <Link
               href="/login"
-              className="p-2.5 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/80 transition-colors border border-border ml-2"
+              className="ml-2 rounded-lg border border-border bg-secondary p-2.5 text-secondary-foreground transition-colors hover:bg-secondary/80"
               title="Login"
             >
               <LogIn className="w-5 h-5" />
@@ -92,7 +96,7 @@ export default function Navbar() {
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen((current) => !current)}
-              className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-accent rounded-lg transition-colors"
+              className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2.5 transition-colors hover:bg-accent"
               aria-expanded={isMobileMenuOpen}
               aria-label={
                 isMobileMenuOpen ? "Tutup menu navigasi" : "Buka menu navigasi"
@@ -110,8 +114,8 @@ export default function Navbar() {
 
       {/* Menu Mobile */}
       {isMobileMenuOpen && (
-        <div className="lg:hidden absolute top-full left-0 right-0 bg-card border-b border-border shadow-xl animate-slide-up max-h-[calc(100vh-4rem)] overflow-y-auto">
-          <div className="container mx-auto px-4 py-4 space-y-2">
+        <div className="absolute top-full left-0 right-0 max-h-[calc(100svh-4rem)] overflow-y-auto border-b border-border bg-card shadow-xl animate-slide-up lg:hidden">
+          <div className="container mx-auto space-y-2 px-4 py-4 sm:px-6">
             {menuItems.map((item) => (
               <MobileMenuItem
                 key={item.label}
@@ -120,12 +124,12 @@ export default function Navbar() {
                 onClose={() => setIsMobileMenuOpen(false)}
               />
             ))}
-            <div className="pt-4 border-t border-border">
+            <div className="border-t border-border pt-4">
               <div className="flex flex-col gap-2 sm:flex-row">
                 <Link
                   href="/informasi/kontak"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex-1 py-3 bg-primary text-primary-foreground text-center font-semibold rounded-lg hover:bg-primary-hover transition-colors"
+                  className="flex-1 rounded-lg bg-primary py-3 text-center font-semibold text-primary-foreground transition-colors hover:bg-primary-hover"
                 >
                   Hubungi Kami
                 </Link>

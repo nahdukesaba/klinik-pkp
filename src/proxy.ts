@@ -1,5 +1,5 @@
 /**
- * Next.js Proxy — CSP, security headers, route protection, rate limiting.
+ * Next.js Proxy — CSP, security headers, API allowlist, dan rate limiting.
  * @see https://nextjs.org/docs/app/guides/content-security-policy
  */
 
@@ -174,7 +174,7 @@ export function proxy(request: NextRequest) {
     frame-src https://www.instagram.com https://www.facebook.com;
     child-src https://www.instagram.com https://www.facebook.com;
     frame-ancestors 'none';
-    upgrade-insecure-requests;
+    ${isDev ? "" : "upgrade-insecure-requests;"}
   `;
 
   // Bersihkan whitespace berlebih

@@ -1,10 +1,7 @@
-"use client";
-
 import type { ReactNode } from "react";
 
 import {
-  BookOpen,
-  Gift,
+  BookOpenText,
   Home,
   Info,
   Palette,
@@ -30,7 +27,7 @@ export interface MenuItem {
 
 export const menuItems: MenuItem[] = [
   {
-    label: "Kondisi Perumahan",
+    label: "Program PKP",
     icon: <Home className="h-4 w-4" />,
     subItems: [
       {
@@ -38,8 +35,12 @@ export const menuItems: MenuItem[] = [
         href: "/sebaran-rusun",
       },
       {
-        label: "Profil Kawasan Kumuh",
+        label: "Kawasan Kumuh",
         href: "/kawasan-kumuh",
+      },
+      {
+        label: "Penerimaan BSPS",
+        href: "/penerimaan-bsps",
       },
     ],
   },
@@ -50,23 +51,18 @@ export const menuItems: MenuItem[] = [
   },
   {
     label: "Sosialisasi",
-    icon: <BookOpen className="h-4 w-4" />,
+    icon: <BookOpenText className="h-4 w-4" />,
     href: "/sosialisasi-klinik-pkp",
-  },
-  {
-    label: "Penerimaan BSPS",
-    icon: <Gift className="h-4 w-4" />,
-    href: "/penerimaan-bsps",
   },
   {
     label: "Informasi",
     icon: <Info className="h-4 w-4" />,
     subItems: [
-      { label: "Tentang", href: "/informasi/tentang" },
+      { label: "Tentang Kami", href: "/informasi/tentang" },
+      { label: "Tahapan", href: "/informasi/tahapan" },
+      { label: "Rumah Layak Huni", href: "/informasi/rumah-layak-huni" },
       { label: "Kontak", href: "/informasi/kontak" },
       { label: "FAQ", href: "/informasi/faq" },
-      { label: "Bahan Bangunan", href: "/informasi/bahan-bangunan" },
-      { label: "Perizinan", href: "/informasi/perizinan" },
       { label: "Peraturan", href: "/informasi/peraturan" },
       {
         label: "Buku Saku FLPP",

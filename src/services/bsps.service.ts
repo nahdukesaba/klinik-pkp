@@ -3,15 +3,15 @@
 import {
   fetchApiList,
   fetchApiListWithMeta,
+  extractVillageName,
+  extractDistrictName,
+  extractRegionName,
   type ApiPaginatedResult,
+  type CoordinateApi,
+  type VillageApi,
+  type DistrictApi,
+  type RegionApi,
 } from "@/lib/api-client";
-import type {
-  CoordinateApi,
-  VillageApi,
-  DistrictApi,
-  RegionApi,
-} from "@/types/api";
-import { extractVillageName, extractDistrictName, extractRegionName } from "@/types/api";
 
 // --- Tipe API ---
 

@@ -5,7 +5,7 @@ import { useState, useRef, useMemo, useCallback, useEffect } from "react";
 import { useCascadingFilter } from "@/hooks/use-cascading-filter";
 import { useDebounce } from "@/hooks/use-debounce";
 import { CURRENT_YEAR } from "@/lib/constants";
-import { formatDateId } from "@/lib/date";
+import { formatDateId, getSortedUniqueYears } from "@/lib/date";
 import { loadLeaflet, cleanupMapContainer, destroyMap, bindMarkerInteraction } from "@/lib/map-utils";
 import { escapeHtml, escapeAttr, sanitizeUrl } from "@/lib/security";
 import { type SosialisasiLocation } from "@/services/sosialisasi.service";
@@ -65,7 +65,7 @@ export function useSosialisasiPKPMap(
   const [mapReady, setMapReady] = useState(false);
   // Default: tahun sekarang agar peta langsung fokus ke data tahun ini
   const [mapYear, setMapYear] = useState<string>(CURRENT_YEAR);
-  const [mapStatusFilter, setMapStatusFilter] = useState<string>("mendatang");
+  const [mapStatusFilter, setMapStatusFilter] = useState<string>("all");
   const [mapSearchQuery, setMapSearchQuery] = useState<string>("");
   const [mapShowFilters, setMapShowFilters] = useState(true);
   const enabledRef = useRef<boolean>(isEnabled);
@@ -79,10 +79,9 @@ export function useSosialisasiPKPMap(
 
   // Daftar tahun yang tersedia dari semua lokasi
   const mapYears = useMemo(() => {
-    const years = [
-      ...new Set(allLocations.map((loc) => Number.parseInt(loc.date.slice(0, 4), 10))),
-    ].filter(Number.isFinite);
-    return years.sort((a, b) => b - a);
+    return getSortedUniqueYears(allLocations.map((location) => location.date.slice(0, 4)), {
+      includeCurrentYear: true,
+    });
   }, [allLocations]);
 
   // Combined filtering (cascading + year + status + search)

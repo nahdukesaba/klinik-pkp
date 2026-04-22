@@ -16,62 +16,6 @@ export function getFileFormValue(values: AdminFormValues, key: string) {
   return Array.isArray(value) ? value : [];
 }
 
-interface FileValidationOptions {
-  field: string;
-  label: string;
-  maxFiles?: number;
-  maxSizeMb: number;
-  required?: boolean;
-  acceptImagesOnly?: boolean;
-}
-
-export function validateFileField(
-  values: AdminFormValues,
-  options: FileValidationOptions
-) {
-  const files = getFileFormValue(values, options.field);
-  const maxBytes = options.maxSizeMb * 1024 * 1024;
-
-  if (options.required && files.length === 0) {
-    return `${options.label} wajib diunggah.`;
-  }
-
-  if (options.maxFiles && files.length > options.maxFiles) {
-    return `${options.label} maksimal ${options.maxFiles} file.`;
-  }
-
-  for (const file of files) {
-    if (options.acceptImagesOnly && !file.type.startsWith("image/")) {
-      return `${options.label} hanya menerima file gambar.`;
-    }
-
-    if (file.size > maxBytes) {
-      return `${file.name} melebihi batas ${options.maxSizeMb} MB.`;
-    }
-  }
-
-  return undefined;
-}
-
-export function validateTotalFileSize(
-  values: AdminFormValues,
-  options: {
-    fields: Array<{ field: string; label: string }>;
-    maxTotalSizeMb: number;
-  }
-) {
-  const maxTotalBytes = options.maxTotalSizeMb * 1024 * 1024;
-  const files = options.fields.flatMap(({ field }) => getFileFormValue(values, field));
-  const totalBytes = files.reduce((sum, file) => sum + file.size, 0);
-
-  if (totalBytes > maxTotalBytes) {
-    const labels = options.fields.map((item) => item.label.toLowerCase()).join(" + ");
-    return `Total ukuran ${labels} melebihi batas ${options.maxTotalSizeMb} MB.`;
-  }
-
-  return undefined;
-}
-
 function pad(value: number) {
   return value.toString().padStart(2, "0");
 }
@@ -107,4 +51,52 @@ export function toIsoStringFromDateTimeLocal(value: string) {
   const offsetRemainderMinutes = pad(absoluteOffset % 60);
 
   return `${datePart}T${timePart}:${seconds}${sign}${offsetHours}:${offsetRemainderMinutes}`;
+}
+
+interface UploadFieldHelperOptions {
+  subject: string;
+  mode?: "create" | "edit";
+  optional?: boolean;
+  requiresReuploadOnEdit?: boolean;
+  validationLabel?: string;
+  maxSizeMb?: number;
+  totalUploadMb?: number;
+}
+
+function buildUploadValidationSummary(options: UploadFieldHelperOptions) {
+  const parts: string[] = [];
+
+  if (options.validationLabel) {
+    parts.push(options.validationLabel);
+  }
+
+  if (options.maxSizeMb) {
+    parts.push(`ukuran maksimal ${options.maxSizeMb} MB per file`);
+  }
+
+  if (options.totalUploadMb) {
+    parts.push(`total upload efektif sekitar ${options.totalUploadMb} MB`);
+  }
+
+  if (parts.length === 0) {
+    return "";
+  }
+
+  return `Backend akan memvalidasi ${parts.join(", ")}.`;
+}
+
+export function buildUploadFieldHelperText(options: UploadFieldHelperOptions) {
+  const mode = options.mode ?? "create";
+  let intro = `Unggah ${options.subject}.`;
+
+  if (mode === "edit" && options.requiresReuploadOnEdit) {
+    intro = `Saat menyimpan perubahan, unggah ulang ${options.subject}.`;
+  } else if (mode === "edit" && options.optional) {
+    intro = `Tambahkan ${options.subject} baru bila diperlukan.`;
+  } else if (options.optional) {
+    intro = `Tambahkan ${options.subject} bila diperlukan.`;
+  }
+
+  const validationSummary = buildUploadValidationSummary(options);
+  return validationSummary ? `${intro} ${validationSummary}` : intro;
 }

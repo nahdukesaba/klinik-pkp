@@ -4,10 +4,10 @@
  * Halaman Lokasi Klinik PKP — informasi lokasi dan kontak.
  * Data statis dari src/content/lokasi-klinik.ts
  * Page ini adalah Server Component agar bisa export metadata untuk SEO.
- * Komponen utama di-lazy-load melalui loader.tsx (Client Component).
+ * Komponen utama di-lazy-load melalui route client reusable.
  */
 
-import LokasiKlinikLoader from "./loader";
+import { LokasiKlinikRouteClient } from "@/components/shared/AppRouteClients";
 
 import type { Metadata } from "next";
 
@@ -18,5 +18,5 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <LokasiKlinikLoader />;
+  return <LokasiKlinikRouteClient />;
 }

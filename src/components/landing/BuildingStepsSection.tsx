@@ -213,30 +213,6 @@ export default function BuildingStepsSection() {
             <ProgressIndicator totalSteps={steps.length} hoveredStep={hoveredStep} />
           </div>
 
-        {/* --- Instagram Section --- */}
-        <div className="mt-16">
-          <div className="text-center mb-8">
-            <h3 className="text-xl lg:text-2xl font-bold text-foreground mb-2">
-              Ikuti Kami di Instagram
-            </h3>
-          </div>
-
-          {/* Instagram Embed */}
-          <div className="max-w-6xl mx-auto">
-            <div className="bg-card rounded-2xl overflow-hidden border border-border shadow-lg">
-              <iframe
-                src="https://www.instagram.com/bp3kp_sumatera2/embed"
-                className="w-full h-[450px] sm:h-[550px] md:h-[700px] lg:h-[750px] xl:h-[800px] 2xl:h-[850px] border-0"
-                loading="lazy"
-                title="Instagram BP3KP Sumatera II"
-                sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms allow-top-navigation-by-user-activation"
-                allow="encrypted-media"
-                scrolling="no"
-                style={{ border: 0, overflow: 'hidden' }}
-              />
-            </div>
-          </div>
-        </div>
       </div>
     </section>
   );

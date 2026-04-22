@@ -1,11 +1,16 @@
 /** API Client — terpusat untuk fetch data dari backend via proxy Next.js. */
 
 import { getApiUrl } from "@/lib/constants";
-import {
-  extractApiCollectionItems,
-  extractApiPaginationMeta,
-  type ApiResponse,
+import type {
+  ApiResponse,
+  CoordinateApi,
+  DistrictApi,
+  RegionApi,
+  VillageApi,
 } from "@/types/api";
+
+// Re-export types yang sering diimport bersama api-client
+export type { ApiResponse, CoordinateApi, DistrictApi, RegionApi, VillageApi };
 
 // --- Error Class ---
 
@@ -53,6 +58,85 @@ export class ApiError extends Error {
   get isNetworkError(): boolean {
     return this.status === 0;
   }
+}
+
+// --- Extract helpers (dipindahkan dari types/api.ts) ---
+
+const API_COLLECTION_KEYS = [
+  "items",
+  "rows",
+  "records",
+  "results",
+  "list",
+] as const;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function getNumberValue(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
+/** Ekstrak array items dari response API yang bisa berbentuk array langsung atau object dengan key standar */
+export function extractApiCollectionItems<T>(data: unknown): T[] | null {
+  if (Array.isArray(data)) {
+    return data as T[];
+  }
+
+  if (!isRecord(data)) {
+    return null;
+  }
+
+  for (const key of API_COLLECTION_KEYS) {
+    const candidate = data[key];
+    if (Array.isArray(candidate)) {
+      return candidate as T[];
+    }
+  }
+
+  return null;
+}
+
+/** Ekstrak metadata paginasi dari raw response API */
+export function extractApiPaginationMeta(data: unknown) {
+  if (!isRecord(data)) {
+    return {} as { totalRecords?: number; page?: number; limit?: number };
+  }
+
+  return {
+    totalRecords: getNumberValue(data.total_records),
+    page: getNumberValue(data.page),
+    limit: getNumberValue(data.limit),
+  };
+}
+
+// --- Helper: ekstrak nama lokasi dari nested objects ---
+
+export function extractVillageName(village?: VillageApi): string {
+  return village?.name ?? "";
+}
+
+/** Fallback ke village.district jika district langsung tidak tersedia */
+export function extractDistrictName(
+  district?: DistrictApi,
+  village?: VillageApi
+): string {
+  return district?.name ?? village?.district?.name ?? "";
+}
+
+/** Fallback ke district.region atau village.district.region */
+export function extractRegionName(
+  region?: RegionApi,
+  district?: DistrictApi,
+  village?: VillageApi
+): string {
+  return (
+    region?.name ??
+    district?.region?.name ??
+    village?.district?.region?.name ??
+    ""
+  );
 }
 
 // --- Fetch Helper ---

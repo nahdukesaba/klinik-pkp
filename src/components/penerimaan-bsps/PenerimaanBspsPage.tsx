@@ -1,18 +1,11 @@
 /**
  * PenerimaanBspsPage
  * Container UI untuk halaman Penerimaan BSPS.
- *
- * Layout:
- * 1. Navbar
- * 2. Hero/Description Section (BSPS info + Peta Lokasi Penerima BSPS)
- * 3. Full-screen Map Section (like Kawasan Kumuh) — sticky saat scroll
- * 4. Information Sections (Persyaratan, Prosedur, Kriteria, CTA)
- * 5. Footer
  */
 
 "use client";
 
-import { useState, useCallback } from "react";
+import { useCallback, useState } from "react";
 
 import { Building2 } from "lucide-react";
 
@@ -46,6 +39,8 @@ export default function PenerimaanBspsPage() {
     statusColors,
     mapRef,
     isMapReady,
+    selectedDesaId,
+    handleDesaCardClick,
     isError,
     error,
     refetch,
@@ -57,33 +52,28 @@ export default function PenerimaanBspsPage() {
   const toggleSidebar = useCallback(() => setSidebarOpen((prev) => !prev), []);
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
 
-  // Tampilkan error state jika gagal mengambil data
   if (isError) {
     return <ApiErrorState error={error} onRetry={refetch} />;
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="flex min-h-screen flex-col bg-background">
       <Navbar />
 
-      {/* Hero / Description Section */}
-      <section className="pt-24 pb-12 relative">
+      <section className="relative pb-12 pt-24">
         <BspsBackgroundPattern />
         <div className="container mx-auto px-4">
-          <div className="text-center max-w-3xl mx-auto">
-            {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-full text-sm font-medium mb-4 border border-primary/20">
-              <Building2 className="w-4 h-4" />
+          <div className="mx-auto max-w-3xl text-center">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-sm font-medium text-primary">
+              <Building2 className="h-4 w-4" />
               <span>BSPS</span>
             </div>
 
-            {/* Title */}
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4">
+            <h1 className="mb-4 text-3xl font-bold text-foreground md:text-4xl lg:text-5xl">
               Penerimaan BSPS
             </h1>
 
-            {/* Description */}
-            <p className="text-muted-foreground text-lg mb-6 leading-relaxed">
+            <p className="mb-6 text-lg leading-relaxed text-muted-foreground">
               Bantuan Stimulan Perumahan Swadaya (BSPS) untuk masyarakat
               berpenghasilan rendah dalam memperbaiki atau membangun rumah.
             </p>
@@ -91,9 +81,12 @@ export default function PenerimaanBspsPage() {
         </div>
       </section>
 
-      {/* Full-screen Map Section (like Kawasan Kumuh) */}
       {/* eslint-disable react-hooks/refs -- useLazyMount returns a callback ref plus a mounted flag */}
-      <section id="peta-bsps" ref={mapLazyRef} className="h-screen flex flex-col scroll-mt-16 lg:scroll-mt-20 isolate">
+      <section
+        id="peta-bsps"
+        ref={mapLazyRef}
+        className="isolate flex h-screen scroll-mt-16 flex-col lg:scroll-mt-20"
+      >
         {isMapMounted ? (
           <BspsMapSection
             filterState={filterState}
@@ -104,7 +97,12 @@ export default function PenerimaanBspsPage() {
             mapRef={mapRef}
             isMapReady={isMapReady}
             filteredDesa={filteredDesa}
+            selectedDesaId={selectedDesaId}
             sidebarOpen={sidebarOpen}
+            onDesaClick={(desa) => {
+              closeSidebar();
+              handleDesaCardClick(desa);
+            }}
             onToggleSidebar={toggleSidebar}
             onCloseSidebar={closeSidebar}
           />
@@ -114,13 +112,10 @@ export default function PenerimaanBspsPage() {
       </section>
       {/* eslint-enable react-hooks/refs */}
 
-      {/* Information Sections */}
       <main ref={ref} className="py-16">
         <div className="container mx-auto px-4">
           <BspsInfoCards />
-
           <BspsRequirements requirements={requirements} />
-
           <BspsProcessSteps
             processSteps={processSteps.steps}
             hoveredStep={processSteps.hoveredStep}
@@ -129,12 +124,10 @@ export default function PenerimaanBspsPage() {
             secondRow={processSteps.secondRow}
             secondRowReversed={processSteps.secondRowReversed}
           />
-
           <BspsKriteria
             kriteriaUtama={kriteriaUtama}
             prioritasPenerima={prioritasPenerima}
           />
-
           <BspsCta />
         </div>
       </main>

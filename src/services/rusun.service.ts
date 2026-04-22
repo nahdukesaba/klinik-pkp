@@ -3,16 +3,16 @@
 import {
   fetchApiList,
   fetchApiListWithMeta,
+  extractVillageName,
+  extractDistrictName,
+  extractRegionName,
   type ApiPaginatedResult,
+  type CoordinateApi,
+  type VillageApi,
+  type DistrictApi,
+  type RegionApi,
 } from "@/lib/api-client";
-import { API_BASE_URL } from "@/lib/constants";
-import type {
-  CoordinateApi,
-  VillageApi,
-  DistrictApi,
-  RegionApi,
-} from "@/types/api";
-import { extractVillageName, extractDistrictName, extractRegionName } from "@/types/api";
+import { buildImageUrl } from "@/lib/constants";
 
 // --- Tipe API ---
 
@@ -68,16 +68,6 @@ export interface RusunListParams {
 }
 
 // --- Transformasi ---
-
-/**
- * Bangun URL gambar dari path relatif API.
- * "rusun/1/file.jpg" → /api/ext/uploads/rusun/1/file.jpg
- */
-export function buildImageUrl(path: string): string {
-  const clean = path.startsWith("/") ? path.slice(1) : path;
-  const withUploads = clean.startsWith("uploads/") ? clean : `uploads/${clean}`;
-  return `${API_BASE_URL}/${withUploads}`;
-}
 
 /** Transform data API → format frontend. Ekstrak nama lokasi dari nested objects. */
 export function transformRusunItem(item: RusunApiItem): RusunData {

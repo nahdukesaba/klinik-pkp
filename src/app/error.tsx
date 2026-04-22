@@ -18,11 +18,15 @@ import { AlertTriangle, RefreshCw, Home } from "lucide-react";
 
 export default function GlobalError({
   error,
+  unstable_retry: unstableRetry,
   reset,
 }: {
   error: Error & { digest?: string };
-  reset: () => void;
+  unstable_retry?: () => void;
+  reset?: () => void;
 }) {
+  const retry = unstableRetry ?? reset;
+
   useEffect(() => {
     // Log error ke console di development
     if (process.env.NODE_ENV === "development") {
@@ -47,7 +51,8 @@ export default function GlobalError({
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <button
-            onClick={reset}
+            onClick={() => retry?.()}
+            disabled={!retry}
             className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary text-primary-foreground font-semibold rounded-xl hover:bg-primary-hover transition-colors"
           >
             <RefreshCw className="w-4 h-4" />

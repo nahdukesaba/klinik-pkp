@@ -38,6 +38,8 @@ export interface SosialisasiRawData {
   berita: BeritaSosialisasi[];
   /** Daftar kabupaten untuk filter dropdown */
   kabupatenList: string[];
+  /** Daftar kabupaten untuk section jadwal kegiatan */
+  upcomingKabupatenList: string[];
   /** Status loading */
   isLoading: boolean;
   /** Status error */
@@ -66,8 +68,6 @@ export function useSosialisasiQuery(): SosialisasiRawData {
     queryKey: ["sosialisasi"],
     queryFn: () => fetchSosialisasiList(),
     ...QUERY_CONFIG,
-    refetchInterval: 30_000,
-    refetchIntervalInBackground: true,
   });
 
   const result = useMemo(() => {
@@ -80,16 +80,33 @@ export function useSosialisasiQuery(): SosialisasiRawData {
       currentTime
     );
   }, [currentTime, query.data]);
-  const upcomingKabupatenList = [
-    "Semua Lokasi",
-    ...Array.from(
-      new Set(
-        result.upcomingLocations
-          .map((item) => item.kabupaten)
-          .filter((item) => item.trim() !== "")
-      )
-    ).sort(),
-  ];
+  const publicKabupatenList = useMemo(
+    () => [
+      "Semua Lokasi",
+      ...Array.from(
+        new Set(
+          result.publicLocations
+            .map((item) => item.kabupaten)
+            .filter((item) => item.trim() !== "")
+        )
+      ).sort(),
+    ],
+    [result.publicLocations]
+  );
+
+  const upcomingKabupatenList = useMemo(
+    () => [
+      "Semua Lokasi",
+      ...Array.from(
+        new Set(
+          result.upcomingLocations
+            .map((item) => item.kabupaten)
+            .filter((item) => item.trim() !== "")
+        )
+      ).sort(),
+    ],
+    [result.upcomingLocations]
+  );
 
   return {
     locations: result.publicLocations,
@@ -97,7 +114,8 @@ export function useSosialisasiQuery(): SosialisasiRawData {
     upcomingLocations: result.upcomingLocations,
     completedLocations: result.completedLocations,
     berita: result.berita,
-    kabupatenList: upcomingKabupatenList,
+    kabupatenList: publicKabupatenList,
+    upcomingKabupatenList,
     isLoading: query.isLoading,
     isError: query.isError,
     error: query.error,

@@ -3,10 +3,10 @@
  *
  * Halaman Sebaran Rusun — menampilkan peta lokasi rumah susun.
  * Page ini adalah Server Component agar bisa export metadata untuk SEO.
- * Komponen utama di-lazy-load melalui loader.tsx (Client Component).
+ * Komponen utama di-lazy-load melalui route client reusable.
  */
 
-import SebaranRusunLoader from "./loader";
+import { SebaranRusunRouteClient } from "@/components/shared/AppRouteClients";
 
 import type { Metadata } from "next";
 
@@ -17,5 +17,5 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <SebaranRusunLoader />;
+  return <SebaranRusunRouteClient />;
 }

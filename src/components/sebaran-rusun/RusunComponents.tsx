@@ -12,7 +12,7 @@ import type { RefObject } from "react";
 import { ArrowLeft, Building2, Layers, MapPin, Search, Users, X } from "lucide-react";
 
 import { SearchableFilterSelect, SidebarPagination } from "@/components/shared";
-import { type RusunData } from "@/hooks/sebaran-rusun/use-rusun-query";
+import { type RusunData } from "@/services/rusun.service";
 
 // =============================================================================
 // RusunHeader

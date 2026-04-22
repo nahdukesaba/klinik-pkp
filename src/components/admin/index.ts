@@ -10,7 +10,6 @@ export { AdminTopbar } from "./AdminTopbar";
 export { AdminAuthProvider, useAdminAuth } from "./AdminAuthGuard";
 export { AdminAccessDenied } from "./AdminAccessDenied";
 export { AdminErrorAlert } from "./AdminErrorAlert";
-export { StatsCard } from "./StatsCard";
 export { AdminPageHeader } from "./AdminPageHeader";
 export { AdminStatsGrid } from "./AdminStatsGrid";
 export {

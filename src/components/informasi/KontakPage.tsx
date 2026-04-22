@@ -3,7 +3,14 @@
 import { Mail, MapPin, MessageSquare, Phone } from "lucide-react";
 
 import { Footer, Navbar } from "@/components/layout";
+import { klinikData } from "@/content/lokasi-klinik";
 import { useScrollAnimation } from "@/hooks/use-scroll-animation";
+import { buildWhatsAppUrl } from "@/lib/contact";
+
+const whatsappHref = buildWhatsAppUrl(
+  klinikData.phone,
+  "Halo Klinik PKP, saya ingin menghubungi tim Klinik PKP."
+);
 
 export default function KontakPage() {
   const ref = useScrollAnimation();
@@ -54,7 +61,7 @@ export default function KontakPage() {
             </a>
 
             <a
-              href="mailto:klinikpkpsumateraii@gmail.com"
+              href={`mailto:${klinikData.email}`}
               className="group animate-on-scroll rounded-2xl border border-border bg-card p-8 text-left shadow-lg transition-all hover:border-primary/30 hover:shadow-2xl"
               style={{ transitionDelay: "0.1s" }}
             >
@@ -63,7 +70,7 @@ export default function KontakPage() {
               </div>
               <h3 className="mb-2 text-xl font-bold text-foreground">Email</h3>
               <p className="mb-2 break-all text-sm font-semibold text-primary sm:text-base md:text-lg">
-                klinikpkpsumateraii@gmail.com
+                {klinikData.email}
               </p>
               <p className="text-sm text-muted-foreground">
                 Respon dalam 1-2 hari kerja
@@ -74,7 +81,7 @@ export default function KontakPage() {
             </a>
 
             <a
-              href="https://wa.me/6282246960231"
+              href={whatsappHref}
               target="_blank"
               rel="noopener noreferrer"
               className="group animate-on-scroll rounded-2xl border border-border bg-card p-8 text-left shadow-lg transition-all hover:border-green-500/30 hover:shadow-2xl"
@@ -89,7 +96,7 @@ export default function KontakPage() {
                 WhatsApp
               </h3>
               <p className="mb-2 break-all text-lg font-semibold text-green-500">
-                082246960231
+                {klinikData.phone}
               </p>
               <p className="text-sm text-muted-foreground">
                 Chat langsung dengan tim kami

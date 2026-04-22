@@ -1,5 +1,6 @@
 import type { AdminFormValues, FormFieldDef } from "@/components/admin";
 import {
+  buildUploadFieldHelperText,
   getFileFormValue,
   getNumberFormValue,
   getStringFormValue,
@@ -57,8 +58,20 @@ export function buildSosialisasiFormFields(params: {
         multiple: true,
         required: true,
         helperText: editingItem
-          ? `Unggah 1 sampai 4 gambar baru. Gambar saat ini: ${editingItem.images.length}. Maksimal 2 MB per gambar dan total request backend efektif 4 MB.`
-          : "Unggah 1 sampai 4 gambar. Maksimal 2 MB per gambar dan total request backend efektif 4 MB.",
+          ? `Dokumentasi saat ini: ${editingItem.images.length} gambar. ${buildUploadFieldHelperText({
+              subject: "1 sampai 4 gambar berita",
+              mode: "edit",
+              requiresReuploadOnEdit: true,
+              validationLabel: "format gambar",
+              maxSizeMb: 2,
+              totalUploadMb: 4,
+            })}`
+          : buildUploadFieldHelperText({
+              subject: "1 sampai 4 gambar berita",
+              validationLabel: "format gambar",
+              maxSizeMb: 2,
+              totalUploadMb: 4,
+            }),
       },
     ] satisfies FormFieldDef[];
   }
@@ -133,8 +146,14 @@ export function buildSosialisasiFormFields(params: {
       type: "file",
       accept: "image/*",
       multiple: true,
-      helperText:
-        "Maksimal 4 gambar, masing-masing maksimal 2 MB, dengan total request backend efektif 4 MB.",
+      helperText: buildUploadFieldHelperText({
+        subject: "1 sampai 4 gambar kegiatan",
+        mode: editingItem ? "edit" : "create",
+        optional: true,
+        validationLabel: "format gambar",
+        maxSizeMb: 2,
+        totalUploadMb: 4,
+      }),
     },
   ] satisfies FormFieldDef[];
 }

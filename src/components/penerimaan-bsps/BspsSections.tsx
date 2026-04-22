@@ -16,7 +16,8 @@ import {
   Users,
 } from "lucide-react";
 
-import { ProgressIndicator, StepArrow } from "@/components/landing";
+import { ProgressIndicator } from "@/components/landing/ProgressIndicator";
+import { StepArrow } from "@/components/landing/StepArrow";
 import type { BspsProcessStep } from "@/services/bsps.service";
 
 import type { LucideIcon } from "lucide-react";

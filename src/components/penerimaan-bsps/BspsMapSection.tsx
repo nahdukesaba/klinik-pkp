@@ -1,17 +1,5 @@
 /**
- * BspsMapSection — Section peta full-screen untuk halaman Penerimaan BSPS.
- *
- * Layout (seperti Kawasan Kumuh):
- * - Header (back, title, search, status filter, stats)
- * - Sidebar (cascading filters + paginated location cards) | Map + Legend
- *
- * Komponen ini mengorkestrasikan sub-komponen:
- * - BspsHeader: navigasi, search, filter, stat badges
- * - BspsSidebar: panel filter lokasi + daftar desa (dari file terpisah)
- * - MapLegend: legenda status penerimaan (shared component)
- *
- * @see BspsSidebar — sidebar filter & daftar lokasi
- * @see MapLegend — legenda peta (shared)
+ * BspsMapSection - Section peta full-screen untuk halaman Penerimaan BSPS.
  */
 
 "use client";
@@ -42,8 +30,6 @@ import {
 import type { BspsData } from "@/services/bsps.service";
 
 import { BspsSidebar } from "./BspsSidebar";
-
-// --- Types ---
 
 interface FilterState {
   searchQuery: string;
@@ -89,12 +75,12 @@ interface BspsMapSectionProps {
   mapRef: RefObject<HTMLDivElement | null>;
   isMapReady: boolean;
   filteredDesa: BspsData[];
+  selectedDesaId: number | null;
   sidebarOpen: boolean;
+  onDesaClick: (desa: BspsData) => void;
   onToggleSidebar: () => void;
   onCloseSidebar: () => void;
 }
-
-// --- BspsHeader — top bar dengan navigasi, search, dan statistik ---
 
 const BspsHeader = memo(function BspsHeader({
   totalKawasan,
@@ -122,17 +108,16 @@ const BspsHeader = memo(function BspsHeader({
   onToggleSidebar: () => void;
 }) {
   return (
-    <div className="bg-card border-b border-border px-4 py-3 flex-shrink-0 relative">
+    <div className="relative flex-shrink-0 border-b border-border bg-card px-4 py-3">
       <div className="flex flex-col gap-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          {/* Title */}
+        <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
           <div className="flex items-center gap-3">
             <Link
               href="/"
-              className="p-2 hover:bg-secondary rounded-lg transition-colors"
+              className="rounded-lg p-2 transition-colors hover:bg-secondary"
               aria-label="Kembali"
             >
-              <ArrowLeft className="w-5 h-5" />
+              <ArrowLeft className="h-5 w-5" />
             </Link>
             <div>
               <p className="text-xs text-muted-foreground">Penerimaan BSPS</p>
@@ -140,36 +125,34 @@ const BspsHeader = memo(function BspsHeader({
             </div>
           </div>
 
-          {/* Controls */}
           <div className="flex flex-wrap items-center gap-2">
-            {/* Search */}
-            <div className="relative w-full max-w-md flex-1 min-w-0 sm:w-auto sm:min-w-[200px] md:min-w-[300px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <div className="relative w-full max-w-md min-w-0 flex-1 sm:w-auto sm:min-w-[200px] md:min-w-[300px]">
+              <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
                 placeholder="Cari desa/kelurahan..."
                 value={searchQuery}
-                onChange={(e) => onSearchChange(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-secondary border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-200"
+                onChange={(event) => onSearchChange(event.target.value)}
+                className="w-full rounded-lg border border-border bg-secondary py-2 pl-10 pr-4 text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
               />
             </div>
 
-            {/* Status (desktop only) */}
             <div className="w-full sm:w-auto">
               <Select value={statusFilter} onValueChange={onStatusChange}>
                 <SelectTrigger className="min-h-10 w-full text-sm sm:w-auto sm:min-w-[10rem]">
                   <SelectValue placeholder="Semua Status" />
                 </SelectTrigger>
-                <SelectContent className="bg-popover z-[9999]">
+                <SelectContent className="z-[9999] bg-popover">
                   <SelectItem value="all">Semua Status</SelectItem>
                   {Object.entries(statusLabels).map(([key, label]) => (
-                    <SelectItem key={key} value={key}>{label}</SelectItem>
+                    <SelectItem key={key} value={key}>
+                      {label}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Year Filter — Reusable dropdown */}
             {availableYears.length > 0 && (
               <YearFilterSelect
                 years={availableYears}
@@ -178,24 +161,22 @@ const BspsHeader = memo(function BspsHeader({
               />
             )}
 
-            {/* Stat Badges */}
             <div className="stat-badge">
-              <Building2 className="w-4 h-4" />
+              <Building2 className="h-4 w-4" />
               <span>{totalKawasan}</span>
-              <span className="hidden sm:inline ml-1">Kawasan</span>
+              <span className="ml-1 hidden sm:inline">Kawasan</span>
             </div>
             <div className="stat-badge hidden md:flex">
-              <Home className="w-4 h-4" />
+              <Home className="h-4 w-4" />
               <span>{totalAlokasiUnit} Unit</span>
             </div>
 
-            {/* Mobile sidebar toggle */}
             <button
               onClick={onToggleSidebar}
-              className="lg:hidden p-2 hover:bg-secondary rounded-lg"
+              className="rounded-lg p-2 hover:bg-secondary lg:hidden"
               aria-label="Toggle sidebar"
             >
-              <Layers className="w-5 h-5" />
+              <Layers className="h-5 w-5" />
             </button>
           </div>
         </div>
@@ -203,8 +184,6 @@ const BspsHeader = memo(function BspsHeader({
     </div>
   );
 });
-
-// --- Main BspsMapSection ---
 
 function BspsMapSection({
   filterState,
@@ -215,16 +194,15 @@ function BspsMapSection({
   mapRef,
   isMapReady,
   filteredDesa,
+  selectedDesaId,
   sidebarOpen,
+  onDesaClick,
   onToggleSidebar,
   onCloseSidebar,
 }: BspsMapSectionProps) {
-  /** Total kawasan (desa) setelah filter */
   const totalKawasan = filteredDesa.length;
-
-  /** Total alokasi unit dari semua desa ter-filter */
   const totalAlokasiUnit = filteredDesa.reduce(
-    (acc, d) => acc + d.alokasiUnit,
+    (accumulator, desa) => accumulator + desa.alokasiUnit,
     0
   );
 
@@ -244,12 +222,11 @@ function BspsMapSection({
         onToggleSidebar={onToggleSidebar}
       />
 
-      {/* Sidebar + Map */}
-      <div className="flex-1 flex overflow-hidden relative mx-2 mb-2 rounded-xl border border-border shadow-sm bg-card/50">
-        {/* Mobile overlay */}
+      <div className="relative mx-2 mb-2 flex flex-1 overflow-hidden rounded-xl border border-border bg-card/50 shadow-sm">
         {sidebarOpen && (
           <div
-            className="lg:hidden fixed inset-0 bg-black/50 z-30"
+            data-ui-route-overlay="bsps-sidebar"
+            className="fixed inset-0 z-30 bg-black/50 lg:hidden"
             onClick={onCloseSidebar}
           />
         )}
@@ -262,37 +239,43 @@ function BspsMapSection({
           filterLists={filterLists}
           statusLabels={statusLabels}
           statusColors={statusColors}
+          selectedDesaId={selectedDesaId}
+          onDesaClick={onDesaClick}
           onCloseSidebar={onCloseSidebar}
         />
 
-        {/* Map Area */}
-        <div className="flex-1 relative overflow-hidden">
+        <div className="relative flex-1 overflow-hidden">
           {!isMapReady && (
-            <div className="absolute inset-0 z-20 bg-muted animate-pulse flex items-center justify-center">
+            <div className="absolute inset-0 z-20 flex items-center justify-center bg-muted animate-pulse">
               <div className="flex flex-col items-center gap-2">
-                <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                <span className="text-sm text-muted-foreground font-medium">Memuat Peta...</span>
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                <span className="text-sm font-medium text-muted-foreground">
+                  Memuat Peta...
+                </span>
               </div>
             </div>
           )}
 
-          <div ref={mapRef} id="penerimaan-bsps-map" className="w-full h-full" style={{ minHeight: "400px" }} />
+          <div
+            ref={mapRef}
+            id="penerimaan-bsps-map"
+            className="h-full w-full"
+            style={{ minHeight: "400px" }}
+          />
 
-          {/* Legenda peta */}
           <MapLegend
             title="Status Penerimaan"
             labels={statusLabels}
             colors={statusColors}
           />
 
-          {/* Mobile: tombol buka filter */}
           {!sidebarOpen && (
             <button
               onClick={onToggleSidebar}
-              className="lg:hidden absolute top-4 right-4 bg-card border border-border rounded-lg p-3 shadow-lg z-20 hover:bg-secondary transition-colors"
+              className="absolute right-4 top-4 z-20 rounded-lg border border-border bg-card p-3 shadow-lg transition-colors hover:bg-secondary lg:hidden"
               aria-label="Buka filter"
             >
-              <MapPin className="w-5 h-5 text-foreground" />
+              <MapPin className="h-5 w-5 text-foreground" />
             </button>
           )}
         </div>

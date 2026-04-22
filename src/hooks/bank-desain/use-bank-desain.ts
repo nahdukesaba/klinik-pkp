@@ -2,7 +2,7 @@
  * Hook: useBankDesain
  * Mengelola filter dan data desain untuk halaman Bank Desain.
  *
- * Data diambil dari API backend via useBankDesainQuery (React Query).
+ * Data diambil dari API backend via React Query.
  * Filter categories dibuat dinamis berdasarkan data yang tersedia.
  */
 
@@ -10,13 +10,21 @@
 
 import { useMemo, useState, useCallback } from "react";
 
-import { useBankDesainQuery, type BankDesainData } from "@/hooks/bank-desain/use-bank-desain-query";
+import { useQuery } from "@tanstack/react-query";
+
 import { useDebounce } from "@/hooks/use-debounce";
+import { QUERY_CONFIG } from "@/lib/constants";
 import { usePagination } from "@/hooks/use-pagination";
 import { sanitizeInput } from "@/lib/security";
+import {
+  deriveFilterCategories,
+  fetchBankDesainList,
+  type BankDesainData,
+} from "@/services/bank-desain.service";
 
 // --- Konstanta ---
 const DEFAULT_FILTER = "all";
+const EMPTY_DESAIN: BankDesainData[] = [];
 
 /**
  * Generate URL unduhan untuk desain.
@@ -28,8 +36,13 @@ function getDesignDownloadUrl(design: BankDesainData): string {
 
 // --- Implementasi Hook ---
 export function useBankDesain() {
-  // Sumber data dari API (React Query)
-  const { data: designs, categories, isLoading, isError, error, refetch } = useBankDesainQuery();
+  const query = useQuery({
+    queryKey: ["bank-desain"] as const,
+    queryFn: () => fetchBankDesainList(),
+    ...QUERY_CONFIG,
+  });
+  const designs = query.data ?? EMPTY_DESAIN;
+  const categories = useMemo(() => deriveFilterCategories(designs), [designs]);
 
   // State filter
   const [typeFilter, setTypeFilter] = useState(DEFAULT_FILTER);
@@ -83,10 +96,10 @@ export function useBankDesain() {
 
   return {
     // State API
-    isLoading,
-    isError,
-    error,
-    refetch,
+    isLoading: query.isLoading,
+    isError: query.isError,
+    error: query.error,
+    refetch: query.refetch,
     // State filter
     typeFilter,
     bedroomFilter,

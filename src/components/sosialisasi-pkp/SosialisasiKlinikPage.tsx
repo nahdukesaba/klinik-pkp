@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 
-import { ArrowDown, BookOpen, Newspaper } from "lucide-react";
+import { BookOpen } from "lucide-react";
 
 import "./sosialisasi.css";
 
@@ -15,37 +15,42 @@ import { MapSkeleton } from "@/components/ui/skeleton";
 import { useSosialisasiPKPPage } from "@/hooks/sosialisasi/use-sosialisasi-pkp-page";
 import { useScrollAnimation } from "@/hooks/use-scroll-animation";
 
-// --- Navigation Button Component (Reusable) ---
-interface NavButtonProps {
-  targetId: string;
-  icon: React.ReactNode;
-  label: string;
-  sublabel?: string;
-  variant?: "primary" | "secondary";
+function SosialisasiSidebarSkeleton() {
+  return (
+    <div className="rounded-xl border border-border bg-card/95 p-4 shadow-lg sm:rounded-2xl">
+      <div className="mb-4 h-6 w-40 animate-pulse rounded bg-muted" />
+      <div className="space-y-3">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <div
+            key={index}
+            className="h-28 animate-pulse rounded-xl bg-muted"
+          />
+        ))}
+      </div>
+    </div>
+  );
 }
 
-function NavButton({ targetId, icon, label, sublabel, variant = "secondary" }: NavButtonProps) {
-  const handleClick = () => {
-    const element = document.getElementById(targetId);
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  };
-
-  const baseClasses = "group flex items-center gap-2 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 border";
-  const variantClasses = variant === "primary"
-    ? "bg-primary text-primary-foreground border-primary hover:bg-primary/90 shadow-lg hover:shadow-xl"
-    : "bg-card text-foreground border-border hover:border-primary/50 hover:bg-primary/5";
-
+function SosialisasiBeritaSkeleton() {
   return (
-    <button onClick={handleClick} className={`${baseClasses} ${variantClasses}`}>
-      {icon}
-      <span className="flex flex-col items-start">
-        <span>{label}</span>
-        {sublabel && <span className="text-xs opacity-75">{sublabel}</span>}
-      </span>
-      <ArrowDown className="w-4 h-4 group-hover:translate-y-0.5 transition-transform" />
-    </button>
+    <div className="space-y-6">
+      <div className="h-8 w-56 animate-pulse rounded bg-muted" />
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div
+            key={index}
+            className="overflow-hidden rounded-xl border border-border bg-card/95 shadow-lg sm:rounded-2xl"
+          >
+            <div className="aspect-video animate-pulse bg-muted" />
+            <div className="space-y-3 p-4">
+              <div className="h-5 w-4/5 animate-pulse rounded bg-muted" />
+              <div className="h-4 w-full animate-pulse rounded bg-muted" />
+              <div className="h-4 w-2/3 animate-pulse rounded bg-muted" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -81,6 +86,7 @@ function SosialisasiKlinikPKPContent() {
     error,
     flyToLocation,
     isError,
+    isLoading,
     jadwal,
     map,
     mapLazy,
@@ -88,6 +94,9 @@ function SosialisasiKlinikPKPContent() {
   } = useSosialisasiPKPPage(handleImageClick);
   const mapLazyRef = mapLazy.ref;
   const isMapMounted = mapLazy.isMounted;
+  const isInitialMapLoading = isLoading && map.filteredMapLocations.length === 0;
+  const isInitialJadwalLoading = isLoading && jadwal.filteredJadwal.length === 0;
+  const isInitialBeritaLoading = isLoading && berita.filteredBerita.length === 0;
 
   // Error state tetap full-page karena tidak ada data sama sekali
   if (isError) {
@@ -115,19 +124,9 @@ function SosialisasiKlinikPKPContent() {
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4">
               Sosialisasi Klinik PKP
             </h1>
-            <p className="text-muted-foreground max-w-2xl mx-auto text-lg mb-6">
-              Informasi kegiatan sosialisasi dan edukasi terkait perumahan dan kawasan permukiman di wilayah Sumatera
+            <p className="mx-auto max-w-2xl text-base text-muted-foreground md:text-lg">
+              Jadwal kegiatan mendatang, peta lokasi, dan berita sosialisasi Klinik PKP di wilayah Sumatera.
             </p>
-
-            {/* Quick Navigation Buttons */}
-            <div className="flex flex-wrap items-center justify-center gap-3">
-              <NavButton
-                targetId="berita-section"
-                icon={<Newspaper className="w-4 h-4" />}
-                label="Berita Sosialisasi"
-                variant="primary"
-              />
-            </div>
           </div>
 
           {/* Map + Jadwal Side by Side on Desktop */}
@@ -135,9 +134,10 @@ function SosialisasiKlinikPKPContent() {
             {/* Map Section - Larger (3/5) */}
             {/* eslint-disable react-hooks/refs -- useLazyMount returns a callback ref plus a mounted flag */}
             <div ref={mapLazyRef} className="lg:col-span-3 lg:sticky lg:top-24 lg:self-start sosialisasi-map">
-              {isMapMounted ? (
+              {isMapMounted && !isInitialMapLoading ? (
                 <PKPMapSection
                   mapRef={map.mapRef}
+                  mapReady={map.mapReady}
                   filteredLocations={map.filteredMapLocations}
                   mapYear={map.mapYear}
                   setMapYear={map.setMapYear}
@@ -167,53 +167,61 @@ function SosialisasiKlinikPKPContent() {
 
             {/* Jadwal Section - Scrollable (2/5) */}
             <div id="jadwal-section" className="lg:col-span-2 scroll-mt-24">
-              <PKPJadwalSection
-                jadwalYear={jadwal.jadwalYear}
-                setJadwalYear={jadwal.setJadwalYear}
-                jadwalMonth={jadwal.jadwalMonth}
-                setJadwalMonth={jadwal.setJadwalMonth}
-                jadwalStartDate={jadwal.jadwalStartDate}
-                setJadwalStartDate={jadwal.setJadwalStartDate}
-                jadwalEndDate={jadwal.jadwalEndDate}
-                setJadwalEndDate={jadwal.setJadwalEndDate}
-                jadwalSearch={jadwal.jadwalSearch}
-                setJadwalSearch={jadwal.setJadwalSearch}
-                jadwalKabupatenFilter={jadwal.jadwalKabupatenFilter}
-                setJadwalKabupatenFilter={jadwal.setJadwalKabupatenFilter}
-                jadwalYears={jadwal.jadwalYears}
-                filteredJadwal={jadwal.filteredJadwal}
-                totalResults={jadwal.filteredJadwal.length}
-                kabupatenList={jadwal.kabupatenList}
-                resetFilters={jadwal.resetFilters}
-                hasActiveFilters={jadwal.hasActiveFilters}
-                onCardClick={flyToLocation}
-                compact={true}
-              />
+              {isInitialJadwalLoading ? (
+                <SosialisasiSidebarSkeleton />
+              ) : (
+                <PKPJadwalSection
+                  jadwalYear={jadwal.jadwalYear}
+                  setJadwalYear={jadwal.setJadwalYear}
+                  jadwalMonth={jadwal.jadwalMonth}
+                  setJadwalMonth={jadwal.setJadwalMonth}
+                  jadwalStartDate={jadwal.jadwalStartDate}
+                  setJadwalStartDate={jadwal.setJadwalStartDate}
+                  jadwalEndDate={jadwal.jadwalEndDate}
+                  setJadwalEndDate={jadwal.setJadwalEndDate}
+                  jadwalSearch={jadwal.jadwalSearch}
+                  setJadwalSearch={jadwal.setJadwalSearch}
+                  jadwalKabupatenFilter={jadwal.jadwalKabupatenFilter}
+                  setJadwalKabupatenFilter={jadwal.setJadwalKabupatenFilter}
+                  jadwalYears={jadwal.jadwalYears}
+                  filteredJadwal={jadwal.filteredJadwal}
+                  totalResults={jadwal.filteredJadwal.length}
+                  kabupatenList={jadwal.kabupatenList}
+                  resetFilters={jadwal.resetFilters}
+                  hasActiveFilters={jadwal.hasActiveFilters}
+                  onCardClick={flyToLocation}
+                  compact={true}
+                />
+              )}
             </div>
           </div>
 
           {/* Berita Section - Full Width */}
           <div id="berita-section" className="scroll-mt-24">
-            <PKPBeritaSection
-                beritaYear={berita.beritaYear}
-                setBeritaYear={berita.setBeritaYear}
-                beritaMonth={berita.beritaMonth}
-                setBeritaMonth={berita.setBeritaMonth}
-                beritaStartDate={berita.beritaStartDate}
-                setBeritaStartDate={berita.setBeritaStartDate}
-                beritaEndDate={berita.beritaEndDate}
-                setBeritaEndDate={berita.setBeritaEndDate}
-                beritaSearch={berita.beritaSearch}
-                setBeritaSearch={berita.setBeritaSearch}
-                beritaYears={berita.beritaYears}
-                filteredBerita={berita.filteredBerita}
-                paginatedBerita={berita.paginatedBerita}
-                pagination={berita.pagination}
-                resetFilters={berita.resetFilters}
-                hasActiveFilters={berita.hasActiveFilters}
-                onImageClick={handleImageClick}
-                onViewOnMap={flyToLocation}
-              />
+            {isInitialBeritaLoading ? (
+              <SosialisasiBeritaSkeleton />
+            ) : (
+              <PKPBeritaSection
+                  beritaYear={berita.beritaYear}
+                  setBeritaYear={berita.setBeritaYear}
+                  beritaMonth={berita.beritaMonth}
+                  setBeritaMonth={berita.setBeritaMonth}
+                  beritaStartDate={berita.beritaStartDate}
+                  setBeritaStartDate={berita.setBeritaStartDate}
+                  beritaEndDate={berita.beritaEndDate}
+                  setBeritaEndDate={berita.setBeritaEndDate}
+                  beritaSearch={berita.beritaSearch}
+                  setBeritaSearch={berita.setBeritaSearch}
+                  beritaYears={berita.beritaYears}
+                  filteredBerita={berita.filteredBerita}
+                  paginatedBerita={berita.paginatedBerita}
+                  pagination={berita.pagination}
+                  resetFilters={berita.resetFilters}
+                  hasActiveFilters={berita.hasActiveFilters}
+                  onImageClick={handleImageClick}
+                  onViewOnMap={flyToLocation}
+                />
+            )}
           </div>
         </div>
 

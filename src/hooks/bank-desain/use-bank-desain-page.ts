@@ -12,8 +12,8 @@
 import { useCallback, useState } from "react";
 
 import { useBankDesain } from "@/hooks/bank-desain/use-bank-desain";
-import type { BankDesainData } from "@/hooks/bank-desain/use-bank-desain-query";
 import { useScrollAnimation } from "@/hooks/use-scroll-animation";
+import type { BankDesainData } from "@/services/bank-desain.service";
 
 // --- Tipe Data ---
 

@@ -22,14 +22,10 @@ import {
   type SosialisasiAdminView,
 } from "@/components/admin/sosialisasi/config";
 import { useAdminCreateIntent } from "@/hooks/admin/use-admin-create-intent";
-import { useCurrentTime } from "@/hooks/use-current-time";
 import { useAdminLocationOptions } from "@/hooks/use-admin-location-options";
+import { useCurrentTime } from "@/hooks/use-current-time";
 import { useToast } from "@/hooks/use-toast";
-import {
-  getStringFormValue,
-  validateFileField,
-  validateTotalFileSize,
-} from "@/lib/admin/form";
+import { getStringFormValue } from "@/lib/admin/form";
 import { canManageContent } from "@/lib/admin/roles";
 import {
   AdminApiError,
@@ -72,7 +68,7 @@ export function useAdminSosialisasiPage(view: SosialisasiAdminView) {
     );
 
   const sosialisasiQuery = useQuery({
-    queryKey: ["admin-sosialisasi", view, currentPage],
+    queryKey: ["admin-sosialisasi", currentPage],
     queryFn: () =>
       fetchSosialisasiPage({
         page: currentPage,
@@ -82,8 +78,6 @@ export function useAdminSosialisasiPage(view: SosialisasiAdminView) {
     gcTime: QUERY_CONFIG.gcTime,
     placeholderData: (previousData) => previousData,
     enabled: canManage,
-    refetchInterval: 30_000,
-    refetchIntervalInBackground: true,
   });
 
   const liveSosialisasiData = useMemo(() => {
@@ -194,39 +188,6 @@ export function useAdminSosialisasiPage(view: SosialisasiAdminView) {
       setFormErrors({});
 
       try {
-        const imageValidationError = validateFileField(values, {
-          field: "images",
-          label: view === "berita" ? "Gambar berita" : "Gambar kegiatan",
-          maxFiles: 4,
-          maxSizeMb: 2,
-          required: view === "berita",
-          acceptImagesOnly: true,
-        });
-
-        if (imageValidationError) {
-          setFormErrors({ images: imageValidationError });
-          toast({
-            title: "Upload belum valid",
-            description: imageValidationError,
-            variant: "destructive",
-          });
-          return;
-        }
-
-        const totalUploadError = validateTotalFileSize(values, {
-          fields: [{ field: "images", label: "Gambar kegiatan" }],
-          maxTotalSizeMb: 4,
-        });
-        if (totalUploadError) {
-          setFormErrors({ images: totalUploadError });
-          toast({
-            title: "Upload belum valid",
-            description: totalUploadError,
-            variant: "destructive",
-          });
-          return;
-        }
-
         const formData = buildSosialisasiFormData(values, {
           view,
           existingItem: editingItem,
@@ -234,7 +195,7 @@ export function useAdminSosialisasiPage(view: SosialisasiAdminView) {
 
         if (editingItem) {
           await adminFetch(`/api/admin/resources/sosialisasi/${editingItem.id}`, {
-            method: "PUT",
+            method: "POST",
             body: formData,
           });
         } else {

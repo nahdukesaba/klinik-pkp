@@ -9,21 +9,29 @@
 
 import { useCallback, useMemo, useState } from "react";
 
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 
 import { useRusunMap } from "@/hooks/sebaran-rusun/use-rusun-map";
-import { useRusunQuery, type RusunData } from "@/hooks/sebaran-rusun/use-rusun-query";
 import { useCascadingFilter } from "@/hooks/use-cascading-filter";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useLazyMount } from "@/hooks/use-lazy-mount";
 import { usePagination } from "@/hooks/use-pagination";
+import { QUERY_CONFIG } from "@/lib/constants";
 import { sanitizeInput } from "@/lib/security";
+import { fetchRusunList, type RusunData } from "@/services/rusun.service";
 
 const SIDEBAR_PER_PAGE = 12;
+const EMPTY_RUSUN: RusunData[] = [];
 
 export function useSebaranRusun() {
   const router = useRouter();
-  const { data, isLoading, isError, error } = useRusunQuery();
+  const query = useQuery({
+    queryKey: ["rusun"] as const,
+    queryFn: () => fetchRusunList(),
+    ...QUERY_CONFIG,
+  });
+  const data = query.data ?? EMPTY_RUSUN;
 
   // Filter
   const [searchQuery, setSearchQuery] = useState("");
@@ -36,7 +44,7 @@ export function useSebaranRusun() {
 
   // Peta (lazy-mount, aktif hanya saat data siap)
   const mapLazy = useLazyMount();
-  const enableMap = mapLazy.isMounted && !isLoading && !isError;
+  const enableMap = mapLazy.isMounted && !query.isLoading && !query.isError;
 
   // Turunan: daftar terfilter (cascading + pencarian, tanpa year filter)
   const filteredRusun = useMemo(() => {
@@ -93,9 +101,9 @@ export function useSebaranRusun() {
 
   return {
     // State
-    isLoading,
-    isError,
-    error,
+    isLoading: query.isLoading,
+    isError: query.isError,
+    error: query.error,
     filters: {
       searchQuery,
       kabupatenFilter: cascading.filterState.kabupatenFilter,

@@ -10,6 +10,7 @@ import {
 } from "@/components/admin";
 import { Button } from "@/components/ui/button";
 import { useAdminSosialisasiPage } from "@/hooks/admin/use-admin-sosialisasi-page";
+import { buildUploadFieldHelperText } from "@/lib/admin/form";
 
 import { type SosialisasiAdminView } from "./config";
 
@@ -104,10 +105,9 @@ export function AdminSosialisasiManager({
 
       {view === "berita" && (
         <div className="rounded-2xl border border-border bg-card p-4 text-sm text-muted-foreground">
-          Kegiatan yang sudah selesai tanpa dokumentasi akan berstatus pending
-          dokumentasi. Unggah maksimal 3 gambar agar kegiatan otomatis siap
-          tampil di berita sosialisasi dan kembali muncul di peta publik sebagai
-          kegiatan selesai.
+          Kegiatan yang selesai tanpa dokumentasi akan tetap berstatus pending.
+          Setelah gambar berita diunggah, kegiatan kembali tampil di berita
+          publik dan peta.
         </div>
       )}
 
@@ -146,8 +146,15 @@ export function AdminSosialisasiManager({
         }
         description={
           view === "berita"
-            ? "Unggah 1 sampai 3 gambar. Maksimal 2 MB per gambar."
-            : "Lengkapi data kegiatan dan dokumentasi seperlunya."
+            ? buildUploadFieldHelperText({
+                subject: "1 sampai 4 gambar berita",
+                mode: editingItem ? "edit" : "create",
+                requiresReuploadOnEdit: true,
+                validationLabel: "format gambar",
+                maxSizeMb: 2,
+                totalUploadMb: 4,
+              })
+            : "Lengkapi data kegiatan inti dan tambahkan dokumentasi bila diperlukan."
         }
         fields={formFields}
         initialValues={initialValues}

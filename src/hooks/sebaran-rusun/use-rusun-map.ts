@@ -6,7 +6,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import type { RusunData } from "@/hooks/sebaran-rusun/use-rusun-query";
+import type { RusunData } from "@/services/rusun.service";
 import {
   loadLeaflet,
   destroyMap,

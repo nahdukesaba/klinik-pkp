@@ -3,10 +3,10 @@
  *
  * Halaman Profil Kawasan Kumuh — peta dan data kawasan kumuh.
  * Page ini adalah Server Component agar bisa export metadata untuk SEO.
- * Komponen utama di-lazy-load melalui loader.tsx (Client Component).
+ * Komponen utama di-lazy-load melalui route client reusable.
  */
 
-import KawasanKumuhLoader from "./loader";
+import { KawasanKumuhRouteClient } from "@/components/shared/AppRouteClients";
 
 import type { Metadata } from "next";
 
@@ -17,5 +17,5 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <KawasanKumuhLoader />;
+  return <KawasanKumuhRouteClient />;
 }

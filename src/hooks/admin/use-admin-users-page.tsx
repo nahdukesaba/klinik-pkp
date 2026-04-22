@@ -165,7 +165,7 @@ export function useAdminUsersPage() {
         type: "text",
         required: true,
         placeholder: "18 digit NIP",
-        helperText: "Gunakan NIP 18 digit yang sudah terdaftar di backend.",
+        helperText: "Masukkan NIP 18 digit sesuai data akun.",
       },
       {
         name: "phone",
@@ -203,7 +203,7 @@ export function useAdminUsersPage() {
               type: "password" as const,
               required: true,
               placeholder: "Minimal 8 karakter",
-              helperText: "Password hanya diisi saat membuat user baru.",
+              helperText: "Isi password hanya saat membuat akun baru.",
             },
           ]
         : []),

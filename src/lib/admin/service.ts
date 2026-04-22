@@ -7,7 +7,6 @@ import type {
   RecentActivity,
 } from "@/types/admin";
 
-import { appendAuditEntry, listStoredAuditEntries } from "./audit-log";
 import {
   ADMIN_CACHE_TAGS,
   createCachedAdminReader,
@@ -18,6 +17,9 @@ import {
   type AdminSessionUser,
 } from "./security";
 import { listUsersPage } from "./users";
+
+const MAX_AUDIT_ENTRIES = 200;
+const auditEntries: AuditEntry[] = [];
 
 function nowIso() {
   return new Date().toISOString();
@@ -30,6 +32,24 @@ function createId(prefix: string) {
 export function normalizeDisplayName(value: string) {
   const sanitized = sanitizeInput(value).replace(/\s+/g, " ").trim();
   return sanitized || "Admin PKP";
+}
+
+function sortAuditDesc(entries: AuditEntry[]) {
+  return [...entries].sort((left, right) =>
+    right.timestamp.localeCompare(left.timestamp)
+  );
+}
+
+async function appendAuditEntry(entry: AuditEntry) {
+  auditEntries.unshift(entry);
+
+  if (auditEntries.length > MAX_AUDIT_ENTRIES) {
+    auditEntries.length = MAX_AUDIT_ENTRIES;
+  }
+}
+
+async function listStoredAuditEntries(limit = 20) {
+  return sortAuditDesc(auditEntries).slice(0, Math.max(0, limit));
 }
 
 function toRecentActivity(entry: AuditEntry): RecentActivity {

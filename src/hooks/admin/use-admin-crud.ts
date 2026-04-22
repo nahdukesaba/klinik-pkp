@@ -36,13 +36,6 @@ export interface UseAdminCrudOptions<TItem extends { id: string | number }> {
   buildPayload: (values: AdminFormValues) => unknown | FormData;
   /** Human-readable name for the item being deleted */
   getDeleteLabel: (item: TItem) => string;
-  /** Optional pre-submit validation; return error string or undefined */
-  validate?: (
-    values: AdminFormValues,
-    editingItem: TItem | null
-  ) => { field: string; message: string } | undefined;
-  /** Whether payload is FormData (skip content-type header) */
-  isFormData?: boolean;
 }
 
 export function useAdminCrud<TItem extends { id: string | number }>(
@@ -93,23 +86,10 @@ export function useAdminCrud<TItem extends { id: string | number }>(
       setFormErrors({});
 
       try {
-        if (options.validate) {
-          const validationError = options.validate(values, editingItem);
-          if (validationError) {
-            setFormErrors({ [validationError.field]: validationError.message });
-            toast({
-              title: "Upload belum valid",
-              description: validationError.message,
-              variant: "destructive",
-            });
-            return;
-          }
-        }
-
         const payload = options.buildPayload(values);
 
         const fetchOptions: RequestInit = {
-          method: editingItem ? "PUT" : "POST",
+          method: "POST",
           body:
             payload instanceof FormData
               ? payload

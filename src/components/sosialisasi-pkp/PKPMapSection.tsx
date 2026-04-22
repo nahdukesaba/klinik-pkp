@@ -9,6 +9,7 @@ import { YearFilterSelect } from "@/components/shared/YearFilterSelect";
 
 interface PKPMapSectionProps {
   mapRef: RefObject<HTMLDivElement | null>;
+  mapReady: boolean;
   filteredLocations: Array<{
     id: number;
     name: string;
@@ -42,6 +43,7 @@ interface PKPMapSectionProps {
 
 export function PKPMapSection({
   mapRef,
+  mapReady,
   filteredLocations,
   mapYear,
   setMapYear,
@@ -65,7 +67,7 @@ export function PKPMapSection({
 }: PKPMapSectionProps) {
   // Map is now initialized automatically in the hook
   const currentYear = new Date().getFullYear().toString();
-  const DEFAULT_STATUS = "mendatang";
+  const DEFAULT_STATUS = "all";
 
   // Check if any filter is active (exclude defaults)
   const activeFilterCount = useMemo(() => {
@@ -184,6 +186,23 @@ export function PKPMapSection({
             className="w-full h-full"
             style={{ minHeight: "400px" }}
           />
+
+          {!mapReady && (
+            <div className="absolute inset-0 flex items-center justify-center bg-background/70 backdrop-blur-[1px]">
+              <div className="flex items-center gap-3 rounded-full border border-border bg-card px-4 py-2 text-sm text-muted-foreground shadow-lg">
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                <span>Memuat peta...</span>
+              </div>
+            </div>
+          )}
+
+          {mapReady && filteredLocations.length === 0 && (
+            <div className="pointer-events-none absolute inset-x-4 bottom-4 flex justify-center">
+              <div className="rounded-full border border-border bg-card/95 px-4 py-2 text-sm text-muted-foreground shadow-lg backdrop-blur-sm">
+                Tidak ada lokasi yang cocok dengan filter saat ini.
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Footer with click instruction - More Compact */}

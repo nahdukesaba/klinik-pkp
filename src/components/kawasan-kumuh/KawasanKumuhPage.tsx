@@ -96,6 +96,7 @@ export default function KawasanKumuhPage() {
         <div className="flex-1 flex overflow-hidden relative mx-2 mb-2 rounded-xl border border-border shadow-sm bg-card/50">
           {sidebarOpen && (
             <div
+              data-ui-route-overlay="kawasan-kumuh-sidebar"
               className="lg:hidden fixed inset-0 bg-black/50 z-30"
               onClick={() => setSidebarOpen(false)}
             />

@@ -15,7 +15,6 @@ import {
 } from "lucide-react";
 
 import { Footer, Navbar } from "@/components/layout";
-import { PageBackground } from "@/components/shared";
 import {
   aboutInfo,
   layananKlinik,
@@ -46,7 +45,11 @@ export default function TentangPage() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <PageBackground />
+      <div className="fixed inset-0 -z-10 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-secondary/60 via-background to-accent-2/20 dark:from-background dark:via-primary/5 dark:to-accent/5" />
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-primary/5 blur-3xl" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full bg-accent-2/10 blur-3xl" />
+      </div>
 
       <main ref={ref} className="pt-24 pb-16">
         <div className="container mx-auto px-4">

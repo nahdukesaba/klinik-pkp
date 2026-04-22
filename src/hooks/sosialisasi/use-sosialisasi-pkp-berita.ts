@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import { usePagination } from "@/hooks/use-pagination";
 import { CURRENT_YEAR } from "@/lib/constants";
+import { getSortedUniqueYears } from "@/lib/date";
 import { sanitizeInput } from "@/lib/security";
 import { type BeritaSosialisasi } from "@/services/sosialisasi.service";
 
@@ -26,10 +27,9 @@ export function useSosialisasiPKPBerita(
   const [beritaSearch, setBeritaSearch] = useState<string>("");
 
   const beritaYears = useMemo(() => {
-    const years = [
-      ...new Set(rawBerita.map((b) => Number.parseInt(b.rawDate.slice(0, 4), 10))),
-    ].filter(Number.isFinite);
-    return years.sort((a, b) => b - a);
+    return getSortedUniqueYears(rawBerita.map((berita) => berita.rawDate.slice(0, 4)), {
+      includeCurrentYear: true,
+    });
   }, [rawBerita]);
 
   const filteredBerita = useMemo(() => {

@@ -5,10 +5,10 @@ import { Clock, ExternalLink, Mail, MapPin, Phone } from "lucide-react";
 
 import { klinikData } from "@/content/lokasi-klinik";
 import { INFO_LINKS, QUICK_LINKS } from "@/lib/constants";
+import { buildTelHref } from "@/lib/contact";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
-  const phoneHref = klinikData.phone.replace(/[^\d+]/g, "");
   const weekdayHours = klinikData.operationalHours
     .filter((item) => !item.hours.toLowerCase().includes("tutup"))
     .map((item) => `${item.day} ${item.hours}`)
@@ -101,7 +101,7 @@ export default function Footer() {
               </li>
               <li>
                 <a
-                  href={`tel:${phoneHref}`}
+                  href={buildTelHref(klinikData.phone)}
                   className="flex items-start gap-3 break-words text-sm text-muted-foreground transition-colors hover:text-primary"
                 >
                   <Phone className="mt-0.5 h-4 w-4 flex-shrink-0" />

@@ -2,65 +2,96 @@
 
 /**
  * Hook: useKawasanKumuh
- * Mengelola data dan filter. Tahun dikirim ke API (bukan client-side filter).
- * Default: tahun sekarang. Daftar tahun dari useKumuhYearsQuery.
+ * Mengelola data dan filter. Tahun dikirim ke API, dan daftar tahunnya
+ * diambil dari seluruh data backend agar opsi filter selalu akurat.
  */
 
-import { useMemo, useState, useCallback } from "react";
+import { useCallback, useMemo, useState } from "react";
 
-import { useKawasanKumuhQuery, useKumuhYearsQuery } from "@/hooks/kawasan-kumuh/use-kawasan-kumuh-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
+
 import { useCascadingFilter } from "@/hooks/use-cascading-filter";
 import { useDebounce } from "@/hooks/use-debounce";
 import { usePagination } from "@/hooks/use-pagination";
-import { CURRENT_YEAR } from "@/lib/constants";
+import { CURRENT_YEAR, CURRENT_YEAR_NUM, QUERY_CONFIG } from "@/lib/constants";
+import { getSortedUniqueYears } from "@/lib/date";
 import { sanitizeInput } from "@/lib/security";
+import {
+  fetchKumuhAvailableYears,
+  fetchKumuhList,
+} from "@/services/kawasan-kumuh.service";
 
 const SIDEBAR_PER_PAGE = 12;
-const CURRENT_YEAR_NUM = parseInt(CURRENT_YEAR, 10);
 
 export function useKawasanKumuh() {
-  // Year state — dikirim ke query hook, default tahun sekarang
   const [yearFilter, setYearFilter] = useState<string>(CURRENT_YEAR);
-  const yearParam = yearFilter === "all" ? undefined : (parseInt(yearFilter, 10) || CURRENT_YEAR_NUM);
 
-  // Data per-tahun dari API (undefined = semua tahun)
-  const { data, isLoading, isError, error, refetch } = useKawasanKumuhQuery(yearParam);
+  const yearsQuery = useQuery({
+    queryKey: ["kawasan-kumuh-years"],
+    queryFn: fetchKumuhAvailableYears,
+    staleTime: 30 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    retry: 2,
+    refetchOnWindowFocus: false,
+  });
+  const yearParam =
+    yearFilter === "all"
+      ? undefined
+      : parseInt(yearFilter, 10) || CURRENT_YEAR_NUM;
 
-  // Daftar tahun (dari semua data, cache lama)
-  const availableYears = useKumuhYearsQuery();
+  const query = useQuery({
+    queryKey: ["kawasan-kumuh", yearParam ?? "all"],
+    queryFn: () => fetchKumuhList(yearParam),
+    placeholderData: keepPreviousData,
+    ...QUERY_CONFIG,
+  });
+  const data = useMemo(() => query.data ?? [], [query.data]);
+  const availableYears = useMemo(() => {
+    const sourceYears = yearsQuery.data?.length
+      ? yearsQuery.data
+      : data.map((item) => item.yearInspected);
+
+    return getSortedUniqueYears([CURRENT_YEAR_NUM, ...sourceYears]);
+  }, [data, yearsQuery.data]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const debouncedSearch = useDebounce(searchQuery, 300);
 
-  // Cascading location filter
   const cascading = useCascadingFilter(data);
 
-  // Filter: year (client-side safety net) + cascading + search + status
   const filteredKawasan = useMemo(() => {
     const q = sanitizeInput(debouncedSearch).toLowerCase();
 
     return cascading.filteredItems.filter((kawasan) => {
-      // Client-side year filter — safety net jika API tidak filter
       const matchesYear =
         yearFilter === "all" || kawasan.yearInspected === yearParam;
-
       const matchesSearch =
         !debouncedSearch ||
         kawasan.name.toLowerCase().includes(q) ||
         kawasan.kelurahan.toLowerCase().includes(q) ||
         kawasan.kecamatan.toLowerCase().includes(q) ||
         kawasan.kabupaten.toLowerCase().includes(q);
-
-      const matchesStatus = statusFilter === "all" || kawasan.status === statusFilter;
+      const matchesStatus =
+        statusFilter === "all" || kawasan.status === statusFilter;
 
       return matchesYear && matchesSearch && matchesStatus;
     });
-  }, [yearFilter, yearParam, debouncedSearch, statusFilter, cascading.filteredItems]);
+  }, [
+    cascading.filteredItems,
+    debouncedSearch,
+    statusFilter,
+    yearFilter,
+    yearParam,
+  ]);
 
-  const pagination = usePagination(filteredKawasan, { perPage: SIDEBAR_PER_PAGE });
+  const pagination = usePagination(filteredKawasan, {
+    perPage: SIDEBAR_PER_PAGE,
+  });
 
-  const resetYear = useCallback(() => setYearFilter(CURRENT_YEAR), []);
+  const resetYear = useCallback(() => {
+    setYearFilter(CURRENT_YEAR);
+  }, []);
 
   return {
     filteredKawasan,
@@ -81,10 +112,10 @@ export function useKawasanKumuh() {
     setKecamatanFilter: cascading.filterActions.setKecamatanFilter,
     setKelurahanFilter: cascading.filterActions.setKelurahanFilter,
     setStatusFilter,
-    isLoading,
-    isError,
-    error,
-    refetch,
+    isLoading: query.isLoading,
+    isError: query.isError,
+    error: query.error,
+    refetch: query.refetch,
     pagination,
   };
 }

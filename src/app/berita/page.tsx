@@ -1,7 +1,6 @@
 /**
- * Route: /berita
- *
- * Redirect ke halaman sosialisasi.
+ * Route kompatibilitas untuk `/berita`.
+ * URL kanonis berita berada di `/sosialisasi-klinik-pkp`.
  */
 
 import { redirect } from "next/navigation";

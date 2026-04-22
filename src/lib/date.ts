@@ -91,6 +91,24 @@ export function getMonthKey(rawDate: string) {
   return dateKey ? dateKey.slice(0, 7) : "";
 }
 
+export function getSortedUniqueYears(
+  years: Array<number | string>,
+  options: { includeCurrentYear?: boolean } = {}
+) {
+  const normalizedYears = years
+    .map((year) => {
+      const value = typeof year === "number" ? year : Number.parseInt(year, 10);
+      return Number.isFinite(value) ? value : null;
+    })
+    .filter((year): year is number => year !== null);
+
+  if (options.includeCurrentYear) {
+    normalizedYears.unshift(new Date().getFullYear());
+  }
+
+  return [...new Set(normalizedYears)].sort((left, right) => right - left);
+}
+
 export function getTimeKey(rawDate: string) {
   const parts = getPartMap(rawDate);
   if (!parts?.hour || !parts.minute) {

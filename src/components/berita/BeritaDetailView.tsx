@@ -17,9 +17,9 @@ import {
   Users,
 } from "lucide-react";
 
-import { RelatedNewsCard } from "@/components/berita/RelatedNewsCard";
 import { Footer, Navbar } from "@/components/layout";
 import { ImageZoomDialog } from "@/components/shared";
+import { formatDateId } from "@/lib/date";
 
 interface BeritaDetailItem {
   id: number;
@@ -54,6 +54,54 @@ interface BeritaDetailViewProps {
 }
 
 const cursorZoomIn = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3Cline x1='11' y1='8' x2='11' y2='14'/%3E%3Cline x1='8' y1='11' x2='14' y2='11'/%3E%3C/svg%3E") 16 16, zoom-in`;
+
+function RelatedNewsCard({
+  id,
+  title,
+  image,
+  rawDate,
+  kabupaten,
+}: {
+  id: number;
+  title: string;
+  image: string;
+  rawDate: string;
+  kabupaten: string;
+}) {
+  return (
+    <Link
+      href={`/sosialisasi-klinik-pkp/berita/${id}`}
+      className="group flex gap-2 md:gap-3 bg-background border border-border rounded-xl overflow-hidden hover:border-primary/40 hover:shadow-md transition-all duration-300 p-2 md:p-3"
+    >
+      <div className="relative w-24 h-24 md:w-28 md:h-28 flex-shrink-0 rounded-md overflow-hidden bg-muted">
+        <Image
+          src={image}
+          alt={title}
+          fill
+          className="object-cover group-hover:scale-105 transition-transform duration-300"
+          sizes="112px"
+        />
+      </div>
+
+      <div className="flex-1 min-w-0 flex flex-col justify-center space-y-1.5 md:space-y-2">
+        <h4 className="text-sm md:text-base font-semibold text-foreground line-clamp-2 group-hover:text-primary transition-colors duration-200">
+          {title}
+        </h4>
+
+        <div className="space-y-1">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Calendar className="w-3 h-3 md:w-3.5 md:h-3.5 text-primary flex-shrink-0" />
+            <span className="line-clamp-1">{formatDateId(rawDate)}</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <MapPin className="w-3 h-3 md:w-3.5 md:h-3.5 text-primary flex-shrink-0" />
+            <span className="line-clamp-1">{kabupaten}</span>
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
+}
 
 export default function BeritaDetailView({
   berita,

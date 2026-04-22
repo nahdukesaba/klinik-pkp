@@ -11,7 +11,7 @@ import {
   extractApiCollectionItems,
   extractApiPaginationMeta,
   type ApiResponse,
-} from "@/types/api";
+} from "@/lib/api-client";
 import { BackendApiError, fetchBackendJson } from "./backend-api";
 import { normalizeDisplayName } from "./service";
 

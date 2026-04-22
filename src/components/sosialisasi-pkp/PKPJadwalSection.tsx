@@ -69,7 +69,7 @@ function JadwalCard({
   return (
     <div
       onClick={() => onCardClick?.(jadwal.coordinates)}
-      className="bg-card dark:bg-white rounded-xl border border-border p-4 shadow-lg hover:shadow-xl hover:border-primary/50 transition-all cursor-pointer group overflow-hidden relative"
+      className="relative cursor-pointer overflow-hidden rounded-xl border border-border bg-card/95 p-4 shadow-lg transition-all hover:border-primary/50 hover:shadow-xl group"
       style={{ transitionDelay: `${Math.min(index, 5) * 0.05}s` }}
     >
       <div className="flex gap-3">
@@ -90,21 +90,21 @@ function JadwalCard({
         <div className="flex-1 min-w-0">
           {/* Tags */}
           <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
-            <span className="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-200">
+            <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-[10px] font-semibold text-yellow-800">
               Sosialisasi
             </span>
-            <span className="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-200">
+            <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-800">
               {jadwal.kabupaten}
             </span>
           </div>
 
           {/* Title */}
-          <h3 className="font-semibold text-foreground dark:text-gray-900 text-sm sm:text-base mb-1.5 line-clamp-2">
+          <h3 className="mb-1.5 line-clamp-2 text-sm font-semibold text-foreground sm:text-base">
             {jadwal.name}
           </h3>
 
           {/* Time & Location */}
-          <div className="flex flex-col gap-1.5 text-xs text-muted-foreground dark:text-gray-600">
+          <div className="flex flex-col gap-1.5 text-xs text-muted-foreground">
             <div className="flex items-center gap-1.5">
               <Clock className="w-3.5 h-3.5 text-primary flex-shrink-0" />
               <span>{jadwal.time} WIB</span>

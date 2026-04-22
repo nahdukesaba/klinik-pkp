@@ -15,26 +15,22 @@
 import {
   fetchApiList,
   fetchApiListWithMeta,
+  extractDistrictName,
+  extractRegionName,
+  extractVillageName,
   type ApiPaginationMeta,
+  type CoordinateApi,
+  type DistrictApi,
+  type RegionApi,
+  type VillageApi,
 } from "@/lib/api-client";
+import { buildImageUrl } from "@/lib/constants";
 import {
   formatDateId,
   formatTimeRangeId,
   getDateKey,
   getMonthKey,
 } from "@/lib/date";
-import { buildImageUrl } from "@/services/rusun.service";
-import type {
-  CoordinateApi,
-  DistrictApi,
-  RegionApi,
-  VillageApi,
-} from "@/types/api";
-import {
-  extractDistrictName,
-  extractRegionName,
-  extractVillageName,
-} from "@/types/api";
 
 // --- Tipe API ---
 
@@ -306,16 +302,17 @@ function buildSosialisasiResult(items: SosialisasiApiItem[]): SosialisasiResult 
 export async function fetchSosialisasiList(
   params: SosialisasiListParams = {}
 ): Promise<SosialisasiResult> {
+  const limit = params.perPage ?? 1000;
   const items = await fetchApiList<SosialisasiApiItem>("/sosialisasi", {
     query: {
       page: params.page,
-      limit: params.perPage,
+      limit,
       region_id: params.regionId,
       district_id: params.districtId,
       village_id: params.villageId,
     },
     errorMessage: "Gagal mengambil data sosialisasi dari server",
-    collectAllPages: false,
+    collectAllPages: true,
   });
 
   return buildSosialisasiResult(items);

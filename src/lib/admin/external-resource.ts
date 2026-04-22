@@ -26,6 +26,8 @@ interface ExternalAdminProxyResult {
   payload: Record<string, unknown>;
 }
 
+export type ExternalAdminRequestBody = FormData | Record<string, unknown> | null;
+
 const EXTERNAL_RESOURCE_CONFIG: Record<
   ExternalAdminResource,
   ExternalResourceConfig
@@ -56,8 +58,15 @@ export function resolveExternalAdminResource(resource: string) {
   return EXTERNAL_RESOURCE_CONFIG[resource as ExternalAdminResource] ?? null;
 }
 
-export async function readExternalJsonBody(request: Request) {
-  return request.json().catch(() => null);
+export async function readExternalAdminRequestBody(
+  request: Request,
+  bodyMode: ResourceMode
+) {
+  return (
+    bodyMode === "form-data"
+      ? request.formData()
+      : request.json()
+  ).catch(() => null) as Promise<ExternalAdminRequestBody>;
 }
 
 function buildExternalResourcePath(
@@ -79,14 +88,14 @@ function createProxyTransportError(status: number, message: string) {
 async function parseProxyResponsePayload(response: Response) {
   const text = await response.text();
 
-  if (!text) {
-    if (response.status === 413) {
-      return {
-        error:
-          "Ukuran upload terlalu besar. Kurangi jumlah file atau kompres file lalu coba lagi.",
-      };
-    }
+  if (response.status === 413) {
+    return {
+      error:
+        "Ukuran upload melebihi batas aman backend. Kurangi ukuran file sedikit lalu coba lagi.",
+    };
+  }
 
+  if (!text) {
     return response.ok
       ? { success: true }
       : { error: "Permintaan tidak berhasil." };
@@ -95,6 +104,15 @@ async function parseProxyResponsePayload(response: Response) {
   try {
     return JSON.parse(text) as Record<string, unknown>;
   } catch {
+    if (text.trim().startsWith("<")) {
+      return {
+        error:
+          response.status >= 500
+            ? "Layanan backend sedang mengalami gangguan."
+            : "Permintaan ke backend tidak berhasil diproses.",
+      };
+    }
+
     return { message: text };
   }
 }
@@ -102,8 +120,7 @@ async function parseProxyResponsePayload(response: Response) {
 export async function proxyExternalAdminResource(params: {
   resource: ExternalAdminResource;
   method: "POST" | "PUT" | "DELETE";
-  body?: FormData | ReadableStream<Uint8Array> | Record<string, unknown> | null;
-  contentType?: string;
+  body?: ExternalAdminRequestBody;
   id?: string;
   accessToken?: string;
 }): Promise<ExternalAdminProxyResult> {
@@ -122,17 +139,9 @@ export async function proxyExternalAdminResource(params: {
   }
 
   let body: BodyInit | undefined;
-  const isReadableStreamBody =
-    typeof ReadableStream !== "undefined" &&
-    params.body instanceof ReadableStream;
 
   if (params.body instanceof FormData) {
     body = params.body;
-  } else if (isReadableStreamBody) {
-    body = params.body as ReadableStream<Uint8Array>;
-    if (params.contentType) {
-      headers.set("Content-Type", params.contentType);
-    }
   } else if (params.body != null && params.method !== "DELETE") {
     headers.set("Content-Type", "application/json");
     body = JSON.stringify(params.body);
@@ -147,8 +156,6 @@ export async function proxyExternalAdminResource(params: {
       body,
       signal: AbortSignal.timeout(20_000),
       cache: "no-store",
-      // @ts-expect-error duplex diperlukan untuk streaming request body di Node.js fetch
-      duplex: isReadableStreamBody ? "half" : undefined,
     });
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") {

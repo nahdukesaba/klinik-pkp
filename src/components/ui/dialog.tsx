@@ -5,7 +5,47 @@ import { X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-const Dialog = DialogPrimitive.Root;
+function clearDialogBodyLocks() {
+  if (typeof document === "undefined") {
+    return;
+  }
+
+  document.body.style.removeProperty("pointer-events");
+  document.body.style.removeProperty("overflow");
+  document.documentElement.style.removeProperty("overflow");
+  document.body.removeAttribute("data-scroll-locked");
+}
+
+type DialogProps = React.ComponentProps<typeof DialogPrimitive.Root>;
+
+function Dialog({ modal = true, onOpenChange, ...props }: DialogProps) {
+  const handleOpenChange = React.useCallback(
+    (open: boolean) => {
+      if (!open) {
+        window.requestAnimationFrame(clearDialogBodyLocks);
+        window.setTimeout(clearDialogBodyLocks, 0);
+      }
+
+      onOpenChange?.(open);
+    },
+    [onOpenChange]
+  );
+
+  React.useEffect(() => {
+    return () => {
+      clearDialogBodyLocks();
+    };
+  }, []);
+
+  return (
+    <DialogPrimitive.Root
+      {...props}
+      modal={modal}
+      onOpenChange={handleOpenChange}
+    />
+  );
+}
+
 const DialogTrigger = DialogPrimitive.Trigger;
 const DialogPortal = DialogPrimitive.Portal;
 const DialogClose = DialogPrimitive.Close;
@@ -16,8 +56,9 @@ const DialogOverlay = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Overlay
     ref={ref}
+    data-ui-dialog-overlay="true"
     className={cn(
-      "fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      "fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:pointer-events-none data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
       className
     )}
     {...props}
@@ -33,6 +74,7 @@ const DialogContent = React.forwardRef<
     <DialogOverlay />
     <DialogPrimitive.Content
       ref={ref}
+      data-ui-dialog-content="true"
       className={cn(
         "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg",
         className

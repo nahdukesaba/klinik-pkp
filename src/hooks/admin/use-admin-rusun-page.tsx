@@ -7,10 +7,10 @@ import { useQuery } from "@tanstack/react-query";
 import { type AdminFormValues, type FormFieldDef } from "@/components/admin";
 import { useAdminLocationOptions } from "@/hooks/use-admin-location-options";
 import {
+  buildUploadFieldHelperText,
   getFileFormValue,
   getNumberFormValue,
   getStringFormValue,
-  validateFileField,
 } from "@/lib/admin/form";
 import { QUERY_CONFIG } from "@/lib/constants";
 import { fetchRusunPage, type RusunData } from "@/services/rusun.service";
@@ -72,17 +72,6 @@ export function useAdminRusunPage() {
     label: "rusun",
     buildPayload: buildRusunFormData,
     getDeleteLabel: (item) => item.name,
-    validate: (values, editingItem) => {
-      const error = validateFileField(values, {
-        field: "images",
-        label: "Gambar rusun",
-        maxFiles: 1,
-        maxSizeMb: 2,
-        required: !editingItem,
-        acceptImagesOnly: true,
-      });
-      return error ? { field: "images", message: error } : undefined;
-    },
   });
 
   const { regionOptions, districtOptions, villageOptions } =
@@ -188,10 +177,14 @@ export function useAdminRusunPage() {
         type: "file",
         accept: "image/*",
         multiple: false,
-        required: !crud.editingItem,
-        helperText: crud.editingItem
-          ? "Opsional. Unggah 1 gambar baru jika ingin mengganti gambar lama. Maksimal 2 MB."
-          : "Unggah 1 gambar rusun. Maksimal 2 MB.",
+        required: true,
+        helperText: buildUploadFieldHelperText({
+          subject: "1 gambar rusun",
+          mode: crud.editingItem ? "edit" : "create",
+          requiresReuploadOnEdit: true,
+          validationLabel: "format gambar",
+          maxSizeMb: 2,
+        }),
       },
     ],
     [crud.editingItem, districtOptions, regionOptions, villageOptions]

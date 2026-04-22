@@ -101,22 +101,14 @@ Sumber acuan saat ini adalah `.env.example`.
 | Variable | Wajib | Fungsi |
 | --- | --- | --- |
 | `JWT_SECRET` | Ya | Secret untuk sign dan verify JWT cookie admin. Minimal 32 karakter. |
-| `ADMIN_NAME` | Tidak | Nama admin fallback lokal jika auth backend belum tersedia. |
-| `ADMIN_EMAIL` | Tidak | Email admin fallback lokal. |
-| `ADMIN_NIP` | Tidak | NIP admin fallback lokal. Harus 18 digit. |
-| `ADMIN_PASSWORD` | Tidak | Password admin fallback lokal. |
-| `NEXT_PUBLIC_APP_NAME` | Tidak | Nama aplikasi publik. |
-| `NEXT_PUBLIC_APP_URL` | Ya | Base URL frontend, biasanya `http://localhost:3000`. |
-| `API_URL` | Ya | Base URL backend API server-side, contoh `http://103.197.190.87/api/v1`. |
-| `AUTH_API_URL` | Tidak | Override penuh URL login backend jika suatu hari endpoint auth pindah. |
-| `AUTH_API_PATH` | Tidak | Path auth backend relatif terhadap `API_URL`, default `/authentications`. |
+| `API_URL` | Ya | Base URL backend API server-side. Backend aktif yang saat ini dipakai proyek ini adalah `http://103.197.190.87/api/v1`. |
 
 ### Catatan penting env
 
-- Browser tidak pernah mengakses `API_URL` langsung. Semua request publik lewat `/api/ext/*`.
+- Browser tidak pernah mengakses `API_URL` langsung. Semua request publik melewati `/api/ext/*`.
 - `JWT_SECRET` dipakai untuk cookie session admin.
-- Login admin mendukung fallback lokal melalui env bila backend auth belum siap.
 - Jangan commit `.env.local`.
+- Jika upload `bank-desain`, `rusun`, atau `sosialisasi` mendapat `413`, masalahnya ada di batas reverse proxy/backend aktif, bukan di route frontend.
 
 ## 5. Gambaran Arsitektur
 
@@ -148,7 +140,7 @@ Sumber acuan saat ini adalah `.env.example`.
 | `src/types/` | Shared types lintas fitur |
 | `src/proxy.ts` | Proxy/middleware utama untuk proteksi route, CSP, security headers, rate limiting, dan allowlist `/api/ext/*` |
 | `next.config.mjs` | Konfigurasi Next.js, remote images, header tambahan, optimize package imports |
-| `docs/` | Dokumen pendukung lama. README ini sekarang menjadi sumber utama onboarding. |
+| `docs/` | Dokumen pendukung teknis. README ini adalah entry point onboarding utama, sedangkan file di `docs/` dipakai untuk detail tertentu. |
 
 ### Struktur `src/`
 

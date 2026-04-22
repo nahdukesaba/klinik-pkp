@@ -86,7 +86,7 @@ function BeritaCard({
 
   return (
     <div
-      className="bg-card dark:bg-white rounded-xl sm:rounded-2xl border border-border overflow-hidden shadow-lg hover:shadow-xl hover:border-primary/30 transition-all group"
+      className="group overflow-hidden rounded-xl border border-border bg-card/95 shadow-lg transition-all hover:border-primary/30 hover:shadow-xl sm:rounded-2xl"
       style={{ transitionDelay: `${index * 0.1}s` }}
     >
       {/* Image + Location Badge */}
@@ -136,13 +136,13 @@ function BeritaCard({
         {/* Title */}
         <Link
           href={`/sosialisasi-klinik-pkp/berita/${berita.id}`}
-          className="font-semibold text-foreground dark:text-gray-900 text-sm sm:text-base mb-2 line-clamp-2 group-hover:text-primary transition-colors block"
+          className="mb-2 block line-clamp-2 text-sm font-semibold text-foreground transition-colors group-hover:text-primary sm:text-base"
         >
           {berita.title}
         </Link>
 
         {/* Description */}
-        <p className="text-muted-foreground dark:text-gray-600 text-xs sm:text-sm line-clamp-2 mb-3 sm:mb-4">
+        <p className="mb-3 line-clamp-2 text-xs text-muted-foreground sm:mb-4 sm:text-sm">
           {berita.description}
         </p>
 

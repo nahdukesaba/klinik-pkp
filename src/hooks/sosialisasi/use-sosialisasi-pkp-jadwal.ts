@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import { CURRENT_YEAR } from "@/lib/constants";
+import { getSortedUniqueYears } from "@/lib/date";
 import { sanitizeInput } from "@/lib/security";
 import { type SosialisasiLocation } from "@/services/sosialisasi.service";
 
@@ -19,7 +20,6 @@ export function useSosialisasiPKPJadwal(
   upcomingLocations: SosialisasiLocation[],
   kabupatenOptions: string[]
 ) {
-  // Default: tahun sekarang
   const [jadwalYear, setJadwalYear] = useState<string>(CURRENT_YEAR);
   const [jadwalMonth, setJadwalMonth] = useState<string>("all");
   const [jadwalStartDate, setJadwalStartDate] = useState<string>("");
@@ -27,14 +27,13 @@ export function useSosialisasiPKPJadwal(
   const [jadwalSearch, setJadwalSearch] = useState<string>("");
   const [jadwalKabupatenFilter, setJadwalKabupatenFilter] = useState<string>("all");
 
-  // Data sudah difilter "mendatang" oleh useSosialisasiData
   const jadwalKegiatan = upcomingLocations;
 
   const jadwalYears = useMemo(() => {
-    const years = [
-      ...new Set(jadwalKegiatan.map((j) => Number.parseInt(j.date.slice(0, 4), 10))),
-    ].filter(Number.isFinite);
-    return years.sort((a, b) => b - a);
+    return getSortedUniqueYears(
+      jadwalKegiatan.map((jadwal) => jadwal.date.slice(0, 4)),
+      { includeCurrentYear: true }
+    );
   }, [jadwalKegiatan]);
 
   const filteredJadwal = useMemo(() => {

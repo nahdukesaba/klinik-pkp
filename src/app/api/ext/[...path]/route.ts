@@ -28,12 +28,20 @@ const BACKEND_TIMEOUT_MS = 30_000;
  */
 const INFRA_ERROR_STATUS = new Set([404, 502, 503, 520, 521, 522, 523, 524]);
 
-/** Header request yang tidak diteruskan ke backend */
-const STRIPPED_REQUEST_HEADERS = new Set([
-  "host",
-  "connection",
-  "content-length",
-  "transfer-encoding",
+/**
+ * Header request yang memang perlu diteruskan ke backend publik.
+ *
+ * Penting: jangan forward cookie/session header browser ke backend publik.
+ * Setelah login admin di frontend, cookie Next.js bisa menjadi cukup besar
+ * dan memicu 431 "Request Header Fields Too Large" di upstream backend.
+ */
+const ALLOWED_REQUEST_HEADERS = new Set([
+  "accept",
+  "content-type",
+  "if-none-match",
+  "if-modified-since",
+  "if-range",
+  "range",
 ]);
 
 /** Header response yang tidak diteruskan ke browser */
@@ -57,7 +65,7 @@ function forwardRequestHeaders(incoming: Headers) {
   const forwarded = new Headers();
 
   for (const [key, value] of incoming.entries()) {
-    if (!STRIPPED_REQUEST_HEADERS.has(key.toLowerCase())) {
+    if (ALLOWED_REQUEST_HEADERS.has(key.toLowerCase())) {
       forwarded.set(key, value);
     }
   }

@@ -2,6 +2,7 @@ import "server-only";
 
 import {
   BackendApiError,
+  buildBackendApiUrl,
   buildBackendProxyUrl,
   fetchBackendJson,
   getBackendApiBaseUrl,
@@ -64,7 +65,7 @@ function extractAuthFailureMessage(payload: unknown, status: number) {
     return "Email, NIP, atau password salah.";
   }
   if (status === 404) {
-    return "Layanan autentikasi tidak tersedia.";
+    return "Endpoint autentikasi backend tidak ditemukan. Periksa AUTH_API_URL atau AUTH_API_PATH.";
   }
   if (status === 429) {
     return "Terlalu banyak percobaan. Silakan coba lagi nanti.";
@@ -90,7 +91,7 @@ function extractAuthFailureDetails(payload: unknown) {
 
 /** Normalisasi status: 404 dari infrastruktur → 502 (bukan "tidak ditemukan"). */
 function normalizeAuthFailureStatus(status: number) {
-  return status === 404 ? 502 : status;
+  return status;
 }
 
 function getSetCookieHeaders(response: Response) {
@@ -140,18 +141,19 @@ function resolveBackendAuthUrls(origin: string) {
     return [];
   }
 
-  return [buildBackendProxyUrl(origin, authPath)];
+  return [
+    buildBackendApiUrl(authPath),
+    buildBackendProxyUrl(origin, authPath),
+  ];
 }
 
 /** Ambil profil pengguna yang sudah terautentikasi dari backend. */
 async function fetchAuthenticatedBackendUser(
-  accessToken: string,
-  origin: string
+  accessToken: string
 ): Promise<AuthenticatedBackendUser> {
   const payload = await fetchBackendJson<ApiResponse<Record<string, unknown>>>(
     "users/me",
     {
-      origin,
       headers: { Authorization: `Bearer ${accessToken}` },
       timeoutMs: 15_000,
     }
@@ -315,10 +317,7 @@ async function authenticateAgainstExternalBackend(
     let backendUser = payload?.data?.user ?? payload?.user ?? null;
     if (!backendUser || typeof backendUser !== "object") {
       try {
-        backendUser = await fetchAuthenticatedBackendUser(
-          backendAccessToken,
-          origin
-        );
+        backendUser = await fetchAuthenticatedBackendUser(backendAccessToken);
       } catch (error) {
         return {
           ok: false,
@@ -471,10 +470,7 @@ export async function refreshExternalBackendSession(params: {
     }
 
     try {
-      const backendUser = await fetchAuthenticatedBackendUser(
-        backendAccessToken,
-        params.origin
-      );
+      const backendUser = await fetchAuthenticatedBackendUser(backendAccessToken);
       const rotatedRefreshToken =
         extractCookieValue(getSetCookieHeaders(response), "refresh_token") ??
         params.backendRefreshToken;

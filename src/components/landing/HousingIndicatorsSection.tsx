@@ -5,7 +5,7 @@ import Image from "next/image";
 import { CheckCircle2 } from "lucide-react";
 
 import { SectionHeader } from "@/components/shared";
-import { housingIndicatorsData } from "@/content/housing-indicators";
+import { housingIndicatorsData } from "@/content/housing-indicators.content";
 import { useScrollAnimation } from "@/hooks/use-scroll-animation";
 
 export default function HousingIndicatorsSection() {

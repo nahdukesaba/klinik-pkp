@@ -13,6 +13,7 @@ import { fetchBspsPage, type BspsData } from "@/services/bsps.service";
 import { useAdminCrud } from "./use-admin-crud";
 
 const BSPS_PAGE_LIMIT = 10;
+const EMPTY_BSPS_ITEMS: BspsData[] = [];
 
 const apiStatusMap = {
   rencana: "Rencana",
@@ -149,7 +150,7 @@ export function useAdminBspsPage() {
     ? bspsToFormValues(crud.editingItem)
     : undefined;
 
-  const bspsList = bspsQuery.data?.items ?? [];
+  const bspsList = bspsQuery.data?.items ?? EMPTY_BSPS_ITEMS;
   const bspsMeta = bspsQuery.data?.meta;
   const stats = useMemo(
     () => ({

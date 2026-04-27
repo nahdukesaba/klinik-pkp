@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="220" height="64" viewBox="0 0 220 64" fill="none">
+  <rect width="220" height="64" rx="16" fill="#F5FBF6"/>
+  <path d="M20 34.5L34 22L48 34.5V46C48 47.1046 47.1046 48 46 48H22C20.8954 48 20 47.1046 20 46V34.5Z" fill="#0E8B63"/>
+  <path d="M16.5 33.5L34 18L51.5 33.5" stroke="#166B5B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M30 48V36H38V48" fill="#E8FFF4"/>
+  <circle cx="44" cy="22" r="10" fill="#F1C84B"/>
+  <text x="66" y="31" fill="#166B5B" font-family="Poppins, Segoe UI, sans-serif" font-size="17" font-weight="700" letter-spacing="0.02em">SIKUMBANG</text>
+  <text x="66" y="47" fill="#607A72" font-family="Poppins, Segoe UI, sans-serif" font-size="12.5" font-weight="600">Portal rumah subsidi</text>
+</svg>

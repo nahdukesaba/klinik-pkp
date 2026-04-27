@@ -16,8 +16,7 @@ import {
   Palette,
 } from "lucide-react";
 
-import { klinikData } from "@/content/lokasi-klinik";
-import { buildWhatsAppUrl } from "@/lib/contact";
+import { KONSULTASI_HREF } from "@/lib/constants";
 
 import type { LucideIcon } from "lucide-react";
 
@@ -27,45 +26,40 @@ interface FeatureCardProps {
   description: string;
   delay: string;
   href: string;
-  external?: boolean;
 }
 
 const heroFeatureCards: FeatureCardProps[] = [
   {
     icon: Palette,
     title: "Bank Desain",
-    description: "Akses referensi desain hunian untuk kebutuhan pembangunan.",
+    description:
+      "Akses referensi desain hunian untuk kebutuhan perencanaan dan pembangunan.",
     delay: "0s",
     href: "/bank-desain",
   },
   {
     icon: BookOpenText,
     title: "Sosialisasi",
-    description: "Lihat kegiatan, materi, dan agenda sosialisasi Klinik PKP.",
+    description:
+      "Lihat kegiatan, materi, dan agenda sosialisasi bidang perumahan dan permukiman.",
     delay: "0.1s",
     href: "/sosialisasi-klinik-pkp",
   },
   {
     icon: MessageCircleQuestionMark,
     title: "Konsultasi",
-    description: "Mulai konsultasi langsung dengan tim Klinik PKP melalui WhatsApp.",
+    description:
+      "Pilih alur konsultasi online atau rencanakan kunjungan langsung sesuai kebutuhan Anda.",
     delay: "0.2s",
-    href: buildWhatsAppUrl(
-      klinikData.phone,
-      "Halo Klinik PKP, saya ingin berkonsultasi terkait layanan perumahan dan kawasan permukiman."
-    ),
-    external: true,
+    href: KONSULTASI_HREF,
   },
   {
     icon: BadgeAlert,
     title: "Aduan",
-    description: "Sampaikan aduan atau laporan Anda ke kanal WhatsApp resmi.",
+    description:
+      "Pilih kanal pengaduan resmi yang sesuai dengan jenis laporan dan tindak lanjut yang dibutuhkan.",
     delay: "0.3s",
-    href: buildWhatsAppUrl(
-      klinikData.phone,
-      "Halo Klinik PKP, saya ingin menyampaikan aduan terkait layanan perumahan dan kawasan permukiman."
-    ),
-    external: true,
+    href: "/informasi/kanal-pengaduan",
   },
 ];
 
@@ -75,7 +69,6 @@ function FeatureCard({
   description,
   delay,
   href,
-  external = false,
 }: FeatureCardProps) {
   const cardClassName =
     "group block h-full cursor-pointer rounded-2xl border border-border bg-card/80 p-4 shadow-lg backdrop-blur-sm transition-all duration-300 animate-slide-up hover:border-primary/30 hover:shadow-xl sm:p-6";
@@ -95,20 +88,6 @@ function FeatureCard({
       </div>
     </>
   );
-
-  if (external) {
-    return (
-      <a
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={cardClassName}
-        style={{ animationDelay: delay }}
-      >
-        {cardContent}
-      </a>
-    );
-  }
 
   return (
     <Link href={href} className={cardClassName} style={{ animationDelay: delay }}>
@@ -156,7 +135,10 @@ export default function HeroSection() {
               className="max-w-2xl text-base text-muted-foreground animate-slide-up sm:text-lg"
               style={{ animationDelay: "0.1s" }}
             >
-              Klinik PKP merupakan layanan informasi, konsultasi, serta pendampingan dan bantuan teknis yang diselenggarakan oleh Balai Pelaksana Penyediaan Perumahan dan Kawasan Permukiman (Balai P3KP).
+              Klinik PKP merupakan layanan informasi, konsultasi, serta
+              pendampingan teknis yang diselenggarakan oleh BP3KP Sumatera II
+              untuk membantu masyarakat memahami layanan perumahan dan kawasan
+              permukiman secara lebih mudah.
             </p>
 
             <div

@@ -6,14 +6,14 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import type { RusunData } from "@/services/rusun.service";
 import {
-  loadLeaflet,
-  destroyMap,
-  cleanupMapContainer,
   bindMarkerInteraction,
   buildSafePopup,
+  cleanupMapContainer,
+  destroyMap,
+  loadLeaflet,
 } from "@/lib/map-utils";
+import type { RusunData } from "@/services/rusun.service";
 
 import type * as L from "leaflet";
 

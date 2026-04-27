@@ -3,11 +3,12 @@ import "server-only";
 import { NextResponse } from "next/server";
 
 import { BackendApiError } from "@/lib/admin/backend-api";
+import { applySensitiveResponseHeaders } from "@/lib/server/web-security";
 
 export type HttpErrorDetails = Record<string, string | string[]>;
 
 export function createJsonResponse(payload: unknown, status = 200) {
-  return NextResponse.json(payload, { status });
+  return applySensitiveResponseHeaders(NextResponse.json(payload, { status }));
 }
 
 export function createJsonErrorResponse(

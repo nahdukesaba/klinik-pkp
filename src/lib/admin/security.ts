@@ -7,9 +7,13 @@ import { NextRequest, NextResponse } from "next/server";
 
 import {
   AUTH_COOKIE_NAME,
+  BACKEND_ACCESS_COOKIE_NAME,
+  BACKEND_REFRESH_COOKIE_NAME,
   getTokenExpiryTimestampMs,
   verifyToken,
 } from "@/lib/auth";
+import { createJsonErrorResponse } from "@/lib/server/http";
+import { hasTrustedSameOrigin } from "@/lib/server/web-security";
 import type { UserRole } from "@/types/admin";
 
 import {
@@ -46,6 +50,7 @@ function mapPayloadToSessionUser(payload: {
   nip: string;
   role: string;
   exp?: number;
+}, tokens?: {
   backendAccessToken?: string;
   backendRefreshToken?: string;
 }) {
@@ -60,8 +65,8 @@ function mapPayloadToSessionUser(payload: {
     nip: payload.nip,
     role: payload.role,
     accessTokenExpiresAt: getTokenExpiryTimestampMs(payload),
-    backendAccessToken: payload.backendAccessToken,
-    backendRefreshToken: payload.backendRefreshToken,
+    backendAccessToken: tokens?.backendAccessToken,
+    backendRefreshToken: tokens?.backendRefreshToken,
   } satisfies AdminSessionUser;
 }
 
@@ -78,7 +83,10 @@ export const getSessionUserFromCookies = cache(async function getSessionUserFrom
     return null;
   }
 
-  return mapPayloadToSessionUser(payload);
+  return mapPayloadToSessionUser(payload, {
+    backendAccessToken: cookieStore.get(BACKEND_ACCESS_COOKIE_NAME)?.value,
+    backendRefreshToken: cookieStore.get(BACKEND_REFRESH_COOKIE_NAME)?.value,
+  });
 });
 
 export async function getSessionUserFromRequest(request: NextRequest) {
@@ -93,7 +101,10 @@ export async function getSessionUserFromRequest(request: NextRequest) {
     return null;
   }
 
-  return mapPayloadToSessionUser(payload);
+  return mapPayloadToSessionUser(payload, {
+    backendAccessToken: request.cookies.get(BACKEND_ACCESS_COOKIE_NAME)?.value,
+    backendRefreshToken: request.cookies.get(BACKEND_REFRESH_COOKIE_NAME)?.value,
+  });
 }
 
 export function createCsrfToken() {
@@ -107,6 +118,7 @@ export function attachCsrfCookie(response: NextResponse, token: string) {
     sameSite: "strict",
     path: "/",
     maxAge: 10 * 60,
+    priority: "medium",
   });
 
   return response;
@@ -145,13 +157,23 @@ export async function authorizeAdminRequest(
   request: NextRequest,
   options: AuthorizeOptions = {}
 ): Promise<AuthorizedResult> {
+  if (options.requireCsrf && !hasTrustedSameOrigin(request)) {
+    return {
+      ok: false,
+      response: createJsonErrorResponse(
+        "Origin permintaan tidak diizinkan.",
+        403
+      ),
+    };
+  }
+
   const user = await getSessionUserFromRequest(request);
   if (!user) {
     return {
       ok: false,
-      response: NextResponse.json(
-        { error: "Sesi admin tidak valid atau telah berakhir." },
-        { status: 401 }
+      response: createJsonErrorResponse(
+        "Sesi admin tidak valid atau telah berakhir.",
+        401
       ),
     };
   }
@@ -159,9 +181,9 @@ export async function authorizeAdminRequest(
   if (options.roles && !options.roles.includes(user.role)) {
     return {
       ok: false,
-      response: NextResponse.json(
-        { error: "Anda tidak memiliki izin untuk melakukan aksi ini." },
-        { status: 403 }
+      response: createJsonErrorResponse(
+        "Anda tidak memiliki izin untuk melakukan aksi ini.",
+        403
       ),
     };
   }
@@ -169,9 +191,9 @@ export async function authorizeAdminRequest(
   if (options.requireCsrf && !hasValidCsrfToken(request)) {
     return {
       ok: false,
-      response: NextResponse.json(
-        { error: "Token keamanan tidak valid. Silakan muat ulang halaman." },
-        { status: 403 }
+      response: createJsonErrorResponse(
+        "Token keamanan tidak valid. Silakan muat ulang halaman.",
+        403
       ),
     };
   }

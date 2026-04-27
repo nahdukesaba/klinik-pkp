@@ -16,6 +16,7 @@ import {
 import { useAdminCrud } from "./use-admin-crud";
 
 const KUMUH_PAGE_LIMIT = 10;
+const EMPTY_KAWASAN_KUMUH_ITEMS: KawasanKumuhData[] = [];
 
 function buildKumuhPayload(values: AdminFormValues) {
   return {
@@ -162,7 +163,7 @@ export function useAdminKawasanKumuhPage() {
     ? kumuhToFormValues(crud.editingItem)
     : undefined;
 
-  const kumuhList = kumuhQuery.data?.items ?? [];
+  const kumuhList = kumuhQuery.data?.items ?? EMPTY_KAWASAN_KUMUH_ITEMS;
   const kumuhMeta = kumuhQuery.data?.meta;
   const stats = useMemo(
     () => ({

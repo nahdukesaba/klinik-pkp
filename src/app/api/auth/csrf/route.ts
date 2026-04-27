@@ -1,12 +1,9 @@
-import { NextResponse } from "next/server";
-
 import { attachCsrfCookie, createCsrfToken } from "@/lib/admin/security";
+import { createJsonResponse } from "@/lib/server/http";
 
 export async function GET() {
   const token = createCsrfToken();
-  const response = NextResponse.json({ csrfToken: token });
-
-  response.headers.set("Cache-Control", "no-store");
+  const response = createJsonResponse({ csrfToken: token });
 
   return attachCsrfCookie(response, token);
 }

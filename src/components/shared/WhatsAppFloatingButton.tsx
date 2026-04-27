@@ -2,12 +2,15 @@
 
 import { usePathname } from "next/navigation";
 
-import { klinikData } from "@/content/lokasi-klinik";
-import { buildWhatsAppUrl } from "@/lib/contact";
+import { klinikData } from "@/content/lokasi-klinik.content";
+import {
+  WHATSAPP_MESSAGE_TEMPLATES,
+  buildWhatsAppUrl,
+} from "@/lib/contact";
 
 const whatsappHref = buildWhatsAppUrl(
   klinikData.phone,
-  "Halo Klinik PKP, saya ingin menghubungi tim Klinik PKP."
+  WHATSAPP_MESSAGE_TEMPLATES.general
 );
 
 export default function WhatsAppFloatingButton() {

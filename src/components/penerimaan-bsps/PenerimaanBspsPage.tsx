@@ -74,8 +74,9 @@ export default function PenerimaanBspsPage() {
             </h1>
 
             <p className="mb-6 text-lg leading-relaxed text-muted-foreground">
-              Bantuan Stimulan Perumahan Swadaya (BSPS) untuk masyarakat
-              berpenghasilan rendah dalam memperbaiki atau membangun rumah.
+              Informasi sebaran, persyaratan, dan tahapan Bantuan Stimulan
+              Perumahan Swadaya (BSPS) bagi masyarakat yang membutuhkan
+              peningkatan kualitas hunian.
             </p>
           </div>
         </div>

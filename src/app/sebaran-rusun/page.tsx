@@ -1,7 +1,7 @@
 /**
  * Route: /sebaran-rusun
  *
- * Halaman Sebaran Rusun — menampilkan peta lokasi rumah susun.
+ * Halaman Sebaran Rusun - menampilkan peta lokasi rumah susun.
  * Page ini adalah Server Component agar bisa export metadata untuk SEO.
  * Komponen utama di-lazy-load melalui route client reusable.
  */
@@ -11,9 +11,9 @@ import { SebaranRusunRouteClient } from "@/components/shared/AppRouteClients";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Sebaran Rusun — Klinik PKP",
+  title: "Sebaran Rusun - Klinik PKP",
   description:
-    "Peta lokasi rumah susun (Rusun) di Sumatera Utara. Lihat sebaran, detail unit, dan informasi lainnya.",
+    "Peta sebaran rumah susun di Sumatera Utara beserta detail lokasi, kapasitas, dan informasi bangunan.",
 };
 
 export default function Page() {

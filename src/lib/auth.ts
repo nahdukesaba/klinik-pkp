@@ -29,6 +29,8 @@ const REFRESH_TOKEN_EXPIRY = "7d"; // 7 hari
 // Cookie names
 export const AUTH_COOKIE_NAME = "klinik-pkp-token";
 export const REFRESH_COOKIE_NAME = "klinik-pkp-refresh";
+export const BACKEND_ACCESS_COOKIE_NAME = "klinik-pkp-backend-access";
+export const BACKEND_REFRESH_COOKIE_NAME = "klinik-pkp-backend-refresh";
 
 // --- Tipe Token ---
 
@@ -40,8 +42,6 @@ export interface AuthUser {
   nip: string;
   role: AuthRole;
   name: string;
-  backendAccessToken?: string;
-  backendRefreshToken?: string;
 }
 
 export interface TokenPayload extends JWTPayload {
@@ -51,8 +51,6 @@ export interface TokenPayload extends JWTPayload {
   role: AuthRole;
   name: string;
   type: "access" | "refresh";
-  backendAccessToken?: string;
-  backendRefreshToken?: string;
 }
 
 export function getTokenExpiryTimestampMs(
@@ -74,12 +72,6 @@ function buildTokenPayload(
     role: user.role,
     name: user.name,
     type,
-    ...(type === "access" && user.backendAccessToken
-      ? { backendAccessToken: user.backendAccessToken }
-      : {}),
-    ...(type === "refresh" && user.backendRefreshToken
-      ? { backendRefreshToken: user.backendRefreshToken }
-      : {}),
   };
 }
 
@@ -139,6 +131,7 @@ export function getAccessTokenCookieOptions() {
     sameSite: "lax" as const,
     path: "/",
     maxAge: 15 * 60, // 15 menit dalam detik
+    priority: "high" as const,
   };
 }
 
@@ -150,8 +143,39 @@ export function getRefreshTokenCookieOptions() {
     name: REFRESH_COOKIE_NAME,
     httpOnly: true,
     secure: isProduction,
-    sameSite: "lax" as const,
+    sameSite: "strict" as const,
     path: "/api/auth",
     maxAge: 7 * 24 * 60 * 60, // 7 hari dalam detik
+    priority: "high" as const,
+  };
+}
+
+/** Cookie access token backend untuk request admin server-side dan API internal. */
+export function getBackendAccessCookieOptions() {
+  const isProduction = process.env.NODE_ENV === "production";
+
+  return {
+    name: BACKEND_ACCESS_COOKIE_NAME,
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: "lax" as const,
+    path: "/",
+    maxAge: 15 * 60,
+    priority: "high" as const,
+  };
+}
+
+/** Cookie refresh session backend, dibatasi ke route auth internal saja. */
+export function getBackendRefreshCookieOptions() {
+  const isProduction = process.env.NODE_ENV === "production";
+
+  return {
+    name: BACKEND_REFRESH_COOKIE_NAME,
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: "strict" as const,
+    path: "/api/auth",
+    maxAge: 7 * 24 * 60 * 60,
+    priority: "high" as const,
   };
 }

@@ -6,11 +6,8 @@ import {
   type ApiResponse,
 } from "@/lib/api-client";
 
-import {
-  ADMIN_CACHE_TAGS,
-  createCachedAdminReader,
-} from "./cache";
 import { fetchBackendJson, getBackendApiBaseUrl } from "./backend-api";
+import { ADMIN_CACHE_TAGS, createCachedAdminReader } from "./cache";
 
 interface ExternalStatsSummary {
   totalBsps: number;

@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import { Clock, ExternalLink, Mail, MapPin, Phone } from "lucide-react";
 
-import { klinikData } from "@/content/lokasi-klinik";
+import { klinikData } from "@/content/lokasi-klinik.content";
 import { INFO_LINKS, QUICK_LINKS } from "@/lib/constants";
 import { buildTelHref } from "@/lib/contact";
 
@@ -39,7 +39,8 @@ export default function Footer() {
               </div>
             </Link>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              Layanan informasi perumahan dan permukiman di wilayah Sumatera II.
+              Layanan informasi, konsultasi, dan pendampingan teknis
+              perumahan serta kawasan permukiman untuk wilayah Sumatera Utara.
             </p>
           </div>
 

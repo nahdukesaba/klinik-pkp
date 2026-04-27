@@ -2,15 +2,11 @@
  * Route: /
  *
  * Landing page Klinik PKP.
- * Homepage difokuskan ke hero, layanan utama, dan highlight Instagram terbaru.
+ * Homepage difokuskan ke hero dan layanan utama.
  */
 
-import { Suspense } from "react";
-
 import HeroSection from "@/components/landing/HeroSection";
-import InstagramSection, {
-  InstagramSectionSkeleton,
-} from "@/components/landing/InstagramSection";
+import InstagramSection from "@/components/landing/InstagramSection";
 import ServicesSection from "@/components/landing/ServicesSection";
 import { Footer, Navbar } from "@/components/layout";
 
@@ -19,7 +15,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Klinik PKP - Perumahan dan Kawasan Permukiman Sumatera Utara",
   description:
-    "Portal informasi perumahan dan kawasan permukiman Sumatera Utara. Sebaran rusun, kawasan kumuh, penerimaan BSPS, dan sosialisasi.",
+    "Portal layanan informasi, konsultasi, dan pendampingan teknis BP3KP Sumatera II untuk sektor perumahan dan kawasan permukiman.",
 };
 
 export default function HomePage() {
@@ -29,9 +25,7 @@ export default function HomePage() {
       <main>
         <HeroSection />
         <ServicesSection />
-        <Suspense fallback={<InstagramSectionSkeleton />}>
-          <InstagramSection />
-        </Suspense>
+        <InstagramSection />
       </main>
       <Footer />
     </div>

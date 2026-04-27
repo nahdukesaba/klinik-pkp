@@ -21,7 +21,7 @@ import {
   nilaiNilai,
   sejarah,
   tugasDanFungsi,
-} from "@/content/tentang";
+} from "@/content/tentang.content";
 import { useScrollAnimation } from "@/hooks/use-scroll-animation";
 
 import type { LucideIcon } from "lucide-react";
@@ -57,7 +57,7 @@ export default function TentangPage() {
           <div className="text-center mb-16 animate-on-scroll">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-full text-sm font-medium mb-4 border border-primary/20">
               <Building2 className="w-4 h-4" />
-              <span>Tentang Kami</span>
+              <span>Tentang</span>
             </div>
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4">
               {aboutInfo.shortTitle}
@@ -177,11 +177,12 @@ export default function TentangPage() {
                 Layanan Klinik PKP
               </h2>
               <p className="text-muted-foreground max-w-2xl mx-auto">
-                Berbagai layanan yang kami sediakan untuk membantu masyarakat
+                Rangkaian layanan yang kami sediakan untuk membantu masyarakat
+                memahami kebutuhan perumahan secara lebih terarah.
               </p>
             </div>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {layananKlinik.map((layanan: { id: number; title: string; description: string; icon: string }, index: number) => {
+              {layananKlinik.map((layanan, index) => {
                 const IconComponent = iconMap[layanan.icon];
                 return (
                   <div
@@ -209,11 +210,12 @@ export default function TentangPage() {
                 Nilai-Nilai Kami
               </h2>
               <p className="text-muted-foreground max-w-2xl mx-auto">
-                Prinsip yang menjadi landasan dalam setiap pelayanan kami
+                Prinsip yang menjadi landasan dalam setiap layanan yang kami
+                berikan.
               </p>
             </div>
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {nilaiNilai.map((nilai: { title: string; description: string; icon: string }, index: number) => {
+              {nilaiNilai.map((nilai, index) => {
                 const IconComponent = iconMap[nilai.icon];
                 return (
                   <div

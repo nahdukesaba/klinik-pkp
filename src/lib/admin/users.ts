@@ -1,5 +1,10 @@
 import "server-only";
 
+import {
+  extractApiCollectionItems,
+  extractApiPaginationMeta,
+  type ApiResponse,
+} from "@/lib/api-client";
 import { sanitizeEmail, sanitizeInput, sanitizeNip } from "@/lib/security";
 import type {
   AdminDirectoryUser,
@@ -7,11 +12,7 @@ import type {
   AdminPaginationMeta,
   UserRole,
 } from "@/types/admin";
-import {
-  extractApiCollectionItems,
-  extractApiPaginationMeta,
-  type ApiResponse,
-} from "@/lib/api-client";
+
 import { BackendApiError, fetchBackendJson } from "./backend-api";
 import { normalizeDisplayName } from "./service";
 

@@ -38,8 +38,9 @@ export default function ServicesSection() {
             Layanan Terpadu Klinik PKP
           </h2>
           <p className="text-muted-foreground">
-            Kami menyediakan berbagai layanan untuk membantu masyarakat dalam
-            mendapatkan informasi dan solusi perumahan yang tepat.
+            Jelajahi layanan utama yang kami sediakan untuk membantu masyarakat
+            memperoleh informasi, arahan, dan rujukan perumahan secara lebih
+            terstruktur.
           </p>
         </div>
 

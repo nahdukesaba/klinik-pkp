@@ -13,7 +13,8 @@ export interface Layanan {
 export const aboutInfo = {
   title: "Balai Pelaksanaan Perumahan, Permukiman, dan Kawasan Perdesaan (BP3KP) Sumatera II",
   shortTitle: "BP3KP Sumatera II",
-  description: "BP3KP Sumatera II merupakan Unit Pelaksana Teknis (UPT) dari Kementerian Pekerjaan Umum dan Perumahan Rakyat yang bertugas melaksanakan kebijakan teknis operasional di bidang perumahan, permukiman, dan kawasan perdesaan di wilayah Sumatera bagian Utara.",
+  description:
+    "BP3KP Sumatera II merupakan unit pelaksana teknis di lingkungan Kementerian Perumahan dan Kawasan Permukiman yang melaksanakan layanan teknis operasional di bidang perumahan, permukiman, dan kawasan perdesaan di wilayah Sumatera Utara.",
   alamat: {
     jalan: "Jalan Suluh No. 99, Kel. Sidorejo Hilir, Kec. Medan Tembung, 20222, Kota Medan, Prov. Sumatera Utara",
     kota: "Medan",
@@ -57,28 +58,31 @@ export const layananKlinik: Layanan[] = [
     id: 1,
     icon: "FileText",
     title: "Informasi",
-    description: "Menyediakan akses informasi serta alternatif teknis dan non-teknis bagi masyarakat berpenghasilan rendah dalam menanggulangi masalah perumahan, berfungsi sebagai 'clearing house' atau rumah bersama.",
+    description:
+      "Menyediakan informasi program, layanan, dan rujukan teknis maupun nonteknis agar masyarakat lebih mudah memahami alur bantuan perumahan.",
   },
   {
     id: 2,
     icon: "FileQuestion",
     title: "Konsultasi",
-    description: "Memberikan edukasi mengenai prosedur pembangunan, mekanisme legalitas tanah, hingga rencana anggaran guna meningkatkan kesadaran akan hunian yang layak.",
+    description:
+      "Memberikan konsultasi mengenai prosedur pembangunan, legalitas tanah, pembiayaan, dan kebutuhan dasar hunian yang layak.",
   },
   {
     id: 3,
     icon: "ClipboardList",
     title: "Pendampingan dan Bantuan Teknis",
-    description: "Memberikan bimbingan langsung selama proses pembangunan atau perbaikan rumah guna mewujudkan hunian yang memenuhi standar layak huni.",
+    description:
+      "Memberikan pendampingan dan bantuan teknis pada proses pembangunan atau perbaikan rumah agar hasilnya lebih aman, fungsional, dan layak huni.",
   },
 ];
 
 export const sejarah = {
   title: "Sejarah Singkat",
   paragraphs: [
-    "Balai Pelaksanaan Perumahan, Permukiman, dan Kawasan Perdesaan (BP3KP) Sumatera II dibentuk sebagai bagian dari upaya pemerintah untuk meningkatkan kualitas perumahan dan permukiman di Indonesia, khususnya di wilayah Sumatera Utara.",
-    "Dengan wilayah kerja yang mencakup Provinsi Sumatera Utara, BP3KP Sumatera II memiliki peran strategis dalam mendukung program-program Kementerian PUPR di tingkat daerah.",
-    "Klinik PKP (Perumahan dan Kawasan Permukiman) hadir sebagai wujud komitmen BP3KP Sumatera II dalam memberikan layanan yang lebih dekat dan responsif kepada masyarakat, khususnya dalam memberikan informasi, konsultasi, dan pendampingan teknis di bidang perumahan dan permukiman.",
+    "Balai Pelaksanaan Perumahan, Permukiman, dan Kawasan Perdesaan (BP3KP) Sumatera II dibentuk untuk memperkuat penyelenggaraan layanan perumahan dan permukiman di wilayah Sumatera Utara.",
+    "Dengan wilayah kerja yang mencakup Provinsi Sumatera Utara, BP3KP Sumatera II berperan penting dalam menghubungkan kebijakan pusat dengan kebutuhan pelayanan teknis di daerah.",
+    "Klinik PKP hadir sebagai wujud komitmen BP3KP Sumatera II untuk menyediakan layanan informasi, konsultasi, dan pendampingan teknis yang lebih dekat, responsif, dan mudah diakses masyarakat.",
   ],
 };
 
@@ -86,21 +90,25 @@ export const nilaiNilai = [
   {
     icon: "Target",
     title: "Profesional",
-    description: "Bekerja dengan kompetensi tinggi dan standar kualitas terbaik",
+    description:
+      "Bekerja dengan kompetensi yang terukur dan standar layanan yang jelas.",
   },
   {
     icon: "Heart",
     title: "Peduli",
-    description: "Mengutamakan kepentingan masyarakat dan keberlanjutan lingkungan",
+    description:
+      "Mengutamakan kepentingan masyarakat serta keberlanjutan lingkungan hunian.",
   },
   {
     icon: "Zap",
     title: "Responsif",
-    description: "Cepat tanggap dalam memberikan layanan dan solusi kepada masyarakat",
+    description:
+      "Cepat tanggap dalam memberikan arahan, layanan, dan solusi yang dibutuhkan.",
   },
   {
     icon: "Shield",
     title: "Integritas",
-    description: "Menjunjung tinggi kejujuran, transparansi, dan akuntabilitas",
+    description:
+      "Menjunjung tinggi kejujuran, transparansi, dan akuntabilitas pelayanan.",
   },
 ];

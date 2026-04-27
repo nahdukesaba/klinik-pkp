@@ -18,6 +18,7 @@ import {
 
 import { ProgressIndicator } from "@/components/landing/ProgressIndicator";
 import { StepArrow } from "@/components/landing/StepArrow";
+import { HUBUNGI_KAMI_HREF } from "@/lib/constants";
 import type { BspsProcessStep } from "@/services/bsps.service";
 
 import type { LucideIcon } from "lucide-react";
@@ -348,7 +349,7 @@ export function BspsCta() {
         Hubungi kami untuk informasi lebih lanjut tentang program BSPS
       </p>
       <Link
-        href="/informasi/kontak"
+        href={HUBUNGI_KAMI_HREF}
         className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary-hover transition-colors"
       >
         Hubungi Kami

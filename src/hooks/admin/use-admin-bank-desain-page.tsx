@@ -19,6 +19,7 @@ import {
 import { useAdminCrud } from "./use-admin-crud";
 
 const BANK_DESAIN_PAGE_LIMIT = 10;
+const EMPTY_BANK_DESAIN_ITEMS: BankDesainData[] = [];
 
 const typeOptions = [
   { value: "Tipe 36", label: "Tipe 36" },
@@ -174,7 +175,7 @@ export function useAdminBankDesainPage() {
     ? desainToFormValues(crud.editingItem)
     : undefined;
 
-  const desainList = desainQuery.data?.items ?? [];
+  const desainList = desainQuery.data?.items ?? EMPTY_BANK_DESAIN_ITEMS;
   const desainMeta = desainQuery.data?.meta;
   const typeStats = useMemo(
     () =>

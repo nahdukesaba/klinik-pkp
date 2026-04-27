@@ -14,7 +14,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Klinik PKP - BP3KP Sumatera II",
   description:
-    "Layanan konsultasi dan informasi terpadu untuk perumahan, permukiman, dan kawasan kumuh di wilayah Sumatera.",
+    "Portal layanan informasi, konsultasi, dan pendampingan teknis BP3KP Sumatera II untuk sektor perumahan dan kawasan permukiman.",
   keywords: [
     "klinik pkp",
     "bp3kp",

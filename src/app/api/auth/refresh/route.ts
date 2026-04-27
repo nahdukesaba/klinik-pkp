@@ -1,7 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, type NextResponse } from "next/server";
 
 import { createSessionAdminUser } from "@/lib/admin/service";
 import {
+  BACKEND_REFRESH_COOKIE_NAME,
+  getBackendAccessCookieOptions,
+  getBackendRefreshCookieOptions,
   REFRESH_COOKIE_NAME,
   createAccessToken,
   createRefreshToken,
@@ -11,11 +14,21 @@ import {
   verifyToken,
   type AuthUser,
 } from "@/lib/auth";
-import { refreshExternalBackendSession } from "@/lib/server/auth-strategies";
+import {
+  refreshExternalBackendSession,
+  type ExternalAuthResult,
+} from "@/lib/server/auth-strategies";
+import {
+  createJsonErrorResponse,
+  createJsonResponse,
+} from "@/lib/server/http";
+import { hasTrustedSameOrigin } from "@/lib/server/web-security";
 
 function clearSessionCookies(response: NextResponse) {
   const accessCookieOptions = getAccessTokenCookieOptions();
   const refreshCookieOptions = getRefreshTokenCookieOptions();
+  const backendAccessCookieOptions = getBackendAccessCookieOptions();
+  const backendRefreshCookieOptions = getBackendRefreshCookieOptions();
 
   response.cookies.set(accessCookieOptions.name, "", {
     httpOnly: accessCookieOptions.httpOnly,
@@ -23,6 +36,7 @@ function clearSessionCookies(response: NextResponse) {
     sameSite: accessCookieOptions.sameSite,
     path: accessCookieOptions.path,
     maxAge: 0,
+    priority: accessCookieOptions.priority,
   });
 
   response.cookies.set(refreshCookieOptions.name, "", {
@@ -31,48 +45,68 @@ function clearSessionCookies(response: NextResponse) {
     sameSite: refreshCookieOptions.sameSite,
     path: refreshCookieOptions.path,
     maxAge: 0,
+    priority: refreshCookieOptions.priority,
+  });
+
+  response.cookies.set(backendAccessCookieOptions.name, "", {
+    httpOnly: backendAccessCookieOptions.httpOnly,
+    secure: backendAccessCookieOptions.secure,
+    sameSite: backendAccessCookieOptions.sameSite,
+    path: backendAccessCookieOptions.path,
+    maxAge: 0,
+    priority: backendAccessCookieOptions.priority,
+  });
+
+  response.cookies.set(backendRefreshCookieOptions.name, "", {
+    httpOnly: backendRefreshCookieOptions.httpOnly,
+    secure: backendRefreshCookieOptions.secure,
+    sameSite: backendRefreshCookieOptions.sameSite,
+    path: backendRefreshCookieOptions.path,
+    maxAge: 0,
+    priority: backendRefreshCookieOptions.priority,
   });
 
   return response;
 }
 
 export async function POST(request: NextRequest) {
+  if (!hasTrustedSameOrigin(request)) {
+    return createJsonErrorResponse("Origin permintaan tidak diizinkan.", 403);
+  }
+
   const refreshToken = request.cookies.get(REFRESH_COOKIE_NAME)?.value;
   if (!refreshToken) {
     return clearSessionCookies(
-      NextResponse.json(
-        { error: "Sesi admin tidak valid atau telah berakhir." },
-        { status: 401 }
-      )
+      createJsonErrorResponse("Sesi admin tidak valid atau telah berakhir.", 401)
     );
   }
 
   const refreshPayload = await verifyToken(refreshToken);
   if (!refreshPayload || refreshPayload.type !== "refresh") {
     return clearSessionCookies(
-      NextResponse.json(
-        { error: "Sesi admin tidak valid atau telah berakhir." },
-        { status: 401 }
-      )
+      createJsonErrorResponse("Sesi admin tidak valid atau telah berakhir.", 401)
     );
   }
 
   let authenticatedUser: AuthUser;
+  const backendRefreshToken =
+    request.cookies.get(BACKEND_REFRESH_COOKIE_NAME)?.value;
+  let refreshedBackendSession: Extract<ExternalAuthResult, { ok: true }> | null =
+    null;
 
-  if (refreshPayload.backendRefreshToken) {
+  if (backendRefreshToken) {
     const refreshResult = await refreshExternalBackendSession({
-      backendRefreshToken: refreshPayload.backendRefreshToken,
+      backendRefreshToken,
       origin: request.nextUrl.origin,
     });
 
     if (!refreshResult.ok) {
       return clearSessionCookies(
-        NextResponse.json(
-          { error: refreshResult.error },
-          { status: refreshResult.status }
-        )
+        createJsonErrorResponse(refreshResult.error, refreshResult.status)
       );
     }
+
+    refreshedBackendSession = refreshResult;
 
     try {
       const sessionUser = createSessionAdminUser(refreshResult.user);
@@ -82,21 +116,14 @@ export async function POST(request: NextRequest) {
         email: sessionUser.email,
         nip: sessionUser.nip,
         role: sessionUser.role,
-        backendAccessToken: refreshResult.backendAccessToken,
-        backendRefreshToken:
-          refreshResult.backendRefreshToken ??
-          refreshPayload.backendRefreshToken,
       };
     } catch (error) {
       return clearSessionCookies(
-        NextResponse.json(
-          {
-            error:
-              error instanceof Error
-                ? error.message
-                : "Akun tidak memiliki akses ke dashboard admin.",
-          },
-          { status: 403 }
+        createJsonErrorResponse(
+          error instanceof Error
+            ? error.message
+            : "Akun tidak memiliki akses ke dashboard admin.",
+          403
         )
       );
     }
@@ -116,13 +143,15 @@ export async function POST(request: NextRequest) {
   ]);
   const nextAccessPayload = await verifyToken(nextAccessToken);
 
-  const response = NextResponse.json({
+  const response = createJsonResponse({
     success: true,
     expiresIn: "15m",
     accessTokenExpiresAt: getTokenExpiryTimestampMs(nextAccessPayload),
   });
   const accessCookieOptions = getAccessTokenCookieOptions();
   const refreshCookieOptions = getRefreshTokenCookieOptions();
+  const backendAccessCookieOptions = getBackendAccessCookieOptions();
+  const backendRefreshCookieOptions = getBackendRefreshCookieOptions();
 
   response.cookies.set(accessCookieOptions.name, nextAccessToken, {
     httpOnly: accessCookieOptions.httpOnly,
@@ -130,6 +159,7 @@ export async function POST(request: NextRequest) {
     sameSite: accessCookieOptions.sameSite,
     path: accessCookieOptions.path,
     maxAge: accessCookieOptions.maxAge,
+    priority: accessCookieOptions.priority,
   });
 
   response.cookies.set(refreshCookieOptions.name, nextRefreshToken, {
@@ -138,11 +168,54 @@ export async function POST(request: NextRequest) {
     sameSite: refreshCookieOptions.sameSite,
     path: refreshCookieOptions.path,
     maxAge: refreshCookieOptions.maxAge,
+    priority: refreshCookieOptions.priority,
   });
 
-  return response;
-}
+  if (backendRefreshToken && refreshedBackendSession) {
+    response.cookies.set(
+      backendAccessCookieOptions.name,
+      refreshedBackendSession.backendAccessToken,
+      {
+        httpOnly: backendAccessCookieOptions.httpOnly,
+        secure: backendAccessCookieOptions.secure,
+        sameSite: backendAccessCookieOptions.sameSite,
+        path: backendAccessCookieOptions.path,
+        maxAge: backendAccessCookieOptions.maxAge,
+        priority: backendAccessCookieOptions.priority,
+      }
+    );
 
-export async function GET(request: NextRequest) {
-  return POST(request);
+    response.cookies.set(
+      backendRefreshCookieOptions.name,
+      refreshedBackendSession.backendRefreshToken ?? backendRefreshToken,
+      {
+        httpOnly: backendRefreshCookieOptions.httpOnly,
+        secure: backendRefreshCookieOptions.secure,
+        sameSite: backendRefreshCookieOptions.sameSite,
+        path: backendRefreshCookieOptions.path,
+        maxAge: backendRefreshCookieOptions.maxAge,
+        priority: backendRefreshCookieOptions.priority,
+      }
+    );
+  } else {
+    response.cookies.set(backendAccessCookieOptions.name, "", {
+      httpOnly: backendAccessCookieOptions.httpOnly,
+      secure: backendAccessCookieOptions.secure,
+      sameSite: backendAccessCookieOptions.sameSite,
+      path: backendAccessCookieOptions.path,
+      maxAge: 0,
+      priority: backendAccessCookieOptions.priority,
+    });
+
+    response.cookies.set(backendRefreshCookieOptions.name, "", {
+      httpOnly: backendRefreshCookieOptions.httpOnly,
+      secure: backendRefreshCookieOptions.secure,
+      sameSite: backendRefreshCookieOptions.sameSite,
+      path: backendRefreshCookieOptions.path,
+      maxAge: 0,
+      priority: backendRefreshCookieOptions.priority,
+    });
+  }
+
+  return response;
 }

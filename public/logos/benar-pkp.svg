@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="220" height="64" viewBox="0 0 220 64" fill="none">
+  <rect width="220" height="64" rx="16" fill="#F5F8FC"/>
+  <path d="M34 17L47 22V31C47 39.2843 41.7657 46.7928 34 50C26.2343 46.7928 21 39.2843 21 31V22L34 17Z" fill="#214A87"/>
+  <path d="M28 33L32 37L40 27" stroke="#F5C14B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="64" y="29" fill="#173664" font-family="Poppins, Segoe UI, sans-serif" font-size="17" font-weight="800" letter-spacing="0.03em">BENAR</text>
+  <text x="64" y="47" fill="#5F6E85" font-family="Poppins, Segoe UI, sans-serif" font-size="14" font-weight="700">PKP</text>
+</svg>

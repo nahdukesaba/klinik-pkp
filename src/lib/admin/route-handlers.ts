@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
 import {
   createBackendErrorResponse,
@@ -219,7 +219,7 @@ export async function handleListUsers(request: NextRequest) {
       { page, limit }
     );
 
-    return NextResponse.json({
+    return createJsonResponse({
       data: users.items,
       meta: users.meta,
     });
@@ -273,7 +273,7 @@ export async function handleCreateUser(request: NextRequest) {
 
     revalidateUsersAdminState();
 
-    return NextResponse.json(result, { status: 201 });
+    return createJsonResponse(result, 201);
   } catch (error) {
     return createBackendErrorResponse(
       error,
@@ -295,7 +295,7 @@ export async function handleGetUser(request: NextRequest, id: string) {
       request.nextUrl.origin
     );
 
-    return NextResponse.json({ data: user });
+    return createJsonResponse({ data: user });
   } catch (error) {
     return createBackendErrorResponse(
       error,
@@ -354,7 +354,7 @@ export async function handleUpdateUser(request: NextRequest, id: string) {
 
     revalidateUsersAdminState();
 
-    return NextResponse.json(result);
+    return createJsonResponse(result);
   } catch (error) {
     return createBackendErrorResponse(
       error,
@@ -383,7 +383,7 @@ export async function handleDeleteUser(request: NextRequest, id: string) {
 
     revalidateUsersAdminState();
 
-    return NextResponse.json({ success: true });
+    return createJsonResponse({ success: true });
   } catch (error) {
     return createBackendErrorResponse(
       error,

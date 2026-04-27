@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="220" height="64" viewBox="0 0 220 64" fill="none">
+  <rect width="220" height="64" rx="16" fill="#FFF6F6"/>
+  <path d="M19 24C19 20.6863 21.6863 18 25 18H47C50.3137 18 53 20.6863 53 24V38C53 41.3137 50.3137 44 47 44H33L25 50V44C21.6863 44 19 41.3137 19 38V24Z" fill="#D3323B"/>
+  <path d="M28 27H44" stroke="#FFE8EA" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M28 33H40" stroke="#FFE8EA" stroke-width="3.5" stroke-linecap="round"/>
+  <text x="66" y="29" fill="#B91C28" font-family="Poppins, Segoe UI, sans-serif" font-size="16" font-weight="700" letter-spacing="0.08em">SP4N</text>
+  <text x="66" y="47" fill="#2B2B2B" font-family="Poppins, Segoe UI, sans-serif" font-size="18" font-weight="800">LAPOR!</text>
+</svg>

@@ -4,7 +4,7 @@
  * POST /api/auth/logout — Hapus token dari httpOnly cookies.
  */
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
 import {
   buildBackendProxyUrl,
@@ -13,32 +13,20 @@ import {
 } from "@/lib/admin/backend-api";
 import { CSRF_COOKIE_NAME } from "@/lib/admin/security";
 import {
-  AUTH_COOKIE_NAME,
-  REFRESH_COOKIE_NAME,
+  BACKEND_REFRESH_COOKIE_NAME,
+  getBackendAccessCookieOptions,
+  getBackendRefreshCookieOptions,
   getAccessTokenCookieOptions,
   getRefreshTokenCookieOptions,
-  verifyToken,
 } from "@/lib/auth";
+import { createJsonErrorResponse, createJsonResponse } from "@/lib/server/http";
+import {
+  applySensitiveResponseHeaders,
+  hasTrustedSameOrigin,
+} from "@/lib/server/web-security";
 
 async function resolveBackendRefreshToken(request: NextRequest) {
-  const refreshToken = request.cookies.get(REFRESH_COOKIE_NAME)?.value;
-  const accessToken = request.cookies.get(AUTH_COOKIE_NAME)?.value;
-
-  if (refreshToken) {
-    const payload = await verifyToken(refreshToken);
-    if (payload?.backendRefreshToken) {
-      return payload.backendRefreshToken;
-    }
-  }
-
-  if (accessToken) {
-    const payload = await verifyToken(accessToken);
-    if (payload?.backendRefreshToken) {
-      return payload.backendRefreshToken;
-    }
-  }
-
-  return null;
+  return request.cookies.get(BACKEND_REFRESH_COOKIE_NAME)?.value ?? null;
 }
 
 async function terminateBackendSession(request: NextRequest) {
@@ -63,11 +51,20 @@ async function terminateBackendSession(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  if (!hasTrustedSameOrigin(request)) {
+    return createJsonErrorResponse("Origin permintaan tidak diizinkan.", 403);
+  }
+
   await terminateBackendSession(request);
 
-  const response = NextResponse.json({ success: true });
+  const response = applySensitiveResponseHeaders(
+    createJsonResponse({ success: true }),
+    { clearSiteData: true }
+  );
   const accessTokenCookieOptions = getAccessTokenCookieOptions();
   const refreshTokenCookieOptions = getRefreshTokenCookieOptions();
+  const backendAccessCookieOptions = getBackendAccessCookieOptions();
+  const backendRefreshCookieOptions = getBackendRefreshCookieOptions();
 
   response.cookies.set(accessTokenCookieOptions.name, "", {
     httpOnly: accessTokenCookieOptions.httpOnly,
@@ -75,6 +72,7 @@ export async function POST(request: NextRequest) {
     sameSite: accessTokenCookieOptions.sameSite,
     path: accessTokenCookieOptions.path,
     maxAge: 0, // Expire segera
+    priority: accessTokenCookieOptions.priority,
   });
 
   response.cookies.set(refreshTokenCookieOptions.name, "", {
@@ -83,6 +81,25 @@ export async function POST(request: NextRequest) {
     sameSite: refreshTokenCookieOptions.sameSite,
     path: refreshTokenCookieOptions.path,
     maxAge: 0,
+    priority: refreshTokenCookieOptions.priority,
+  });
+
+  response.cookies.set(backendAccessCookieOptions.name, "", {
+    httpOnly: backendAccessCookieOptions.httpOnly,
+    secure: backendAccessCookieOptions.secure,
+    sameSite: backendAccessCookieOptions.sameSite,
+    path: backendAccessCookieOptions.path,
+    maxAge: 0,
+    priority: backendAccessCookieOptions.priority,
+  });
+
+  response.cookies.set(backendRefreshCookieOptions.name, "", {
+    httpOnly: backendRefreshCookieOptions.httpOnly,
+    secure: backendRefreshCookieOptions.secure,
+    sameSite: backendRefreshCookieOptions.sameSite,
+    path: backendRefreshCookieOptions.path,
+    maxAge: 0,
+    priority: backendRefreshCookieOptions.priority,
   });
 
   response.cookies.set(CSRF_COOKIE_NAME, "", {
@@ -91,6 +108,7 @@ export async function POST(request: NextRequest) {
     sameSite: "strict",
     path: "/",
     maxAge: 0,
+    priority: "medium",
   });
 
   return response;

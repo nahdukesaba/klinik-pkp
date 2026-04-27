@@ -14,7 +14,10 @@ import { useCascadingFilter } from "@/hooks/use-cascading-filter";
 import { useDebounce } from "@/hooks/use-debounce";
 import { CURRENT_YEAR, CURRENT_YEAR_NUM, QUERY_CONFIG } from "@/lib/constants";
 import { sanitizeInput } from "@/lib/security";
-import { fetchBspsList } from "@/services/bsps.service";
+import { fetchBspsList, type BspsData } from "@/services/bsps.service";
+
+const EMPTY_BSPS_LIST: BspsData[] = [];
+const DEFAULT_AVAILABLE_YEARS = [CURRENT_YEAR_NUM];
 
 export function usePenerimaanBsps() {
   const [yearFilter, setYearFilter] = useState<string>(CURRENT_YEAR);
@@ -42,8 +45,8 @@ export function usePenerimaanBsps() {
       return years.sort((left, right) => right - left);
     },
   });
-  const rawData = dataQuery.data ?? [];
-  const availableYears = yearsQuery.data ?? [CURRENT_YEAR_NUM];
+  const rawData = dataQuery.data ?? EMPTY_BSPS_LIST;
+  const availableYears = yearsQuery.data ?? DEFAULT_AVAILABLE_YEARS;
 
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");

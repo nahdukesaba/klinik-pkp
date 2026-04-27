@@ -140,7 +140,8 @@ function EmptyState({ onReset }: { onReset: () => void }) {
         Tidak Ada Desain Ditemukan
       </h3>
       <p className="mx-auto mb-4 max-w-md text-muted-foreground">
-        Coba ubah filter atau kata kunci pencarian Anda.
+        Coba sesuaikan filter atau kata kunci pencarian untuk melihat desain
+        lain yang tersedia.
       </p>
       <button
         type="button"
@@ -255,11 +256,11 @@ export default function BankDesainPage() {
               <span>Bank Desain</span>
             </div>
             <h1 className="mb-4 text-3xl font-bold text-foreground md:text-4xl lg:text-5xl">
-              Koleksi Desain Rumah
+              Referensi Desain Rumah dan Rusun
             </h1>
             <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-              Temukan berbagai desain rumah yang dapat menjadi inspirasi untuk
-              pembangunan hunian Anda.
+              Temukan referensi desain yang dapat membantu perencanaan hunian,
+              mulai dari rumah tapak hingga rusun sederhana.
             </p>
           </div>
 
@@ -268,7 +269,7 @@ export default function BankDesainPage() {
               <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Cari desain berdasarkan nama, kode, atau tipe..."
+                placeholder="Cari desain berdasarkan nama, kode, atau tipe bangunan..."
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
                 className="w-full rounded-xl border border-border bg-secondary/50 py-3 pl-12 pr-4 text-sm placeholder:text-muted-foreground/60 focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/50"

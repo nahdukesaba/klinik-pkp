@@ -19,8 +19,9 @@ import {
   regulations,
   regulationCategories,
   relatedLinks,
-} from "@/content/informasi";
+} from "@/content/informasi.content";
 import { useScrollAnimation } from "@/hooks/use-scroll-animation";
+import { HUBUNGI_KAMI_HREF } from "@/lib/constants";
 
 import type { LucideIcon } from "lucide-react";
 
@@ -55,8 +56,9 @@ export default function PeraturanPage() {
               Peraturan & Kebijakan
             </h1>
             <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
-              Kumpulan peraturan dan kebijakan terkait perumahan, bangunan
-              gedung, dan program BSPS
+              Rujukan regulasi terkait perumahan, bangunan gedung, dan program
+              bantuan yang sering dibutuhkan masyarakat maupun pemangku
+              kepentingan.
             </p>
           </div>
 
@@ -200,13 +202,12 @@ export default function PeraturanPage() {
                   Perlu Informasi Lebih Lanjut?
                 </h3>
                 <p className="text-muted-foreground">
-                  Untuk informasi lebih detail mengenai peraturan dan
-                  kebijakan, silakan hubungi Klinik PKP atau kunjungi portal
-                  JDIH Kementerian PUPR.
+                  Untuk menelusuri regulasi lebih lanjut, silakan hubungi
+                  Klinik PKP atau kunjungi portal JDIH Kementerian PKP.
                 </p>
               </div>
               <Link
-                href="/informasi/kontak"
+                href={HUBUNGI_KAMI_HREF}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary-hover transition-colors flex-shrink-0"
               >
                 Hubungi Kami

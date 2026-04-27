@@ -57,6 +57,10 @@ export const MONTHS_LIST = [
   { value: "12", label: "Desember" },
 ] as const;
 
+export const HUBUNGI_KAMI_HREF = "/hubungi-kami";
+export const KONSULTASI_HREF = "/konsultasi";
+export const INFORMASI_DEFAULT_HREF = "/informasi/rumah-layak-huni";
+
 export const QUICK_LINKS = [
   { label: "Bank Desain", href: "/bank-desain" },
   { label: "Sosialisasi", href: "/sosialisasi-klinik-pkp" },
@@ -65,48 +69,55 @@ export const QUICK_LINKS = [
 ] as const;
 
 export const INFO_LINKS = [
-  { label: "Tentang Kami", href: "/informasi/tentang" },
-  { label: "Kontak", href: "/informasi/kontak" },
-  { label: "FAQ", href: "/informasi/faq" },
+  { label: "Rumah Layak Huni", href: "/informasi/rumah-layak-huni" },
+  { label: "Tahapan", href: "/informasi/tahapan" },
+  { label: "Tentang", href: "/informasi/about" },
+  { label: "Aplikasi Terkait", href: "/informasi/aplikasi-terkait" },
+  { label: "Kanal Pengaduan", href: "/informasi/kanal-pengaduan" },
   { label: "Peraturan", href: "/informasi/peraturan" },
-  { label: "Buku Saku FLPP", href: "https://djvend02-ops.github.io/buku-saku-flpp/" },
 ] as const;
 
 export const SERVICES = [
   {
     image: "/service-rusun.jpg",
     title: "Sebaran Rusun",
-    description: "Informasi lengkap lokasi rusun yang dibangun oleh BP3KP di berbagai wilayah Sumatera.",
+    description:
+      "Peta sebaran rumah susun beserta informasi lokasi, kapasitas, dan kondisi bangunan di wilayah layanan.",
     href: "/sebaran-rusun",
   },
   {
     image: "/service-kumuh.jpg",
     title: "Kawasan Kumuh",
-    description: "Profil dan data kawasan kumuh beserta program penanganannya di wilayah kerja.",
+    description:
+      "Data kawasan kumuh beserta profil wilayah dan informasi penanganan yang sedang berjalan.",
     href: "/kawasan-kumuh",
   },
   {
     image: "/service-bsps.jpg",
     title: "Penerimaan BSPS",
-    description: "Informasi persyaratan dan prosedur pendaftaran program BSPS.",
+    description:
+      "Informasi persyaratan, tahapan, dan sebaran penerima program Bantuan Stimulan Perumahan Swadaya.",
     href: "/penerimaan-bsps",
   },
   {
     image: "/service-bank-desain.jpg",
     title: "Bank Desain",
-    description: "Koleksi desain rumah dan rusun untuk referensi pembangunan hunian.",
+    description:
+      "Koleksi desain rumah dan rusun yang dapat dijadikan referensi perencanaan pembangunan hunian.",
     href: "/bank-desain",
   },
   {
     image: "/service-sosialisasi.jpg",
     title: "Sosialisasi",
-    description: "Kegiatan sosialisasi dan edukasi terkait perumahan dan permukiman.",
+    description:
+      "Jadwal kegiatan, materi edukasi, dan rangkaian berita sosialisasi bidang perumahan dan permukiman.",
     href: "/sosialisasi-klinik-pkp",
   },
   {
     image: "/service-konsultasi.jpg",
     title: "Konsultasi",
-    description: "Layanan konsultasi gratis seputar perumahan dan permukiman.",
-    href: "/informasi/kontak",
+    description:
+      "Layanan konsultasi untuk pertanyaan umum, kebutuhan teknis, dan arahan layanan perumahan yang sesuai.",
+    href: KONSULTASI_HREF,
   },
 ] as const;

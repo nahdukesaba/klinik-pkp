@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import { SectionHeader } from "@/components/shared";
-import { buildingStepsData } from "@/content/building-steps";
+import { buildingStepsData } from "@/content/building-steps.content";
 import { useScrollAnimation } from "@/hooks/use-scroll-animation";
 
 import { ProgressIndicator } from "./ProgressIndicator";
@@ -109,7 +109,7 @@ export default function BuildingStepsSection() {
         <SectionHeader
           badge="Panduan Pembangunan"
           title="Bagaimana Tahapan Membangun Rumah?"
-          description="Ikuti langkah-langkah berikut untuk membangun rumah impian Anda dengan terencana dan aman."
+          description="Ikuti langkah-langkah berikut untuk membangun rumah secara terencana dan aman."
         />
 
         {/* Steps Grid with Arrows */}

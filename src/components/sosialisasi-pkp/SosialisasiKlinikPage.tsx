@@ -125,7 +125,8 @@ function SosialisasiKlinikPKPContent() {
               Sosialisasi Klinik PKP
             </h1>
             <p className="mx-auto max-w-2xl text-base text-muted-foreground md:text-lg">
-              Jadwal kegiatan mendatang, peta lokasi, dan berita sosialisasi Klinik PKP di wilayah Sumatera.
+              Jadwal kegiatan, peta lokasi, dan rangkaian berita sosialisasi
+              Klinik PKP yang dapat diikuti masyarakat di wilayah layanan.
             </p>
           </div>
 

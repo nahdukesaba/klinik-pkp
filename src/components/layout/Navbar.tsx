@@ -17,6 +17,7 @@ import {
   MobileMenuItem,
 } from "@/components/layout/navbar-menu";
 import ThemeToggle from "@/components/shared/ThemeToggle";
+import { HUBUNGI_KAMI_HREF } from "@/lib/constants";
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -76,7 +77,7 @@ function NavbarContent({ pathname }: NavbarContentProps) {
           <div className="hidden lg:flex items-center gap-2">
             <ThemeToggle />
             <Link
-              href="/informasi/kontak"
+              href={HUBUNGI_KAMI_HREF}
               className="px-5 py-2.5 bg-primary text-primary-foreground text-sm font-semibold rounded-lg hover:bg-primary-hover transition-colors shadow-md hover:shadow-lg"
             >
               Hubungi Kami
@@ -127,7 +128,7 @@ function NavbarContent({ pathname }: NavbarContentProps) {
             <div className="border-t border-border pt-4">
               <div className="flex flex-col gap-2 sm:flex-row">
                 <Link
-                  href="/informasi/kontak"
+                  href={HUBUNGI_KAMI_HREF}
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="flex-1 rounded-lg bg-primary py-3 text-center font-semibold text-primary-foreground transition-colors hover:bg-primary-hover"
                 >

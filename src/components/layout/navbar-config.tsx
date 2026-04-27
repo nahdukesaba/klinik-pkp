@@ -7,6 +7,8 @@ import {
   Palette,
 } from "lucide-react";
 
+import { INFO_LINKS } from "@/lib/constants";
+
 export interface NestedMenuItem {
   label: string;
   href: string;
@@ -57,18 +59,10 @@ export const menuItems: MenuItem[] = [
   {
     label: "Informasi",
     icon: <Info className="h-4 w-4" />,
-    subItems: [
-      { label: "Tentang Kami", href: "/informasi/tentang" },
-      { label: "Tahapan", href: "/informasi/tahapan" },
-      { label: "Rumah Layak Huni", href: "/informasi/rumah-layak-huni" },
-      { label: "Kontak", href: "/informasi/kontak" },
-      { label: "FAQ", href: "/informasi/faq" },
-      { label: "Peraturan", href: "/informasi/peraturan" },
-      {
-        label: "Buku Saku FLPP",
-        href: "https://djvend02-ops.github.io/buku-saku-flpp/",
-      },
-    ],
+    subItems: INFO_LINKS.map((link) => ({
+      label: link.label,
+      href: link.href,
+    })),
   },
 ];
 

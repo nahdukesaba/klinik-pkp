@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
 import { authorizeAdminRequest } from "@/lib/admin/security";
 import { listAuditEntries } from "@/lib/admin/service";
+import { createJsonResponse } from "@/lib/server/http";
 
 function parseAuditLimit(value: string | null, fallback: number) {
   const parsed = Number(value);
@@ -21,5 +22,5 @@ export async function GET(request: NextRequest) {
   const limit = parseAuditLimit(request.nextUrl.searchParams.get("limit"), 20);
   const audit = await listAuditEntries(limit);
 
-  return NextResponse.json({ data: audit });
+  return createJsonResponse({ data: audit });
 }

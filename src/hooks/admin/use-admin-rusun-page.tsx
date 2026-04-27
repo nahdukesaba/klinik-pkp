@@ -18,6 +18,7 @@ import { fetchRusunPage, type RusunData } from "@/services/rusun.service";
 import { useAdminCrud } from "./use-admin-crud";
 
 const RUSUN_PAGE_LIMIT = 10;
+const EMPTY_RUSUN_ITEMS: RusunData[] = [];
 
 function buildRusunFormData(values: AdminFormValues) {
   const formData = new FormData();
@@ -194,7 +195,7 @@ export function useAdminRusunPage() {
     ? rusunToFormValues(crud.editingItem)
     : undefined;
 
-  const rusunList = rusunQuery.data?.items ?? [];
+  const rusunList = rusunQuery.data?.items ?? EMPTY_RUSUN_ITEMS;
   const rusunMeta = rusunQuery.data?.meta;
   const stats = useMemo(
     () => ({

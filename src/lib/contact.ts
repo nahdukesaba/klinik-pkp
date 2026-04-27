@@ -2,6 +2,12 @@
  * Shared helpers for contact links.
  */
 
+export const WHATSAPP_MESSAGE_TEMPLATES = {
+  consultation:
+    "Halo Klinik PKP, saya ingin berkonsultasi terkait layanan perumahan dan kawasan permukiman.",
+  general: "Halo Klinik PKP, saya ingin menghubungi tim Klinik PKP.",
+} as const;
+
 function normalizePhoneDigits(phone: string) {
   return phone.replace(/\D/g, "");
 }

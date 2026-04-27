@@ -10,7 +10,7 @@ import { Clock, ExternalLink, Mail, MapPin, Phone } from "lucide-react";
 
 import { Footer, Navbar } from "@/components/layout";
 import { MapSkeleton } from "@/components/ui/skeleton";
-import { klinikData } from "@/content/lokasi-klinik";
+import { klinikData } from "@/content/lokasi-klinik.content";
 import { useLazyMount } from "@/hooks/use-lazy-mount";
 import { useScrollAnimation } from "@/hooks/use-scroll-animation";
 import { buildTelHref } from "@/lib/contact";
@@ -149,11 +149,12 @@ export default function LokasiKlinikPage() {
               <span>Lokasi Klinik</span>
             </div>
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4">
-              Kunjungi Klinik PKP Kami
+              Kunjungi Klinik PKP
             </h1>
             <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
-              Datang langsung ke kantor kami untuk konsultasi tatap muka dengan
-              tim ahli perumahan dan kawasan permukiman.
+              Datang langsung ke kantor kami untuk berkonsultasi, meminta
+              informasi layanan, atau memperoleh arahan teknis secara tatap
+              muka.
             </p>
           </div>
 

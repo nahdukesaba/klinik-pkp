@@ -13,8 +13,8 @@ import { useMemo, useState, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import { useDebounce } from "@/hooks/use-debounce";
-import { QUERY_CONFIG } from "@/lib/constants";
 import { usePagination } from "@/hooks/use-pagination";
+import { QUERY_CONFIG } from "@/lib/constants";
 import { sanitizeInput } from "@/lib/security";
 import {
   deriveFilterCategories,

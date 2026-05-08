@@ -7,7 +7,7 @@
 import { NextRequest } from "next/server";
 
 import {
-  buildBackendProxyUrl,
+  buildBackendApiUrl,
   createBackendHeaders,
   getBackendApiBaseUrl,
 } from "@/lib/admin/backend-api";
@@ -37,7 +37,7 @@ async function terminateBackendSession(request: NextRequest) {
 
   try {
     getBackendApiBaseUrl();
-    await fetch(buildBackendProxyUrl(request.nextUrl.origin, "authentications"), {
+    await fetch(buildBackendApiUrl("authentications"), {
       method: "DELETE",
       headers: createBackendHeaders({
         Cookie: `refresh_token=${encodeURIComponent(backendRefreshToken)}`,

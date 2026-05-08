@@ -7,13 +7,18 @@ import { useQuery } from "@tanstack/react-query";
 import { type AdminFormValues, type FormFieldDef } from "@/components/admin";
 import { useAdminLocationOptions } from "@/hooks/use-admin-location-options";
 import {
+  buildExistingUploadFiles,
   buildUploadFieldHelperText,
+  getExistingFileFormValue,
   getFileFormValue,
   getNumberFormValue,
   getStringFormValue,
 } from "@/lib/admin/form";
 import { QUERY_CONFIG } from "@/lib/constants";
-import { fetchRusunPage, type RusunData } from "@/services/rusun.service";
+import {
+  fetchRusunPage,
+  type RusunData,
+} from "@/services/rusun.service";
 
 import { useAdminCrud } from "./use-admin-crud";
 
@@ -43,6 +48,11 @@ function buildRusunFormData(values: AdminFormValues) {
 
   for (const file of getFileFormValue(values, "images")) {
     formData.append("images", file);
+  }
+
+  const existingImages = getExistingFileFormValue(values, "images");
+  if (existingImages) {
+    formData.set("existing_images", existingImages);
   }
 
   return formData;
@@ -178,7 +188,10 @@ export function useAdminRusunPage() {
         type: "file",
         accept: "image/*",
         multiple: false,
-        required: true,
+        required: !crud.editingItem,
+        existingFiles: crud.editingItem
+          ? buildExistingUploadFiles([crud.editingItem.image], "Gambar")
+          : undefined,
         helperText: buildUploadFieldHelperText({
           subject: "1 gambar rusun",
           mode: crud.editingItem ? "edit" : "create",
@@ -199,11 +212,9 @@ export function useAdminRusunPage() {
   const rusunMeta = rusunQuery.data?.meta;
   const stats = useMemo(
     () => ({
-      totalRusun: rusunMeta?.totalRecords ?? 0,
-      totalUnits: rusunList.reduce((sum, item) => sum + item.units, 0),
-      totalTower: rusunList.reduce((sum, item) => sum + item.tower, 0),
+      totalRusun: rusunMeta?.totalRecords ?? rusunList.length,
     }),
-    [rusunList, rusunMeta?.totalRecords]
+    [rusunList.length, rusunMeta?.totalRecords]
   );
 
   return {

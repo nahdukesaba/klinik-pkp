@@ -2,6 +2,7 @@ import { NextRequest, type NextResponse } from "next/server";
 
 import { createSessionAdminUser } from "@/lib/admin/service";
 import {
+  BACKEND_ACCESS_COOKIE_NAME,
   BACKEND_REFRESH_COOKIE_NAME,
   getBackendAccessCookieOptions,
   getBackendRefreshCookieOptions,
@@ -91,6 +92,8 @@ export async function POST(request: NextRequest) {
   let authenticatedUser: AuthUser;
   const backendRefreshToken =
     request.cookies.get(BACKEND_REFRESH_COOKIE_NAME)?.value;
+  const backendAccessToken =
+    request.cookies.get(BACKEND_ACCESS_COOKIE_NAME)?.value;
   let refreshedBackendSession: Extract<ExternalAuthResult, { ok: true }> | null =
     null;
 
@@ -127,6 +130,13 @@ export async function POST(request: NextRequest) {
         )
       );
     }
+  } else if (backendAccessToken) {
+    return clearSessionCookies(
+      createJsonErrorResponse(
+        "Sesi backend tidak dapat diperpanjang. Silakan login ulang.",
+        401
+      )
+    );
   } else {
     authenticatedUser = {
       id: refreshPayload.userId,

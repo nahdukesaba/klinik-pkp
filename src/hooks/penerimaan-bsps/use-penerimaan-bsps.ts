@@ -32,10 +32,7 @@ export function usePenerimaanBsps() {
   const yearsQuery = useQuery({
     queryKey: ["bsps-years"],
     queryFn: () => fetchBspsList(),
-    staleTime: 30 * 60 * 1000,
-    gcTime: 60 * 60 * 1000,
-    retry: 2,
-    refetchOnWindowFocus: false,
+    ...QUERY_CONFIG,
     select: (data) => {
       const years = [...new Set(data.map((item) => item.yearGiven))];
       if (!years.includes(CURRENT_YEAR_NUM)) {

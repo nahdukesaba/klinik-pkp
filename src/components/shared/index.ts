@@ -18,6 +18,7 @@ export {
   AuthCardSkeleton,
   BankDesainPageSkeleton,
   BeritaDetailSkeleton,
+  FaqPageSkeleton,
   InformasiPageSkeleton,
   LokasiKlinikPageSkeleton,
   MapDashboardLoading,

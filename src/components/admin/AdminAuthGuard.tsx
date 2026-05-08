@@ -101,10 +101,22 @@ export function AdminAuthProvider({
         const payload = await response.json().catch(() => null);
 
         if (response.ok) {
+          const refreshData =
+            payload &&
+            typeof payload === "object" &&
+            "data" in payload &&
+            payload.data &&
+            typeof payload.data === "object"
+              ? payload.data
+              : payload;
+
           lastRefreshAtRef.current = Date.now();
           expiresAtRef.current =
-            typeof payload?.accessTokenExpiresAt === "number"
-              ? payload.accessTokenExpiresAt
+            refreshData &&
+            typeof refreshData === "object" &&
+            "accessTokenExpiresAt" in refreshData &&
+            typeof refreshData.accessTokenExpiresAt === "number"
+              ? refreshData.accessTokenExpiresAt
               : Date.now() + sessionLifetimeMs;
           return true;
         }

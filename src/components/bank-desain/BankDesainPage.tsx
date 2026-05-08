@@ -256,11 +256,11 @@ export default function BankDesainPage() {
               <span>Bank Desain</span>
             </div>
             <h1 className="mb-4 text-3xl font-bold text-foreground md:text-4xl lg:text-5xl">
-              Referensi Desain Rumah dan Rusun
+              Referensi Desain Rumah Tipe 36
             </h1>
             <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-              Temukan referensi desain yang dapat membantu perencanaan hunian,
-              mulai dari rumah tapak hingga rusun sederhana.
+              Temukan referensi desain Tipe 36 yang dapat membantu perencanaan
+              hunian sederhana secara lebih praktis.
             </p>
           </div>
 

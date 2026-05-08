@@ -29,10 +29,7 @@ export function useKawasanKumuh() {
   const yearsQuery = useQuery({
     queryKey: ["kawasan-kumuh-years"],
     queryFn: fetchKumuhAvailableYears,
-    staleTime: 30 * 60 * 1000,
-    gcTime: 60 * 60 * 1000,
-    retry: 2,
-    refetchOnWindowFocus: false,
+    ...QUERY_CONFIG,
   });
   const yearParam =
     yearFilter === "all"

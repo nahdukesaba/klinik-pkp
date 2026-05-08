@@ -39,8 +39,15 @@ export interface CoordinateApi {
 
 export interface ApiResponse<T> {
   success: boolean;
-  message: string;
+  message?: string;
   data: T;
-  error?: string;
+  meta?: Record<string, unknown>;
+  error?:
+    | string
+    | {
+        code?: string;
+        message?: string;
+        details?: Record<string, string | string[]>;
+      };
   details?: Record<string, string | string[]>;
 }

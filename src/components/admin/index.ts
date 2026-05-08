@@ -21,4 +21,9 @@ export {
 } from "./AdminDataTable";
 export type { Column, TableAction } from "./AdminDataTable";
 export { AdminFormDialog } from "./AdminFormDialog";
-export type { AdminFormValue, AdminFormValues, FormFieldDef } from "./AdminFormDialog";
+export type {
+  AdminFormValue,
+  AdminFormValues,
+  ExistingUploadFile,
+  FormFieldDef,
+} from "./AdminFormDialog";

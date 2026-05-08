@@ -1,6 +1,8 @@
 import type { AdminFormValues, FormFieldDef } from "@/components/admin";
 import {
+  buildExistingUploadFiles,
   buildUploadFieldHelperText,
+  getExistingFileFormValue,
   getFileFormValue,
   getNumberFormValue,
   getStringFormValue,
@@ -56,16 +58,19 @@ export function buildSosialisasiFormFields(params: {
         type: "file",
         accept: "image/*",
         multiple: true,
-        required: true,
+        required: !editingItem,
+        existingFiles: editingItem
+          ? buildExistingUploadFiles(editingItem.images, "Gambar")
+          : undefined,
         helperText: editingItem
-          ? `Dokumentasi saat ini: ${editingItem.images.length} gambar. ${buildUploadFieldHelperText({
+          ? buildUploadFieldHelperText({
               subject: "1 sampai 4 gambar berita",
               mode: "edit",
               requiresReuploadOnEdit: true,
               validationLabel: "format gambar",
               maxSizeMb: 2,
               totalUploadMb: 4,
-            })}`
+            })
           : buildUploadFieldHelperText({
               subject: "1 sampai 4 gambar berita",
               validationLabel: "format gambar",
@@ -146,6 +151,9 @@ export function buildSosialisasiFormFields(params: {
       type: "file",
       accept: "image/*",
       multiple: true,
+      existingFiles: editingItem
+        ? buildExistingUploadFiles(editingItem.images, "Gambar")
+        : undefined,
       helperText: buildUploadFieldHelperText({
         subject: "1 sampai 4 gambar kegiatan",
         mode: editingItem ? "edit" : "create",
@@ -190,6 +198,11 @@ export function buildSosialisasiFormData(
       formData.append("images", file);
     }
 
+    const existingImages = getExistingFileFormValue(values, "images");
+    if (existingImages) {
+      formData.set("existing_images", existingImages);
+    }
+
     return formData;
   }
 
@@ -217,6 +230,11 @@ export function buildSosialisasiFormData(
 
   for (const file of getFileFormValue(values, "images")) {
     formData.append("images", file);
+  }
+
+  const existingImages = getExistingFileFormValue(values, "images");
+  if (existingImages) {
+    formData.set("existing_images", existingImages);
   }
 
   return formData;

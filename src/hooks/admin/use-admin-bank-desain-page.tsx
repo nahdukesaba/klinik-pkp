@@ -6,7 +6,9 @@ import { useQuery } from "@tanstack/react-query";
 
 import { type AdminFormValues, type FormFieldDef } from "@/components/admin";
 import {
+  buildExistingUploadFiles,
   buildUploadFieldHelperText,
+  getExistingFileFormValue,
   getFileFormValue,
   getStringFormValue,
 } from "@/lib/admin/form";
@@ -23,16 +25,10 @@ const EMPTY_BANK_DESAIN_ITEMS: BankDesainData[] = [];
 
 const typeOptions = [
   { value: "Tipe 36", label: "Tipe 36" },
-  { value: "Tipe 45", label: "Tipe 45" },
-  { value: "Tipe 54", label: "Tipe 54" },
-  { value: "Rusun", label: "Rusun" },
 ];
 
 const frontendTypeToApiType = {
   T36: "Tipe 36",
-  T45: "Tipe 45",
-  T54: "Tipe 54",
-  Rusun: "Rusun",
 } as const;
 
 function buildBankDesainFormData(values: AdminFormValues) {
@@ -51,6 +47,16 @@ function buildBankDesainFormData(values: AdminFormValues) {
 
   for (const file of getFileFormValue(values, "files")) {
     formData.append("files", file);
+  }
+
+  const existingImages = getExistingFileFormValue(values, "images");
+  if (existingImages) {
+    formData.set("existing_images", existingImages);
+  }
+
+  const existingFiles = getExistingFileFormValue(values, "files");
+  if (existingFiles) {
+    formData.set("existing_files", existingFiles);
   }
 
   return formData;
@@ -142,7 +148,10 @@ export function useAdminBankDesainPage() {
         type: "file",
         accept: "image/*",
         multiple: true,
-        required: true,
+        required: !crud.editingItem,
+        existingFiles: crud.editingItem
+          ? buildExistingUploadFiles(crud.editingItem.previewImages, "Gambar")
+          : undefined,
         helperText: buildUploadFieldHelperText({
           subject: "1 sampai 4 gambar desain",
           mode: crud.editingItem ? "edit" : "create",
@@ -158,7 +167,10 @@ export function useAdminBankDesainPage() {
         type: "file",
         accept: ".pdf,application/pdf",
         multiple: false,
-        required: true,
+        required: !crud.editingItem,
+        existingFiles: crud.editingItem
+          ? buildExistingUploadFiles([crud.editingItem.rabPdfUrl], "Dokumen")
+          : undefined,
         helperText: buildUploadFieldHelperText({
           subject: "1 dokumen PDF desain",
           mode: crud.editingItem ? "edit" : "create",
@@ -177,13 +189,11 @@ export function useAdminBankDesainPage() {
 
   const desainList = desainQuery.data?.items ?? EMPTY_BANK_DESAIN_ITEMS;
   const desainMeta = desainQuery.data?.meta;
-  const typeStats = useMemo(
-    () =>
-      desainList.reduce((acc, item) => {
-        acc[item.type] = (acc[item.type] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>),
-    [desainList]
+  const stats = useMemo(
+    () => ({
+      totalDesain: desainMeta?.totalRecords ?? desainList.length,
+    }),
+    [desainList.length, desainMeta?.totalRecords]
   );
 
   return {
@@ -195,7 +205,7 @@ export function useAdminBankDesainPage() {
     desainQuery,
     desainList,
     desainMeta,
-    typeStats,
+    stats,
     formFields,
     initialValues,
     openCreateDialog: crud.openCreateDialog,

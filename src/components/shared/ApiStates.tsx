@@ -77,7 +77,7 @@ interface ErrorDisplay {
 }
 
 /** Tentukan tampilan error berdasarkan ApiError atau generic Error */
-function getErrorDisplay(error?: Error | null): ErrorDisplay {
+function getErrorDisplay(error?: unknown): ErrorDisplay {
   if (error instanceof ApiError) {
     // Server sedang mati / maintenance (5xx)
     if (error.isServerError) {
@@ -156,7 +156,7 @@ function getErrorDisplay(error?: Error | null): ErrorDisplay {
 
 interface ApiErrorStateProps {
   /** Error object — jika ApiError, akan menampilkan pesan status-spesifik */
-  error?: Error | null;
+  error?: unknown;
   /** Override judul error */
   title?: string;
   /** Override deskripsi error */

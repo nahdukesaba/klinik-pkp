@@ -8,15 +8,16 @@ import {
   readJsonRequestBody,
 } from "@/lib/server/http";
 import {
+  adminFaqMutationSchema,
   adminUserCreateSchema,
   adminUserUpdateSchema,
   validateForm,
 } from "@/lib/validations";
 
 import {
-  ADMIN_CACHE_TAGS,
-  revalidateAdminTag,
-  revalidateAdminTags,
+  ADMIN_STATE_TAGS,
+  markAdminStateChanged,
+  markAdminStatesChanged,
 } from "./cache";
 import {
   type ExternalAdminResource,
@@ -29,7 +30,7 @@ import {
   authorizeAdminRequest,
   getRequestIpAddress,
 } from "./security";
-import { createAuditEntry } from "./service";
+import { createAuditEntry, listAuditEntriesPage } from "./service";
 import {
   ADMIN_USERS_PAGE_LIMIT,
   createUser,
@@ -42,6 +43,7 @@ import {
 type ExternalResourceMutationMethod = "POST" | "PUT" | "DELETE";
 type ExternalResourceAuditAction = "CREATE" | "UPDATE" | "DELETE";
 const textEncoder = new TextEncoder();
+const MAX_ADMIN_RESOURCE_PAGE_LIMIT = 100;
 
 interface ExternalResourceMutationOptions {
   method: ExternalResourceMutationMethod;
@@ -85,10 +87,32 @@ function parsePositiveInt(value: string | null, fallback: number) {
   return Math.max(1, Math.trunc(parsed));
 }
 
-function revalidateUsersAdminState() {
-  revalidateAdminTags([
-    ADMIN_CACHE_TAGS.usersDirectory,
-    ADMIN_CACHE_TAGS.dashboardOverview,
+function sanitizeAdminResourceSearchParams(searchParams: URLSearchParams) {
+  const sanitized = new URLSearchParams(searchParams);
+
+  if (sanitized.has("page")) {
+    sanitized.set("page", String(parsePositiveInt(sanitized.get("page"), 1)));
+  }
+
+  if (sanitized.has("limit")) {
+    sanitized.set(
+      "limit",
+      String(
+        Math.min(
+          MAX_ADMIN_RESOURCE_PAGE_LIMIT,
+          parsePositiveInt(sanitized.get("limit"), MAX_ADMIN_RESOURCE_PAGE_LIMIT)
+        )
+      )
+    );
+  }
+
+  return sanitized;
+}
+
+function markUsersAdminStateChanged() {
+  markAdminStatesChanged([
+    ADMIN_STATE_TAGS.usersDirectory,
+    ADMIN_STATE_TAGS.dashboardOverview,
   ]);
 }
 
@@ -138,7 +162,75 @@ async function readExternalMutationBody(request: NextRequest, resource: string) 
     };
   }
 
+  if (resource === "faq" && !(body instanceof FormData)) {
+    const validation = validateForm(adminFaqMutationSchema, body);
+    if (!validation.success) {
+      return {
+        ok: false as const,
+        response: createValidationErrorResponse(
+          "Data FAQ tidak valid.",
+          validation.errors
+        ),
+      };
+    }
+
+    return { ok: true as const, body: validation.data };
+  }
+
   return { ok: true as const, body };
+}
+
+export async function handleExternalAdminResourceList(
+  request: NextRequest,
+  resource: string
+) {
+  const auth = await authorizeAdminRequest(request, { roles: ["admin"] });
+  if (!auth.ok) {
+    return auth.response;
+  }
+
+  if (!resolveExternalAdminResource(resource)) {
+    return createJsonErrorResponse("Resource admin tidak ditemukan.", 404);
+  }
+
+  const result = await proxyExternalAdminResource({
+    resource: resource as ExternalAdminResource,
+    method: "GET",
+    accessToken: auth.user.backendAccessToken,
+    searchParams: sanitizeAdminResourceSearchParams(request.nextUrl.searchParams),
+  });
+
+  return createJsonResponse(result.payload, result.status);
+}
+
+export async function handleExternalAdminResourceDetail(
+  request: NextRequest,
+  resource: string,
+  id: string
+) {
+  const auth = await authorizeAdminRequest(request, { roles: ["admin"] });
+  if (!auth.ok) {
+    return auth.response;
+  }
+
+  if (!resolveExternalAdminResource(resource)) {
+    return createJsonErrorResponse(
+      "Resource admin tidak ditemukan.",
+      404,
+      undefined,
+      "RESOURCE_NOT_FOUND"
+    );
+  }
+
+  const result = await proxyExternalAdminResource({
+    resource: resource as ExternalAdminResource,
+    method: "GET",
+    id,
+    accessToken: auth.user.backendAccessToken,
+    searchParams: request.nextUrl.searchParams,
+  });
+
+  return createJsonResponse(result.payload, result.status);
 }
 
 export async function handleExternalAdminResourceMutation(
@@ -153,8 +245,7 @@ export async function handleExternalAdminResourceMutation(
     return auth.response;
   }
 
-  const config = resolveExternalAdminResource(options.resource);
-  if (!config) {
+  if (!resolveExternalAdminResource(options.resource)) {
     return createJsonErrorResponse("Resource admin tidak ditemukan.", 404);
   }
 
@@ -193,7 +284,7 @@ export async function handleExternalAdminResourceMutation(
     details: options.details({ resource: options.resource, id: options.id }),
   });
 
-  revalidateAdminTag(ADMIN_CACHE_TAGS.externalStats);
+  markAdminStateChanged(ADMIN_STATE_TAGS.externalStats);
 
   return createJsonResponse(result.payload, result.status);
 }
@@ -215,7 +306,6 @@ export async function handleListUsers(request: NextRequest) {
     );
     const users = await listUsersPage(
       auth.user.backendAccessToken,
-      request.nextUrl.origin,
       { page, limit }
     );
 
@@ -261,8 +351,7 @@ export async function handleCreateUser(request: NextRequest) {
   try {
     const result = await createUser(
       validatedData,
-      auth.user.backendAccessToken,
-      request.nextUrl.origin
+      auth.user.backendAccessToken
     );
 
     await recordAudit(request, auth.user, {
@@ -271,7 +360,7 @@ export async function handleCreateUser(request: NextRequest) {
       details: `Menambahkan pengguna ${validatedData.email} ke Control Users.`,
     });
 
-    revalidateUsersAdminState();
+    markUsersAdminStateChanged();
 
     return createJsonResponse(result, 201);
   } catch (error) {
@@ -291,8 +380,7 @@ export async function handleGetUser(request: NextRequest, id: string) {
   try {
     const user = await getUserDetail(
       id,
-      auth.user.backendAccessToken,
-      request.nextUrl.origin
+      auth.user.backendAccessToken
     );
 
     return createJsonResponse({ data: user });
@@ -342,8 +430,7 @@ export async function handleUpdateUser(request: NextRequest, id: string) {
     const result = await updateUser(
       id,
       validatedData,
-      auth.user.backendAccessToken,
-      request.nextUrl.origin
+      auth.user.backendAccessToken
     );
 
     await recordAudit(request, auth.user, {
@@ -352,7 +439,7 @@ export async function handleUpdateUser(request: NextRequest, id: string) {
       details: `Memperbarui pengguna ${validatedData.email} pada Control Users.`,
     });
 
-    revalidateUsersAdminState();
+    markUsersAdminStateChanged();
 
     return createJsonResponse(result);
   } catch (error) {
@@ -373,7 +460,7 @@ export async function handleDeleteUser(request: NextRequest, id: string) {
   }
 
   try {
-    await deleteUser(id, auth.user.backendAccessToken, request.nextUrl.origin);
+    await deleteUser(id, auth.user.backendAccessToken);
 
     await recordAudit(request, auth.user, {
       action: "DELETE",
@@ -381,7 +468,7 @@ export async function handleDeleteUser(request: NextRequest, id: string) {
       details: `Menghapus pengguna dengan id ${id} dari Control Users.`,
     });
 
-    revalidateUsersAdminState();
+    markUsersAdminStateChanged();
 
     return createJsonResponse({ success: true });
   } catch (error) {
@@ -390,4 +477,39 @@ export async function handleDeleteUser(request: NextRequest, id: string) {
       "Gagal menghapus pengguna backend."
     );
   }
+}
+
+export function parseAdminListPagination(
+  request: NextRequest,
+  defaults: { page?: number; limit?: number; maxLimit?: number } = {}
+) {
+  const maxLimit = defaults.maxLimit ?? MAX_ADMIN_RESOURCE_PAGE_LIMIT;
+  const page = parsePositiveInt(
+    request.nextUrl.searchParams.get("page"),
+    defaults.page ?? 1
+  );
+  const limit = Math.min(
+    maxLimit,
+    parsePositiveInt(
+      request.nextUrl.searchParams.get("limit"),
+      defaults.limit ?? maxLimit
+    )
+  );
+
+  return { page, limit };
+}
+
+export async function handleListAuditEntries(request: NextRequest) {
+  const auth = await authorizeAdminRequest(request, { roles: ["admin"] });
+  if (!auth.ok) {
+    return auth.response;
+  }
+
+  const { page, limit } = parseAdminListPagination(request, {
+    limit: 20,
+    maxLimit: 100,
+  });
+  const audit = await listAuditEntriesPage(page, limit);
+
+  return createJsonResponse({ data: audit.items, meta: audit.meta });
 }

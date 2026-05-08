@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { createJsonResponse } from "@/lib/server/http";
 
 /**
  * Health Check API
@@ -6,5 +6,5 @@ import { NextResponse } from "next/server";
  * GET /api/health — Status aplikasi (hanya informasi non-sensitif).
  */
 export async function GET() {
-  return NextResponse.json({ status: "ok" });
+  return createJsonResponse({ status: "ok" });
 }

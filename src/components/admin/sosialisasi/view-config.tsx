@@ -172,6 +172,11 @@ export function buildSosialisasiViewConfig(params: {
   completedLocations: SosialisasiLocation[];
   pendingLocations: SosialisasiLocation[];
   kabupatenCount: number;
+  statsLocations?: SosialisasiLocation[];
+  statsUpcomingLocations?: SosialisasiLocation[];
+  statsCompletedLocations?: SosialisasiLocation[];
+  statsPendingLocations?: SosialisasiLocation[];
+  statsKabupatenCount?: number;
 }): SosialisasiViewConfig {
   const {
     view,
@@ -180,12 +185,18 @@ export function buildSosialisasiViewConfig(params: {
     completedLocations,
     pendingLocations,
     kabupatenCount,
+    statsLocations = locations,
+    statsUpcomingLocations = upcomingLocations,
+    statsCompletedLocations = completedLocations,
+    statsPendingLocations = pendingLocations,
+    statsKabupatenCount = kabupatenCount,
   } = params;
 
   if (view === "jadwal") {
     const agenda = sortByScheduledAtAsc(locations);
+    const allAgenda = sortByScheduledAtAsc(statsLocations);
     const currentMonth = getMonthKey(new Date().toISOString());
-    const currentMonthCount = agenda.filter((item) =>
+    const currentMonthCount = allAgenda.filter((item) =>
       getMonthKey(item.scheduledAtStart) === currentMonth
     ).length;
 
@@ -199,10 +210,10 @@ export function buildSosialisasiViewConfig(params: {
       columns: jadwalColumns,
       data: agenda,
       stats: [
-        { label: "Agenda Halaman Ini", value: agenda.length },
+        { label: "Total Agenda", value: allAgenda.length },
         { label: "Bulan Ini", value: currentMonthCount },
-        { label: "Mendatang Halaman Ini", value: upcomingLocations.length },
-        { label: "Selesai Halaman Ini", value: completedLocations.length },
+        { label: "Mendatang", value: statsUpcomingLocations.length },
+        { label: "Selesai", value: statsCompletedLocations.length },
       ],
       icon: <CalendarClock className="h-5 w-5" />,
     };
@@ -211,6 +222,11 @@ export function buildSosialisasiViewConfig(params: {
   if (view === "berita") {
     const berita = sortByScheduledAtDesc(
       [...pendingLocations, ...completedLocations].filter(
+        (item) => item.description.trim() !== ""
+      )
+    );
+    const allBerita = sortByScheduledAtDesc(
+      [...statsPendingLocations, ...statsCompletedLocations].filter(
         (item) => item.description.trim() !== ""
       )
     );
@@ -225,13 +241,13 @@ export function buildSosialisasiViewConfig(params: {
       columns: beritaColumns,
       data: berita,
       stats: [
-        { label: "Berita Halaman Ini", value: berita.length },
+        { label: "Total Berita", value: allBerita.length },
         {
-          label: "Dengan Gambar Halaman Ini",
-          value: berita.filter((item) => item.images.length > 0).length,
+          label: "Dengan Gambar",
+          value: allBerita.filter((item) => item.images.length > 0).length,
         },
-        { label: "Pending Dokumentasi", value: pendingLocations.length },
-        { label: "Selesai Halaman Ini", value: completedLocations.length },
+        { label: "Pending Dokumentasi", value: statsPendingLocations.length },
+        { label: "Selesai", value: statsCompletedLocations.length },
       ],
       icon: <Newspaper className="h-5 w-5" />,
     };
@@ -247,10 +263,10 @@ export function buildSosialisasiViewConfig(params: {
     columns: lokasiColumns,
     data: locations,
     stats: [
-      { label: "Titik Halaman Ini", value: locations.length },
-      { label: "Kabupaten Halaman Ini", value: kabupatenCount },
-      { label: "Mendatang Halaman Ini", value: upcomingLocations.length },
-      { label: "Selesai Halaman Ini", value: completedLocations.length },
+      { label: "Total Titik", value: statsLocations.length },
+      { label: "Kabupaten/Kota", value: statsKabupatenCount },
+      { label: "Mendatang", value: statsUpcomingLocations.length },
+      { label: "Selesai", value: statsCompletedLocations.length },
     ],
     icon: <MapPin className="h-5 w-5" />,
   };

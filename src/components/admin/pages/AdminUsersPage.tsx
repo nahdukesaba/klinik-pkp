@@ -1,6 +1,6 @@
 "use client";
 
-import { BadgeCheck, RefreshCw, Shield, UserX, Users } from "lucide-react";
+import { RefreshCw, Users } from "lucide-react";
 
 import {
   AdminAccessDenied,
@@ -267,25 +267,8 @@ export default function AdminUsersPage() {
       <AdminStatsGrid
         items={[
           { label: "Total User", value: stats.totalUsers, icon: <Users className="h-5 w-5" /> },
-          {
-            label: "User Halaman Ini",
-            value: stats.pageUsers,
-            icon: <BadgeCheck className="h-5 w-5" />,
-            tone: "bg-teal-500/10 text-teal-600",
-          },
-          {
-            label: "Aktif Halaman Ini",
-            value: stats.activeOnPage,
-            icon: <Shield className="h-5 w-5" />,
-            tone: "bg-emerald-500/10 text-emerald-600",
-          },
-          {
-            label: "Admin Halaman Ini",
-            value: stats.adminsOnPage,
-            icon: <UserX className="h-5 w-5" />,
-            tone: "bg-amber-500/10 text-amber-600",
-          },
         ]}
+        columnsClassName="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
       />
 
       <FilterBar

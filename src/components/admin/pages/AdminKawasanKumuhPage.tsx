@@ -137,7 +137,6 @@ export default function AdminKawasanKumuhPage() {
         title="Data Kawasan Kumuh"
         description="Kelola data kawasan, indikator kekumuhan, dan lokasi hasil inspeksi."
         icon={<Map className="h-5 w-5" />}
-        publicHref="/kawasan-kumuh"
         createLabel="Tambah Kawasan"
         onCreate={openCreateDialog}
       />
@@ -146,16 +145,16 @@ export default function AdminKawasanKumuhPage() {
         items={[
           { label: "Total Kawasan", value: stats.totalKawasan },
           {
-            label: "Luas Halaman Ini",
+            label: "Total Luas",
             value: `${stats.totalLuas.toLocaleString("id-ID")} Ha`,
           },
           {
-            label: "Penduduk Halaman Ini",
+            label: "Total Penduduk",
             value: stats.totalPenduduk.toLocaleString("id-ID"),
           },
-          { label: "Berat Halaman Ini", value: stats.berat },
-          { label: "Sedang Halaman Ini", value: stats.sedang },
-          { label: "Ringan Halaman Ini", value: stats.ringan },
+          { label: "Berat", value: stats.berat },
+          { label: "Sedang", value: stats.sedang },
+          { label: "Ringan", value: stats.ringan },
         ]}
         columnsClassName="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6"
       />

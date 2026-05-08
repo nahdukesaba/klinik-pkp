@@ -103,7 +103,7 @@ export default function AdminBankDesainPage() {
     desainQuery,
     desainList,
     desainMeta,
-    typeStats,
+    stats,
     formFields,
     initialValues,
     openCreateDialog,
@@ -126,20 +126,15 @@ export default function AdminBankDesainPage() {
         title="Data Bank Desain"
         description="Kelola desain rumah, gambar, dan file dokumen."
         icon={<Palette className="h-5 w-5" />}
-        publicHref="/bank-desain"
         createLabel="Tambah Desain"
         onCreate={openCreateDialog}
       />
 
       <AdminStatsGrid
         items={[
-          { label: "Total Desain", value: desainMeta?.totalRecords ?? 0 },
-          ...Object.entries(typeStats).map(([type, count]) => ({
-            label: `${type} Halaman Ini`,
-            value: count,
-          })),
+          { label: "Total Desain", value: stats.totalDesain },
         ]}
-        columnsClassName="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5"
+        columnsClassName="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
       />
 
       {desainQuery.error ? (

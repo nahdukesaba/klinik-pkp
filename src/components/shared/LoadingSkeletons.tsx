@@ -142,6 +142,54 @@ export function BankDesainPageSkeleton() {
   );
 }
 
+export function FaqPageSkeleton() {
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="h-16 lg:h-20 bg-card border-b border-border animate-pulse" />
+
+      <div className="container mx-auto px-4 py-24">
+        <div className="mx-auto max-w-4xl">
+          <div className="mb-5 flex items-center gap-3">
+            <div className="h-11 w-11 rounded-lg bg-muted animate-pulse" />
+            <div className="space-y-2">
+              <div className="h-4 w-32 rounded bg-muted animate-pulse" />
+              <div className="h-9 w-56 rounded bg-muted animate-pulse" />
+            </div>
+          </div>
+          <div className="h-5 w-full max-w-3xl rounded bg-muted animate-pulse" />
+          <div className="mt-2 h-5 w-2/3 rounded bg-muted animate-pulse" />
+        </div>
+
+        <div className="mx-auto mt-8 max-w-4xl rounded-lg border border-border bg-card p-5 shadow-sm">
+          <div className="h-5 w-32 rounded bg-muted animate-pulse" />
+          <div className="mt-3 h-12 w-full rounded-lg bg-muted animate-pulse" />
+          <div className="mt-4 flex gap-2 overflow-hidden">
+            {Array.from({ length: 5 }).map((_, index) => (
+              <div
+                key={index}
+                className="h-11 w-24 shrink-0 rounded-lg bg-muted animate-pulse"
+              />
+            ))}
+          </div>
+        </div>
+
+        <div className="mx-auto mt-8 max-w-4xl space-y-3">
+          {Array.from({ length: 5 }).map((_, index) => (
+            <div
+              key={index}
+              className="rounded-lg border border-border bg-card p-5 shadow-sm"
+            >
+              <div className="h-5 w-3/4 rounded bg-muted animate-pulse" />
+              <div className="mt-4 h-4 w-full rounded bg-muted animate-pulse" />
+              <div className="mt-2 h-4 w-5/6 rounded bg-muted animate-pulse" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function LokasiKlinikPageSkeleton() {
   return (
     <div className="min-h-screen bg-background">

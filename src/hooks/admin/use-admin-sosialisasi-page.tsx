@@ -21,6 +21,7 @@ import {
   buildSosialisasiViewConfig,
   type SosialisasiAdminView,
 } from "@/components/admin/sosialisasi/config";
+import { useConfirmDialog } from "@/components/providers/ConfirmDialogProvider";
 import { useAdminCreateIntent } from "@/hooks/admin/use-admin-create-intent";
 import { useAdminLocationOptions } from "@/hooks/use-admin-location-options";
 import { useCurrentTime } from "@/hooks/use-current-time";
@@ -44,6 +45,7 @@ const SOSIALISASI_PAGE_LIMIT = 10;
 export function useAdminSosialisasiPage(view: SosialisasiAdminView) {
   const { user } = useAdminAuth();
   const { toast } = useToast();
+  const confirm = useConfirmDialog();
   const queryClient = useQueryClient();
   const currentTime = useCurrentTime();
 
@@ -195,7 +197,7 @@ export function useAdminSosialisasiPage(view: SosialisasiAdminView) {
 
         if (editingItem) {
           await adminFetch(`/api/admin/resources/sosialisasi/${editingItem.id}`, {
-            method: "POST",
+            method: "PUT",
             body: formData,
           });
         } else {
@@ -245,7 +247,14 @@ export function useAdminSosialisasiPage(view: SosialisasiAdminView) {
 
   const handleDelete = useCallback(
     async (item: SosialisasiLocation) => {
-      if (!window.confirm(`Hapus kegiatan "${item.name}"?`)) {
+      const confirmed = await confirm({
+        title: "Hapus kegiatan?",
+        description: `Kegiatan "${item.name}" akan dihapus permanen.`,
+        confirmLabel: "Hapus",
+        destructive: true,
+      });
+
+      if (!confirmed) {
         return;
       }
 
@@ -267,7 +276,7 @@ export function useAdminSosialisasiPage(view: SosialisasiAdminView) {
         });
       }
     },
-    [refreshSosialisasi, toast]
+    [confirm, refreshSosialisasi, toast]
   );
 
   const actions = useMemo<TableAction<SosialisasiLocation>[]>(() => {

@@ -14,8 +14,6 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            // Sinkronkan dengan QUERY_CONFIG agar konsisten.
-            // Ref: react-query-best-practices/cache-stale-time
             staleTime: QUERY_CONFIG.staleTime,
             gcTime: QUERY_CONFIG.gcTime,
             retry: QUERY_CONFIG.retry,

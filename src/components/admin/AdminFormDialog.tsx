@@ -31,6 +31,11 @@ import { cn } from "@/lib/utils";
 export type AdminFormValue = string | File[];
 export type AdminFormValues = Record<string, AdminFormValue>;
 
+export interface ExistingUploadFile {
+  name: string;
+  url: string;
+}
+
 export interface FormFieldDef {
   name: string;
   label: string;
@@ -50,6 +55,7 @@ export interface FormFieldDef {
   accept?: string;
   multiple?: boolean;
   helperText?: string;
+  existingFiles?: ExistingUploadFile[];
 }
 
 interface AdminFormDialogProps {
@@ -89,6 +95,12 @@ function buildDefaultValues(
     defaults[field.name] =
       initialValues[field.name] ??
       (field.type === "file" ? [] : field.defaultValue ?? "");
+
+    if (field.type === "file" && field.existingFiles) {
+      defaults[`${field.name}Existing`] =
+        initialValues[`${field.name}Existing`] ??
+        JSON.stringify(field.existingFiles);
+    }
   }
 
   return defaults;
@@ -99,7 +111,11 @@ function buildFormStateKey(
   initialValues: AdminFormValues
 ) {
   const fieldSignature = fields
-    .map((field) => `${field.name}:${field.type}:${field.defaultValue ?? ""}`)
+    .map((field) => {
+      const existingSignature =
+        field.existingFiles?.map((file) => file.url).join(",") ?? "";
+      return `${field.name}:${field.type}:${field.defaultValue ?? ""}:${existingSignature}`;
+    })
     .join("|");
   const initialValueSignature = Object.entries(initialValues)
     .sort(([left], [right]) => left.localeCompare(right))
@@ -132,6 +148,24 @@ function mergeFiles(currentFiles: File[], nextFiles: File[], allowMultiple: bool
   }
 
   return merged;
+}
+
+function parseExistingFiles(value: AdminFormValue | undefined) {
+  if (typeof value !== "string" || !value) {
+    return [] as ExistingUploadFile[];
+  }
+
+  try {
+    const parsed = JSON.parse(value) as ExistingUploadFile[];
+    return Array.isArray(parsed)
+      ? parsed.filter(
+          (file) =>
+            typeof file?.name === "string" && typeof file?.url === "string"
+        )
+      : [];
+  } catch {
+    return [];
+  }
 }
 
 function AdminFormDialogBody({
@@ -176,6 +210,8 @@ function AdminFormDialogBody({
         const fieldValue = values[field.name];
         const stringValue = typeof fieldValue === "string" ? fieldValue : "";
         const fileValue = Array.isArray(fieldValue) ? fieldValue : [];
+        const existingFieldName = `${field.name}Existing`;
+        const existingFiles = parseExistingFiles(values[existingFieldName]);
 
         return (
           <div key={field.name} className="space-y-2">
@@ -232,7 +268,11 @@ function AdminFormDialogBody({
                   type="file"
                   accept={field.accept}
                   multiple={field.multiple}
-                  required={field.required && fileValue.length === 0}
+                  required={
+                    field.required &&
+                    fileValue.length === 0 &&
+                    existingFiles.length === 0
+                  }
                   onChange={(event) => {
                     const nextFiles = Array.from(event.target.files ?? []);
                     handleChange(
@@ -247,10 +287,52 @@ function AdminFormDialogBody({
                       "border-destructive focus-visible:ring-destructive"
                   )}
                 />
+                {existingFiles.length > 0 && (
+                  <div className="rounded-md border border-border bg-muted/20 px-3 py-2">
+                    <p className="text-xs font-medium text-foreground">
+                      File saat ini
+                    </p>
+                    <div className="mt-2 space-y-2">
+                      {existingFiles.map((file) => (
+                        <div
+                          key={file.url}
+                          className="flex items-center justify-between gap-3 rounded-md border border-border/70 bg-background/80 px-2.5 py-2"
+                        >
+                          <a
+                            href={file.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="min-w-0 truncate text-xs font-medium text-foreground underline-offset-2 hover:underline"
+                          >
+                            {file.name}
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleChange(
+                                existingFieldName,
+                                JSON.stringify(
+                                  existingFiles.filter(
+                                    (existingFile) =>
+                                      existingFile.url !== file.url
+                                  )
+                                )
+                              )
+                            }
+                            className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive"
+                            aria-label={`Hapus ${file.name}`}
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {fileValue.length > 0 && (
                   <div className="rounded-md border border-border bg-muted/30 px-3 py-2">
                     <p className="text-xs font-medium text-foreground">
-                      {fileValue.length} file dipilih
+                      File baru
                     </p>
                     <div className="mt-2 space-y-2">
                       {fileValue.map((file, index) => (

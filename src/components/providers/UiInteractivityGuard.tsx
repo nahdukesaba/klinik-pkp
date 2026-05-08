@@ -42,8 +42,15 @@ function cleanupClosedDialogArtifacts() {
   );
 
   if (!hasOpenDialog()) {
-    removeMatchedNodes(FOCUS_GUARD_SELECTOR);
-    restoreBodyInteractivity();
+    window.requestAnimationFrame(() => {
+      if (hasOpenDialog()) {
+        return;
+      }
+
+      removeMatchedNodes(`${DIALOG_OVERLAY_SELECTOR}, ${DIALOG_CONTENT_SELECTOR}`);
+      removeMatchedNodes(FOCUS_GUARD_SELECTOR);
+      restoreBodyInteractivity();
+    });
   }
 }
 

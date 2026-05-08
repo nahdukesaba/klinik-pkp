@@ -104,7 +104,6 @@ export default function AdminBspsPage() {
         title="Data Penerimaan BSPS"
         description="Kelola data bantuan perumahan secara aman langsung dari panel admin."
         icon={<HandCoins className="h-5 w-5" />}
-        publicHref="/penerimaan-bsps"
         createLabel="Tambah BSPS"
         onCreate={openCreateDialog}
       />
@@ -113,12 +112,13 @@ export default function AdminBspsPage() {
         items={[
           { label: "Total Lokasi", value: stats.totalLokasi },
           {
-            label: "Unit Halaman Ini",
+            label: "Total Unit",
             value: stats.totalUnit.toLocaleString("id-ID"),
           },
-          { label: "Selesai Halaman Ini", value: stats.selesai },
-          { label: "Proses Halaman Ini", value: stats.proses },
+          { label: "Selesai", value: stats.selesai },
+          { label: "Dalam Proses", value: stats.proses },
         ]}
+        columnsClassName="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
       />
 
       {bspsQuery.error ? (

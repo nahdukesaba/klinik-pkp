@@ -9,6 +9,7 @@ import { useAdminLocationOptions } from "@/hooks/use-admin-location-options";
 import { getNumberFormValue, getStringFormValue } from "@/lib/admin/form";
 import { QUERY_CONFIG } from "@/lib/constants";
 import {
+  fetchKumuhList,
   fetchKumuhPage,
   type KawasanKumuhData,
 } from "@/services/kawasan-kumuh.service";
@@ -77,6 +78,14 @@ export function useAdminKawasanKumuhPage() {
     staleTime: QUERY_CONFIG.staleTime,
     gcTime: QUERY_CONFIG.gcTime,
     placeholderData: (previousData) => previousData,
+    enabled: crud.canManage,
+  });
+
+  const kumuhStatsQuery = useQuery({
+    queryKey: ["admin-kawasan-kumuh-stats"],
+    queryFn: () => fetchKumuhList({ perPage: KUMUH_PAGE_LIMIT, collectAllPages: true }),
+    staleTime: QUERY_CONFIG.staleTime,
+    gcTime: QUERY_CONFIG.gcTime,
     enabled: crud.canManage,
   });
 
@@ -164,17 +173,18 @@ export function useAdminKawasanKumuhPage() {
     : undefined;
 
   const kumuhList = kumuhQuery.data?.items ?? EMPTY_KAWASAN_KUMUH_ITEMS;
+  const allKumuhList = kumuhStatsQuery.data ?? kumuhList;
   const kumuhMeta = kumuhQuery.data?.meta;
   const stats = useMemo(
     () => ({
-      totalKawasan: kumuhMeta?.totalRecords ?? 0,
-      totalLuas: kumuhList.reduce((sum, item) => sum + item.luas, 0),
-      totalPenduduk: kumuhList.reduce((sum, item) => sum + item.penduduk, 0),
-      berat: kumuhList.filter((item) => item.status === "berat").length,
-      sedang: kumuhList.filter((item) => item.status === "sedang").length,
-      ringan: kumuhList.filter((item) => item.status === "ringan").length,
+      totalKawasan: kumuhMeta?.totalRecords ?? allKumuhList.length,
+      totalLuas: allKumuhList.reduce((sum, item) => sum + item.luas, 0),
+      totalPenduduk: allKumuhList.reduce((sum, item) => sum + item.penduduk, 0),
+      berat: allKumuhList.filter((item) => item.status === "berat").length,
+      sedang: allKumuhList.filter((item) => item.status === "sedang").length,
+      ringan: allKumuhList.filter((item) => item.status === "ringan").length,
     }),
-    [kumuhList, kumuhMeta?.totalRecords]
+    [allKumuhList, kumuhMeta?.totalRecords]
   );
 
   return {

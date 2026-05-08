@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import {
   Building2,
   HandCoins,
+  HelpCircle,
   LayoutDashboard,
   Map,
   MapPin,
@@ -97,6 +98,19 @@ const adminNavItems: AdminNavItem[] = [
       {
         label: "Tambah Desain",
         href: "/admin/bank-desain?create=1",
+        roles: ADMIN_CONTENT_ROLES,
+      },
+    ],
+  },
+  {
+    label: "FAQ",
+    href: "/admin/faq",
+    icon: <HelpCircle className="h-5 w-5" />,
+    children: [
+      { label: "Daftar FAQ", href: "/admin/faq" },
+      {
+        label: "Tambah FAQ",
+        href: "/admin/faq?create=1",
         roles: ADMIN_CONTENT_ROLES,
       },
     ],

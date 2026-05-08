@@ -5,6 +5,7 @@ import { startTransition, useCallback, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { useAdminAuth, type AdminFormValues, type FormFieldDef } from "@/components/admin";
+import { useConfirmDialog } from "@/components/providers/ConfirmDialogProvider";
 import { useToast } from "@/hooks/use-toast";
 import { getStringFormValue } from "@/lib/admin/form";
 import { canManageUsers } from "@/lib/admin/roles";
@@ -72,6 +73,7 @@ function createDefaultPaginationMeta(page: number): AdminPaginationMeta {
 export function useAdminUsersPage() {
   const { user } = useAdminAuth();
   const { toast } = useToast();
+  const confirm = useConfirmDialog();
   const queryClient = useQueryClient();
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -136,11 +138,8 @@ export function useAdminUsersPage() {
   const stats = useMemo(
     () => ({
       totalUsers: usersMeta.totalRecords,
-      pageUsers: pageUsers.length,
-      activeOnPage: pageUsers.filter((item) => item.isActive).length,
-      adminsOnPage: pageUsers.filter((item) => item.role === "admin").length,
     }),
-    [pageUsers, usersMeta.totalRecords]
+    [usersMeta.totalRecords]
   );
 
   const formFields = useMemo<FormFieldDef[]>(
@@ -324,7 +323,14 @@ export function useAdminUsersPage() {
 
   const handleDelete = useCallback(
     async (item: AdminDirectoryUser) => {
-      if (!window.confirm(`Hapus user "${item.name}" dari backend?`)) {
+      const confirmed = await confirm({
+        title: "Hapus user?",
+        description: `User "${item.name}" akan dihapus dari backend.`,
+        confirmLabel: "Hapus",
+        destructive: true,
+      });
+
+      if (!confirmed) {
         return;
       }
 
@@ -357,7 +363,7 @@ export function useAdminUsersPage() {
         });
       }
     },
-    [currentPage, pageUsers.length, refreshUsers, toast]
+    [confirm, currentPage, pageUsers.length, refreshUsers, toast]
   );
 
   const handleFormOpenChange = useCallback((open: boolean) => {

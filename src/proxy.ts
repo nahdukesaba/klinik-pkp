@@ -5,6 +5,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 
+import { apiError } from "@/lib/api-response";
+
 // --- Rate Limiting Store (in-memory, per server instance) ---
 
 const rateLimitStore = new Map<
@@ -93,6 +95,7 @@ function shouldApplyRateLimit(
  * Tambahkan path baru di sini saat endpoint backend bertambah.
  */
 const ALLOWED_API_PATHS = [
+  "/api/ext/faqs",
   "/api/ext/rusun",
   "/api/ext/uploads/",
   "/api/ext/sosialisasi",
@@ -101,7 +104,6 @@ const ALLOWED_API_PATHS = [
   "/api/ext/bsps",
   "/api/ext/forgot-password",
   "/api/ext/authentications",
-  "/api/ext/users",
   "/api/ext/regions",
   "/api/ext/districts",
   "/api/ext/villages",
@@ -109,9 +111,13 @@ const ALLOWED_API_PATHS = [
 
 /** Cek apakah path API diizinkan berdasarkan allowlist */
 function isAllowedApiPath(pathname: string): boolean {
-  return ALLOWED_API_PATHS.some(
-    (allowed) => pathname === allowed || pathname.startsWith(allowed)
-  );
+  return ALLOWED_API_PATHS.some((allowed) => {
+    if (allowed.endsWith("/")) {
+      return pathname.startsWith(allowed);
+    }
+
+    return pathname === allowed || pathname.startsWith(`${allowed}/`);
+  });
 }
 
 export function proxy(request: NextRequest) {
@@ -126,8 +132,8 @@ export function proxy(request: NextRequest) {
     shouldApplyRateLimit(request, pathname, isDev) &&
     isRateLimited(clientAddress)
   ) {
-    return new NextResponse("Too Many Requests", {
-      status: 429,
+    return apiError(429, "Terlalu banyak permintaan.", {
+      code: "RATE_LIMITED",
       headers: {
         "Retry-After": String(Math.ceil(RATE_LIMIT_WINDOW / 1000)),
       },
@@ -139,7 +145,9 @@ export function proxy(request: NextRequest) {
   // Biarkan proxy fokus pada rate limiting + allowlist path publik.
   if (pathname.startsWith("/api/")) {
     if (pathname.startsWith("/api/ext/") && !isAllowedApiPath(pathname)) {
-      return new NextResponse("Forbidden", { status: 403 });
+      return apiError(403, "Endpoint API tidak diizinkan.", {
+        code: "FORBIDDEN",
+      });
     }
 
     return NextResponse.next();

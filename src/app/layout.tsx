@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 
+import { ConfirmDialogProvider } from "@/components/providers/ConfirmDialogProvider";
 import { QueryProvider } from "@/components/providers/QueryProvider";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { UiInteractivityGuard } from "@/components/providers/UiInteractivityGuard";
@@ -47,12 +48,14 @@ export default async function RootLayout({
           nonce={nonce}
         >
           <QueryProvider>
-            <TooltipProvider>
-              <UiInteractivityGuard />
-              {children}
-              <WhatsAppFloatingButton />
-              <Toaster />
-            </TooltipProvider>
+            <ConfirmDialogProvider>
+              <TooltipProvider>
+                <UiInteractivityGuard />
+                {children}
+                <WhatsAppFloatingButton />
+                <Toaster />
+              </TooltipProvider>
+            </ConfirmDialogProvider>
           </QueryProvider>
         </ThemeProvider>
       </body>

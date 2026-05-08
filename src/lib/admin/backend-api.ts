@@ -2,8 +2,6 @@ import "server-only";
 
 import {
   buildConfiguredBackendApiUrl,
-  normalizeBackendApiBaseUrl,
-  normalizeBackendPathname,
   requireBackendApiBaseUrl,
 } from "@/lib/server/backend-config";
 
@@ -79,13 +77,6 @@ export function buildBackendApiUrl(pathname: string) {
   return buildConfiguredBackendApiUrl(pathname);
 }
 
-/** Buat URL proxy melalui Next.js API route. */
-export function buildBackendProxyUrl(origin: string, pathname: string) {
-  const normalizedOrigin = normalizeBackendApiBaseUrl(origin);
-  const cleanPath = normalizeBackendPathname(pathname);
-  return `${normalizedOrigin}/api/ext/${cleanPath}`;
-}
-
 /** Buat header standar untuk request ke backend. */
 export function createBackendHeaders(headers?: HeadersInit) {
   const requestHeaders = new Headers(headers);
@@ -99,16 +90,14 @@ export function createBackendHeaders(headers?: HeadersInit) {
 /** Fetch JSON dari backend dengan timeout dan error handling. */
 export async function fetchBackendJson<T>(
   pathname: string,
-  init: RequestInit & { timeoutMs?: number; origin?: string } = {}
+  init: RequestInit & { timeoutMs?: number } = {}
 ) {
-  const { timeoutMs = 20_000, headers, origin, ...requestInit } = init;
+  const { timeoutMs = 20_000, headers, ...requestInit } = init;
 
   let targetUrl: string;
 
   try {
-    targetUrl = origin
-      ? buildBackendProxyUrl(origin, pathname)
-      : buildBackendApiUrl(pathname);
+    targetUrl = buildBackendApiUrl(pathname);
   } catch (error) {
     throw new BackendApiError(
       error instanceof Error ? error.message : "Konfigurasi API_URL belum tersedia.",

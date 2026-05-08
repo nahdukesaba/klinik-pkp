@@ -52,6 +52,7 @@ export interface KumuhListParams {
   perPage?: number;
   regionId?: string;
   districtId?: string;
+  collectAllPages?: boolean;
 }
 
 export const kawasanStatusColors: Record<string, { fill: string; label: string }> = {
@@ -116,7 +117,7 @@ export async function fetchKumuhList(
     },
     transform: transformKumuhItem,
     errorMessage: "Gagal mengambil data kawasan kumuh dari server",
-    collectAllPages: false,
+    collectAllPages: params.collectAllPages ?? false,
   });
 }
 
@@ -151,5 +152,6 @@ export async function fetchKumuhPage(
     },
     transform: transformKumuhItem,
     errorMessage: "Gagal mengambil data kawasan kumuh dari server",
+    requestOptions: { retry: 0 },
   });
 }

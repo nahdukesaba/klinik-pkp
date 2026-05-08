@@ -90,6 +90,22 @@ export const adminUserUpdateSchema = adminUserBaseSchema.extend({
     .transform((value) => value?.trim() ?? ""),
 });
 
+export const adminFaqMutationSchema = z.object({
+  question: z
+    .string()
+    .min(1, "Pertanyaan wajib diisi")
+    .max(500, "Pertanyaan terlalu panjang")
+    .transform((value) => sanitizeInput(value).replace(/\s+/g, " ").trim()),
+  answer: z
+    .string()
+    .min(1, "Jawaban wajib diisi")
+    .max(5000, "Jawaban terlalu panjang")
+    .transform((value) => sanitizeInput(value).trim()),
+  is_active: z.boolean({
+    error: "Status publikasi tidak valid.",
+  }),
+});
+
 // --- Validation Helper ---
 
 export interface ValidationResult<T> {

@@ -128,6 +128,7 @@ export interface BspsListParams {
   regionId?: string;
   districtId?: string;
   villageId?: string;
+  collectAllPages?: boolean;
 }
 
 // --- Transformasi ---
@@ -176,7 +177,7 @@ export async function fetchBspsList(
     },
     transform: transformBspsItem,
     errorMessage: "Gagal mengambil data BSPS dari server",
-    collectAllPages: false,
+    collectAllPages: params.collectAllPages ?? false,
   });
 }
 
@@ -199,5 +200,6 @@ export async function fetchBspsPage(
     },
     transform: transformBspsItem,
     errorMessage: "Gagal mengambil data BSPS dari server",
+    requestOptions: { retry: 0 },
   });
 }

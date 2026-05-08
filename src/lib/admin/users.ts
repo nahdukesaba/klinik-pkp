@@ -135,7 +135,6 @@ function requireBackendAccessToken(backendAccessToken?: string) {
 
 export async function listUsersPage(
   backendAccessToken?: string,
-  origin?: string,
   options?: {
     page?: number;
     limit?: number;
@@ -146,7 +145,6 @@ export async function listUsersPage(
   const payload = await fetchBackendJson<ApiResponse<unknown>>(
     buildUsersEndpoint(options?.page, options?.limit),
     {
-      origin,
       headers: createAuthorizedHeaders(accessToken),
       timeoutMs: 20_000,
     }
@@ -169,13 +167,11 @@ export async function listUsersPage(
 
 export async function getUserDetail(
   id: string,
-  backendAccessToken?: string,
-  origin?: string
+  backendAccessToken?: string
 ) {
   const accessToken = requireBackendAccessToken(backendAccessToken);
 
   const payload = await fetchBackendJson<ApiResponse<unknown>>(`users/${id}`, {
-    origin,
     headers: createAuthorizedHeaders(accessToken),
     timeoutMs: 15_000,
   });
@@ -210,14 +206,12 @@ function buildUserMutationPayload(input: AdminUserMutationInput) {
 
 export async function createUser(
   input: AdminUserMutationInput,
-  backendAccessToken?: string,
-  origin?: string
+  backendAccessToken?: string
 ) {
   const accessToken = requireBackendAccessToken(backendAccessToken);
 
   return fetchBackendJson<ApiResponse<unknown>>("users", {
     method: "POST",
-    origin,
     headers: createAuthorizedHeaders(accessToken, {
       "Content-Type": "application/json",
     }),
@@ -229,14 +223,12 @@ export async function createUser(
 export async function updateUser(
   id: string,
   input: AdminUserMutationInput,
-  backendAccessToken?: string,
-  origin?: string
+  backendAccessToken?: string
 ) {
   const accessToken = requireBackendAccessToken(backendAccessToken);
 
   return fetchBackendJson<ApiResponse<unknown>>(`users/${id}`, {
     method: "PUT",
-    origin,
     headers: createAuthorizedHeaders(accessToken, {
       "Content-Type": "application/json",
     }),
@@ -247,14 +239,12 @@ export async function updateUser(
 
 export async function deleteUser(
   id: string,
-  backendAccessToken?: string,
-  origin?: string
+  backendAccessToken?: string
 ) {
   const accessToken = requireBackendAccessToken(backendAccessToken);
 
   return fetchBackendJson<ApiResponse<unknown>>(`users/${id}`, {
     method: "DELETE",
-    origin,
     headers: createAuthorizedHeaders(accessToken),
     timeoutMs: 20_000,
   });

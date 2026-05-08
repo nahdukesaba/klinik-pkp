@@ -18,7 +18,6 @@ export class AdminApiError extends Error {
   }
 }
 
-let csrfTokenCache: string | null = null;
 let csrfTokenPromise: Promise<string> | null = null;
 let adminSessionRefreshPromise: Promise<boolean> | null = null;
 
@@ -27,23 +26,89 @@ function isCsrfErrorPayload(payload: unknown) {
     return false;
   }
 
+  const nestedError =
+    "error" in payload &&
+    payload.error &&
+    typeof payload.error === "object" &&
+    "message" in payload.error &&
+    typeof payload.error.message === "string"
+      ? payload.error.message.toLowerCase()
+      : "";
   const errorMessage =
     "error" in payload && typeof payload.error === "string"
       ? payload.error.toLowerCase()
       : "";
 
   return (
+    nestedError.includes("token keamanan") ||
+    nestedError.includes("request tidak valid") ||
+    nestedError.includes("csrf") ||
     errorMessage.includes("token keamanan") ||
     errorMessage.includes("request tidak valid") ||
     errorMessage.includes("csrf")
   );
 }
 
-async function getCsrfToken(forceRefresh = false) {
-  if (!forceRefresh && csrfTokenCache) {
-    return csrfTokenCache;
+function getApiPayloadData(payload: unknown) {
+  if (
+    payload &&
+    typeof payload === "object" &&
+    "success" in payload &&
+    (payload as { success?: unknown }).success === true &&
+    "data" in payload
+  ) {
+    return (payload as { data?: unknown }).data;
   }
 
+  return payload;
+}
+
+function getApiErrorMessage(payload: unknown) {
+  if (!payload || typeof payload !== "object") {
+    return undefined;
+  }
+
+  const error = (payload as { error?: unknown }).error;
+  if (typeof error === "string" && error.trim()) {
+    return error;
+  }
+
+  if (
+    error &&
+    typeof error === "object" &&
+    "message" in error &&
+    typeof error.message === "string"
+  ) {
+    return error.message;
+  }
+
+  const message = (payload as { message?: unknown }).message;
+  return typeof message === "string" && message.trim() ? message : undefined;
+}
+
+function getApiErrorDetails(payload: unknown) {
+  if (!payload || typeof payload !== "object") {
+    return undefined;
+  }
+
+  const error = (payload as { error?: unknown }).error;
+  if (
+    error &&
+    typeof error === "object" &&
+    "details" in error &&
+    error.details &&
+    typeof error.details === "object"
+  ) {
+    return error.details as Record<string, string | string[]>;
+  }
+
+  const details = (payload as { details?: unknown }).details;
+  return details && typeof details === "object"
+    ? (details as Record<string, string | string[]>)
+    : undefined;
+}
+
+async function getCsrfToken(forceRefresh = false) {
   if (!forceRefresh && csrfTokenPromise) {
     return csrfTokenPromise;
   }
@@ -55,12 +120,17 @@ async function getCsrfToken(forceRefresh = false) {
   })
     .then(async (response) => {
       const payload = await response.json().catch(() => null);
-      if (!response.ok || !payload?.csrfToken) {
+      const data = getApiPayloadData(payload);
+      const csrfToken =
+        data && typeof data === "object" && "csrfToken" in data
+          ? (data as { csrfToken?: unknown }).csrfToken
+          : undefined;
+
+      if (!response.ok || typeof csrfToken !== "string") {
         throw new Error("Gagal memuat token keamanan.");
       }
 
-      csrfTokenCache = payload.csrfToken as string;
-      return csrfTokenCache;
+      return csrfToken;
     })
     .finally(() => {
       csrfTokenPromise = null;
@@ -173,11 +243,9 @@ export async function adminFetch<T>(
 
       if (!retryResponse.ok) {
         throw new AdminApiError(
-          retryPayload?.error ??
-            retryPayload?.message ??
-            "Permintaan admin gagal diproses.",
+          getApiErrorMessage(retryPayload) ?? "Permintaan admin gagal diproses.",
           retryResponse.status,
-          retryPayload?.details
+          getApiErrorDetails(retryPayload)
         );
       }
 
@@ -185,9 +253,9 @@ export async function adminFetch<T>(
     }
 
     throw new AdminApiError(
-      payload?.error ?? payload?.message ?? "Permintaan admin gagal diproses.",
+      getApiErrorMessage(payload) ?? "Permintaan admin gagal diproses.",
       response.status,
-      payload?.details
+      getApiErrorDetails(payload)
     );
   }
 

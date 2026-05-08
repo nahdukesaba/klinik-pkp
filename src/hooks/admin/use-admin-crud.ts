@@ -5,6 +5,7 @@ import { useCallback, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { useAdminAuth, type AdminFormValues } from "@/components/admin";
+import { useConfirmDialog } from "@/components/providers/ConfirmDialogProvider";
 import { useToast } from "@/hooks/use-toast";
 import { canManageContent } from "@/lib/admin/roles";
 import {
@@ -15,26 +16,12 @@ import {
 
 import { useAdminCreateIntent } from "./use-admin-create-intent";
 
-/**
- * Shared foundation for all admin CRUD page hooks.
- *
- * Provides: form state, saving/delete lifecycle, query invalidation,
- * create intent (URL query param).
- *
- * Each page hook builds on top by providing entity-specific formFields,
- * initialValues, payload builders, and stats.
- */
-
 export interface UseAdminCrudOptions<TItem extends { id: string | number }> {
-  /** React Query key prefix, e.g. "admin-bsps" */
   queryKey: string;
-  /** API resource path, e.g. "/api/admin/resources/bsps" */
+  relatedQueryKeys?: readonly string[];
   resourcePath: string;
-  /** Display label for toast messages, e.g. "BSPS" */
   label: string;
-  /** Build the API payload from form values */
   buildPayload: (values: AdminFormValues) => unknown | FormData;
-  /** Human-readable name for the item being deleted */
   getDeleteLabel: (item: TItem) => string;
 }
 
@@ -43,6 +30,7 @@ export function useAdminCrud<TItem extends { id: string | number }>(
 ) {
   const { user } = useAdminAuth();
   const { toast } = useToast();
+  const confirm = useConfirmDialog();
   const queryClient = useQueryClient();
 
   const [formOpen, setFormOpen] = useState(false);
@@ -67,8 +55,13 @@ export function useAdminCrud<TItem extends { id: string | number }>(
   });
 
   const refreshData = useCallback(async () => {
-    await queryClient.invalidateQueries({ queryKey: [options.queryKey] });
-  }, [queryClient, options.queryKey]);
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: [options.queryKey] }),
+      ...(options.relatedQueryKeys ?? []).map((queryKey) =>
+        queryClient.invalidateQueries({ queryKey: [queryKey] })
+      ),
+    ]);
+  }, [queryClient, options.queryKey, options.relatedQueryKeys]);
 
   const openEditDialog = useCallback(
     (item: TItem, itemToFormValues: (item: TItem) => AdminFormValues) => {
@@ -89,7 +82,7 @@ export function useAdminCrud<TItem extends { id: string | number }>(
         const payload = options.buildPayload(values);
 
         const fetchOptions: RequestInit = {
-          method: "POST",
+          method: editingItem ? "PUT" : "POST",
           body:
             payload instanceof FormData
               ? payload
@@ -138,9 +131,14 @@ export function useAdminCrud<TItem extends { id: string | number }>(
 
   const handleDelete = useCallback(
     async (item: TItem) => {
-      if (
-        !window.confirm(`Hapus ${options.label.toLowerCase()} "${options.getDeleteLabel(item)}"?`)
-      ) {
+      const confirmed = await confirm({
+        title: `Hapus ${options.label}?`,
+        description: `Data "${options.getDeleteLabel(item)}" akan dihapus permanen.`,
+        confirmLabel: "Hapus",
+        destructive: true,
+      });
+
+      if (!confirmed) {
         return;
       }
 
@@ -164,7 +162,7 @@ export function useAdminCrud<TItem extends { id: string | number }>(
         });
       }
     },
-    [options, refreshData, toast]
+    [confirm, options, refreshData, toast]
   );
 
   const handleFormOpenChange = useCallback((open: boolean) => {

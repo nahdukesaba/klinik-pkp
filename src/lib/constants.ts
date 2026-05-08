@@ -2,12 +2,31 @@
 
 // --- API Configuration ---
 
-/** Default React Query config untuk semua data hooks. */
+function getErrorStatus(error: unknown) {
+  return typeof error === "object" &&
+    error !== null &&
+    "status" in error &&
+    typeof error.status === "number"
+    ? error.status
+    : undefined;
+}
+
+function shouldRetryQuery(failureCount: number, error: unknown) {
+  const status = getErrorStatus(error);
+
+  if (status && status >= 400 && status < 500) {
+    return false;
+  }
+
+  return failureCount < 2;
+}
+
+/** Default React Query config. Data selalu dianggap fresh dari backend. */
 export const QUERY_CONFIG = {
-  staleTime: 5 * 60 * 1000,       // Data fresh selama 5 menit
-  gcTime: 10 * 60 * 1000,         // Cache disimpan 10 menit
-  retry: 2,                       // Retry 2x jika gagal
-  refetchOnWindowFocus: false,     // Jangan refetch saat tab aktif
+  staleTime: 0,
+  gcTime: 0,
+  retry: shouldRetryQuery,
+  refetchOnWindowFocus: false,
 } as const;
 
 /**
@@ -60,6 +79,7 @@ export const MONTHS_LIST = [
 export const HUBUNGI_KAMI_HREF = "/hubungi-kami";
 export const KONSULTASI_HREF = "/konsultasi";
 export const INFORMASI_DEFAULT_HREF = "/informasi/rumah-layak-huni";
+export const FAQ_HREF = "/faq";
 
 export const QUICK_LINKS = [
   { label: "Bank Desain", href: "/bank-desain" },
@@ -72,6 +92,7 @@ export const INFO_LINKS = [
   { label: "Rumah Layak Huni", href: "/informasi/rumah-layak-huni" },
   { label: "Tahapan", href: "/informasi/tahapan" },
   { label: "Tentang", href: "/informasi/about" },
+  { label: "FAQ", href: FAQ_HREF },
   { label: "Aplikasi Terkait", href: "/informasi/aplikasi-terkait" },
   { label: "Kanal Pengaduan", href: "/informasi/kanal-pengaduan" },
   { label: "Peraturan", href: "/informasi/peraturan" },
@@ -103,7 +124,7 @@ export const SERVICES = [
     image: "/service-bank-desain.jpg",
     title: "Bank Desain",
     description:
-      "Koleksi desain rumah dan rusun yang dapat dijadikan referensi perencanaan pembangunan hunian.",
+      "Koleksi desain rumah Tipe 36 yang dapat dijadikan referensi perencanaan pembangunan hunian.",
     href: "/bank-desain",
   },
   {

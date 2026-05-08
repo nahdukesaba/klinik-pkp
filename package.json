@@ -24,7 +24,7 @@
     "jose": "^6.2.2",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.7.0",
-    "next": "^16.2.1",
+    "next": "^16.2.4",
     "next-themes": "^0.4.6",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
@@ -43,8 +43,11 @@
     "eslint": "^9.39.4",
     "eslint-config-next": "^16.2.1",
     "eslint-plugin-import": "^2.32.0",
-    "postcss": "^8.5.8",
+    "postcss": "8.5.14",
     "tailwindcss": "^4.2.2",
     "typescript": "^6.0.2"
+  },
+  "overrides": {
+    "postcss": "8.5.14"
   }
 }

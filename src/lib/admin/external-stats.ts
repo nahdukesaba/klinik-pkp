@@ -7,9 +7,10 @@ import {
 } from "@/lib/api-client";
 
 import { fetchBackendJson, getBackendApiBaseUrl } from "./backend-api";
-import { ADMIN_CACHE_TAGS, createCachedAdminReader } from "./cache";
+import { ADMIN_STATE_TAGS, createAdminReader } from "./cache";
 
 interface ExternalStatsSummary {
+  totalFaqs: number;
   totalBsps: number;
   totalRusun: number;
   totalKumuh: number;
@@ -19,6 +20,11 @@ interface ExternalStatsSummary {
 }
 
 const EXTERNAL_STATS_RESOURCES = [
+  {
+    key: "totalFaqs",
+    label: "FAQ",
+    path: "faqs",
+  },
   {
     key: "totalBsps",
     label: "BSPS",
@@ -62,6 +68,7 @@ async function fetchExternalCollectionCount(path: string) {
 
 async function readExternalDashboardStats(): Promise<ExternalStatsSummary> {
   const summary: ExternalStatsSummary = {
+    totalFaqs: 0,
     totalBsps: 0,
     totalRusun: 0,
     totalKumuh: 0,
@@ -97,15 +104,15 @@ async function readExternalDashboardStats(): Promise<ExternalStatsSummary> {
   return summary;
 }
 
-const getCachedExternalDashboardStats = createCachedAdminReader(
+const readExternalDashboardStatsFresh = createAdminReader(
   "admin-external-stats",
   readExternalDashboardStats,
   {
     revalidate: 60,
-    tags: [ADMIN_CACHE_TAGS.externalStats],
+    tags: [ADMIN_STATE_TAGS.externalStats],
   }
 );
 
 export async function getExternalDashboardStats(): Promise<ExternalStatsSummary> {
-  return getCachedExternalDashboardStats();
+  return readExternalDashboardStatsFresh();
 }

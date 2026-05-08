@@ -3,7 +3,6 @@ import "server-only";
 import {
   BackendApiError,
   buildBackendApiUrl,
-  buildBackendProxyUrl,
   fetchBackendJson,
   getBackendApiBaseUrl,
 } from "@/lib/admin/backend-api";
@@ -37,7 +36,7 @@ export type ExternalAuthResult =
     };
 
 // ---------------------------------------------------------------------------
-// Cache deduplikasi untuk request autentikasi yang identik secara bersamaan
+// Deduplikasi untuk request autentikasi yang identik secara bersamaan.
 // ---------------------------------------------------------------------------
 
 const pendingExternalAuth = new Map<string, Promise<ExternalAuthResult>>();
@@ -124,7 +123,7 @@ function extractCookieValue(setCookieHeaders: string[], cookieName: string) {
   return undefined;
 }
 
-function resolveBackendAuthUrls(origin: string) {
+function resolveBackendAuthUrls() {
   const configuredAuthUrl = process.env.AUTH_API_URL?.trim();
   if (configuredAuthUrl) {
     return [configuredAuthUrl];
@@ -141,10 +140,7 @@ function resolveBackendAuthUrls(origin: string) {
     return [];
   }
 
-  return [
-    buildBackendApiUrl(authPath),
-    buildBackendProxyUrl(origin, authPath),
-  ];
+  return [buildBackendApiUrl(authPath)];
 }
 
 /** Ambil profil pengguna yang sudah terautentikasi dari backend. */
@@ -243,9 +239,9 @@ export function authenticateAgainstLocalAdminEnv(input: {
 
 async function authenticateAgainstExternalBackend(
   input: { email: string; nip: string; password: string },
-  origin: string
+  _origin: string
 ): Promise<ExternalAuthResult> {
-  const backendAuthUrls = resolveBackendAuthUrls(origin);
+  const backendAuthUrls = resolveBackendAuthUrls();
 
   if (!backendAuthUrls.length) {
     return {
@@ -400,7 +396,7 @@ export async function refreshExternalBackendSession(params: {
   backendRefreshToken: string;
   origin: string;
 }): Promise<ExternalAuthResult> {
-  const backendAuthUrls = resolveBackendAuthUrls(params.origin);
+  const backendAuthUrls = resolveBackendAuthUrls();
 
   if (!backendAuthUrls.length) {
     return {

@@ -13,7 +13,7 @@ import { buildImageUrl } from "@/lib/constants";
 export interface BankDesainApiItem {
   id: string;
   name: string;
-  type: "Tipe 36" | "Tipe 45" | "Tipe 54" | "Rusun";
+  type: string;
   bedroom_count: number;
   bathroom_count: number;
   total_area: number;
@@ -30,7 +30,7 @@ export interface BankDesainData {
   /** Kode desain (dari ID API) */
   code: string;
   title: string;
-  /** Tipe rumah untuk filter: "T36", "T45", "T54", "Rusun" */
+  /** Tipe rumah untuk filter: "T36" */
   type: string;
   /** Filter teras/garasi: "dengan-teras" | "tanpa-teras" */
   terasFeature: string;
@@ -71,20 +71,25 @@ export interface BankDesainListParams {
 
 // --- Mapping tipe ---
 
+const BANK_DESAIN_API_TYPE = "Tipe 36";
+const BANK_DESAIN_FRONTEND_TYPE = "T36";
+
 const TYPE_MAP: Record<string, string> = {
-  "Tipe 36": "T36",
-  "Tipe 45": "T45",
-  "Tipe 54": "T54",
-  "Rusun": "Rusun",
+  [BANK_DESAIN_API_TYPE]: BANK_DESAIN_FRONTEND_TYPE,
 };
 
 /** Label tipe untuk tampilan filter */
 const TYPE_LABELS: Record<string, string> = {
-  "T36": "Tipe 36 (36 m²)",
-  "T45": "Tipe 45 (45 m²)",
-  "T54": "Tipe 54 (54 m²)",
-  "Rusun": "Rusun",
+  [BANK_DESAIN_FRONTEND_TYPE]: "Tipe 36 (36 m²)",
 };
+
+function normalizeBankDesainTypeParam(_type?: string) {
+  return BANK_DESAIN_API_TYPE;
+}
+
+function filterType36Designs(items: BankDesainData[]) {
+  return items.filter((item) => item.type === BANK_DESAIN_FRONTEND_TYPE);
+}
 
 // --- Transformasi ---
 
@@ -152,9 +157,9 @@ export function deriveFilterCategories(items: BankDesainData[]): FilterCategorie
 export async function fetchBankDesainList(
   params: BankDesainListParams = {}
 ): Promise<BankDesainData[]> {
-  return fetchApiList<BankDesainApiItem, BankDesainData>("/bank-desain", {
+  const items = await fetchApiList<BankDesainApiItem, BankDesainData>("/bank-desain", {
     query: {
-      type: params.type,
+      type: normalizeBankDesainTypeParam(params.type),
       page: params.page,
       limit: params.perPage,
     },
@@ -162,16 +167,18 @@ export async function fetchBankDesainList(
     errorMessage: "Gagal mengambil data bank desain dari server",
     collectAllPages: false,
   });
+
+  return filterType36Designs(items);
 }
 
 export async function fetchBankDesainPage(
   params: BankDesainListParams = {}
 ): Promise<ApiPaginatedResult<BankDesainData>> {
-  return fetchApiListWithMeta<BankDesainApiItem, BankDesainData>(
+  const result = await fetchApiListWithMeta<BankDesainApiItem, BankDesainData>(
     "/bank-desain",
     {
       query: {
-        type: params.type,
+        type: normalizeBankDesainTypeParam(params.type),
         page: params.page,
         limit: params.perPage,
       },
@@ -179,4 +186,9 @@ export async function fetchBankDesainPage(
       errorMessage: "Gagal mengambil data bank desain dari server",
     }
   );
+
+  return {
+    ...result,
+    items: filterType36Designs(result.items),
+  };
 }

@@ -1,7 +1,5 @@
 import "server-only";
 
-import { cache } from "react";
-
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -70,7 +68,7 @@ function mapPayloadToSessionUser(payload: {
   } satisfies AdminSessionUser;
 }
 
-export const getSessionUserFromCookies = cache(async function getSessionUserFromCookies() {
+export async function getSessionUserFromCookies() {
   const cookieStore = await cookies();
   const token = cookieStore.get(AUTH_COOKIE_NAME)?.value;
 
@@ -87,7 +85,7 @@ export const getSessionUserFromCookies = cache(async function getSessionUserFrom
     backendAccessToken: cookieStore.get(BACKEND_ACCESS_COOKIE_NAME)?.value,
     backendRefreshToken: cookieStore.get(BACKEND_REFRESH_COOKIE_NAME)?.value,
   });
-});
+}
 
 export async function getSessionUserFromRequest(request: NextRequest) {
   const token = request.cookies.get(AUTH_COOKIE_NAME)?.value;

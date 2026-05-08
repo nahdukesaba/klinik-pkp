@@ -63,6 +63,7 @@ export class ApiError extends Error {
 // --- Extract helpers (dipindahkan dari types/api.ts) ---
 
 const API_COLLECTION_KEYS = [
+  "data",
   "items",
   "rows",
   "records",
@@ -101,13 +102,21 @@ export function extractApiCollectionItems<T>(data: unknown): T[] | null {
 /** Ekstrak metadata paginasi dari raw response API */
 export function extractApiPaginationMeta(data: unknown) {
   if (!isRecord(data)) {
-    return {} as { totalRecords?: number; page?: number; limit?: number };
+    return {} as {
+      totalRecords?: number;
+      page?: number;
+      limit?: number;
+      totalPages?: number;
+    };
   }
 
   return {
-    totalRecords: getNumberValue(data.total_records),
+    totalRecords:
+      getNumberValue(data.total_records) ?? getNumberValue(data.total),
     page: getNumberValue(data.page),
     limit: getNumberValue(data.limit),
+    totalPages:
+      getNumberValue(data.total_pages) ?? getNumberValue(data.total_page),
   };
 }
 
@@ -185,6 +194,7 @@ interface ApiListPage<T> {
     totalRecords?: number;
     page?: number;
     limit?: number;
+    totalPages?: number;
   };
 }
 
@@ -313,7 +323,9 @@ async function apiFetch<T>(
           continue;
         }
         if (process.env.NODE_ENV === "development" && !suppressErrorLog) {
-          console.error(`[API ${error.status}] ${endpoint}: ${error.message}`);
+          // API errors are rendered by page-level UI; console.error opens the
+          // Next.js dev overlay and can block normal admin interactions.
+          console.warn(`[API ${error.status}] ${endpoint}: ${error.message}`);
         }
         throw error;
       }
@@ -348,7 +360,11 @@ function normalizeApiListPage<T>(
   errorMessage: string
 ): ApiListPage<T> {
   if (!response.success) {
-    throw new Error(response.error ?? response.message ?? errorMessage);
+    throw new Error(
+      typeof response.error === "string"
+        ? response.error
+        : response.error?.message ?? response.message ?? errorMessage
+    );
   }
 
   const items = extractApiCollectionItems<T>(response.data);
@@ -358,7 +374,10 @@ function normalizeApiListPage<T>(
 
   return {
     items,
-    meta: extractApiPaginationMeta(response.data),
+    meta: {
+      ...extractApiPaginationMeta(response.data),
+      ...extractApiPaginationMeta(response.meta),
+    },
   };
 }
 
@@ -398,10 +417,23 @@ function normalizeApiPaginationMeta(
 ): ApiPaginationMeta {
   const requestedPage = getPositiveNumberQueryValue(query?.page);
   const requestedLimit = getPositiveNumberQueryValue(query?.limit);
+  const totalPagesFromMeta =
+    typeof meta.totalPages === "number" &&
+    Number.isFinite(meta.totalPages) &&
+    meta.totalPages > 0
+      ? Math.trunc(meta.totalPages)
+      : undefined;
   const page = requestedPage ?? meta.page ?? 1;
   const limit = requestedLimit ?? meta.limit ?? Math.max(itemCount, 1);
-  const totalRecords = Math.max(meta.totalRecords ?? itemCount, itemCount);
-  const totalPages = Math.max(1, Math.ceil(totalRecords / limit));
+  const totalRecords = Math.max(
+    meta.totalRecords ??
+      (totalPagesFromMeta ? totalPagesFromMeta * limit : itemCount),
+    itemCount
+  );
+  const totalPages = Math.max(
+    1,
+    totalPagesFromMeta ?? Math.ceil(totalRecords / limit)
+  );
 
   return {
     totalRecords,

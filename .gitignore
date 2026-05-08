@@ -31,6 +31,8 @@ debug.log
 # Environment variables
 .env*.local
 .env
+.env.*
+!.env.example
 
 # Vercel
 .vercel

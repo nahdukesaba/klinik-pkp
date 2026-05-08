@@ -6,6 +6,7 @@ import {
   normalizeBackendPathname,
   requireBackendApiBaseUrl,
 } from "@/lib/server/backend-config";
+import { createJsonErrorResponse } from "@/lib/server/http";
 
 const BACKEND_TIMEOUT_MS = 30_000;
 
@@ -79,15 +80,13 @@ export async function proxyBackendRequest(
   try {
     backendUrl = buildBackendUrl(path, request.nextUrl.searchParams);
   } catch (error) {
-    return NextResponse.json(
-      {
-        success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Konfigurasi API_URL belum tersedia.",
-      },
-      { status: 503 }
+    return createJsonErrorResponse(
+      error instanceof Error
+        ? error.message
+        : "Konfigurasi API_URL belum tersedia.",
+      503,
+      undefined,
+      "SERVICE_UNAVAILABLE"
     );
   }
 
@@ -108,12 +107,11 @@ export async function proxyBackendRequest(
     });
 
     if (isInfrastructureErrorResponse(backendResponse)) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Layanan sedang tidak tersedia. Silakan coba beberapa saat lagi.",
-        },
-        { status: 502 }
+      return createJsonErrorResponse(
+        "Layanan sedang tidak tersedia. Silakan coba beberapa saat lagi.",
+        502,
+        undefined,
+        "BAD_GATEWAY"
       );
     }
 
@@ -124,21 +122,19 @@ export async function proxyBackendRequest(
     });
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Waktu tunggu habis. Silakan coba beberapa saat lagi.",
-        },
-        { status: 504 }
+      return createJsonErrorResponse(
+        "Waktu tunggu habis. Silakan coba beberapa saat lagi.",
+        504,
+        undefined,
+        "GATEWAY_TIMEOUT"
       );
     }
 
-    return NextResponse.json(
-      {
-        success: false,
-        error: "Layanan sedang tidak tersedia. Silakan coba beberapa saat lagi.",
-      },
-      { status: 502 }
+    return createJsonErrorResponse(
+      "Layanan sedang tidak tersedia. Silakan coba beberapa saat lagi.",
+      502,
+      undefined,
+      "BAD_GATEWAY"
     );
   } finally {
     clearTimeout(timeoutId);

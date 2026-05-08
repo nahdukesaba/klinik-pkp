@@ -81,7 +81,7 @@ export function useLoginPage() {
 
         const data = await adminFetch<{
           success: boolean;
-          user?: { name?: string };
+          data?: { user?: { name?: string } };
         }>("/api/auth/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -90,7 +90,7 @@ export function useLoginPage() {
 
         toast({
           title: "Login berhasil!",
-          description: `Selamat datang, ${data.user?.name ?? "Admin"}.`,
+          description: `Selamat datang, ${data.data?.user?.name ?? "Admin"}.`,
         });
 
         if (document.activeElement instanceof HTMLElement) {

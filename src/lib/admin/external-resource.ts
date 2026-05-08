@@ -7,6 +7,7 @@ import {
 } from "./backend-api";
 
 export type ExternalAdminResource =
+  | "faq"
   | "bsps"
   | "kumuh"
   | "rusun"
@@ -32,6 +33,10 @@ const EXTERNAL_RESOURCE_CONFIG: Record<
   ExternalAdminResource,
   ExternalResourceConfig
 > = {
+  faq: {
+    upstreamPath: "faqs",
+    bodyMode: "json",
+  },
   bsps: {
     upstreamPath: "bsps",
     bodyMode: "json",
@@ -71,10 +76,14 @@ export async function readExternalAdminRequestBody(
 
 function buildExternalResourcePath(
   resource: ExternalAdminResource,
-  id?: string
+  id?: string,
+  searchParams?: URLSearchParams
 ) {
   const config = EXTERNAL_RESOURCE_CONFIG[resource];
-  return `${config.upstreamPath}${id ? `/${id}` : ""}`;
+  const query = searchParams?.toString();
+  const pathname = `${config.upstreamPath}${id ? `/${id}` : ""}`;
+
+  return query ? `${pathname}?${query}` : pathname;
 }
 
 function createProxyTransportError(status: number, message: string) {
@@ -119,10 +128,11 @@ async function parseProxyResponsePayload(response: Response) {
 
 export async function proxyExternalAdminResource(params: {
   resource: ExternalAdminResource;
-  method: "POST" | "PUT" | "DELETE";
+  method: "GET" | "POST" | "PUT" | "DELETE";
   body?: ExternalAdminRequestBody;
   id?: string;
   accessToken?: string;
+  searchParams?: URLSearchParams;
 }): Promise<ExternalAdminProxyResult> {
   try {
     getBackendApiBaseUrl();
@@ -130,7 +140,11 @@ export async function proxyExternalAdminResource(params: {
     return createProxyTransportError(503, "Konfigurasi API_URL belum tersedia.");
   }
 
-  const resourcePath = buildExternalResourcePath(params.resource, params.id);
+  const resourcePath = buildExternalResourcePath(
+    params.resource,
+    params.id,
+    params.searchParams
+  );
   const url = buildBackendApiUrl(resourcePath);
 
   const headers = createBackendHeaders();
@@ -140,7 +154,9 @@ export async function proxyExternalAdminResource(params: {
 
   let body: BodyInit | undefined;
 
-  if (params.body instanceof FormData) {
+  if (params.method === "GET") {
+    body = undefined;
+  } else if (params.body instanceof FormData) {
     body = params.body;
   } else if (params.body != null && params.method !== "DELETE") {
     headers.set("Content-Type", "application/json");

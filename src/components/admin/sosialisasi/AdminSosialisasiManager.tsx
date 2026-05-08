@@ -1,8 +1,6 @@
 "use client";
 
-import Link from "next/link";
-
-import { ExternalLink, PlusCircle } from "lucide-react";
+import { PlusCircle } from "lucide-react";
 
 import {
   AdminDataTable,
@@ -10,7 +8,6 @@ import {
 } from "@/components/admin";
 import { Button } from "@/components/ui/button";
 import { useAdminSosialisasiPage } from "@/hooks/admin/use-admin-sosialisasi-page";
-import { buildUploadFieldHelperText } from "@/lib/admin/form";
 
 import { type SosialisasiAdminView } from "./config";
 
@@ -66,50 +63,17 @@ export function AdminSosialisasiManager({
 
         <div className="flex items-center gap-3">
           {view !== "berita" ? (
-            <>
-              <Link
-                href="/sosialisasi-klinik-pkp"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
-              >
-                <ExternalLink className="h-3.5 w-3.5" />
-                Lihat di halaman publik
-              </Link>
-              <Button
-                type="button"
-                onClick={openCreateDialog}
-                className="gap-2"
-              >
-                <PlusCircle className="h-4 w-4" />
-                {viewConfig.addLabel}
-              </Button>
-            </>
+            <Button
+              type="button"
+              onClick={openCreateDialog}
+              className="gap-2"
+            >
+              <PlusCircle className="h-4 w-4" />
+              {viewConfig.addLabel}
+            </Button>
           ) : null}
         </div>
       </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {viewConfig.stats.map((item) => (
-          <div
-            key={item.label}
-            className="rounded-2xl border border-border bg-card p-4 shadow-sm"
-          >
-            <p className="text-2xl font-semibold text-foreground">{item.value}</p>
-            <p className="mt-1 text-xs uppercase tracking-[0.18em] text-muted-foreground">
-              {item.label}
-            </p>
-          </div>
-        ))}
-      </div>
-
-      {view === "berita" && (
-        <div className="rounded-2xl border border-border bg-card p-4 text-sm text-muted-foreground">
-          Kegiatan yang selesai tanpa dokumentasi akan tetap berstatus pending.
-          Setelah gambar berita diunggah, kegiatan kembali tampil di berita
-          publik dan peta.
-        </div>
-      )}
 
       {sosialisasiQuery.error && (
         <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
@@ -146,14 +110,7 @@ export function AdminSosialisasiManager({
         }
         description={
           view === "berita"
-            ? buildUploadFieldHelperText({
-                subject: "1 sampai 4 gambar berita",
-                mode: editingItem ? "edit" : "create",
-                requiresReuploadOnEdit: true,
-                validationLabel: "format gambar",
-                maxSizeMb: 2,
-                totalUploadMb: 4,
-              })
+            ? "File lama tetap dipakai. Gambar maksimal 2 MB per file, total maksimal 4 MB."
             : "Lengkapi data kegiatan inti dan tambahkan dokumentasi bila diperlukan."
         }
         fields={formFields}

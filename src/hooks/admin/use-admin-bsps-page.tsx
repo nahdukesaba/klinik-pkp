@@ -8,7 +8,11 @@ import { type AdminFormValues, type FormFieldDef } from "@/components/admin";
 import { useAdminLocationOptions } from "@/hooks/use-admin-location-options";
 import { getNumberFormValue, getStringFormValue } from "@/lib/admin/form";
 import { QUERY_CONFIG } from "@/lib/constants";
-import { fetchBspsPage, type BspsData } from "@/services/bsps.service";
+import {
+  fetchBspsList,
+  fetchBspsPage,
+  type BspsData,
+} from "@/services/bsps.service";
 
 import { useAdminCrud } from "./use-admin-crud";
 
@@ -78,6 +82,14 @@ export function useAdminBspsPage() {
     staleTime: QUERY_CONFIG.staleTime,
     gcTime: QUERY_CONFIG.gcTime,
     placeholderData: (previousData) => previousData,
+    enabled: crud.canManage,
+  });
+
+  const bspsStatsQuery = useQuery({
+    queryKey: ["admin-bsps-stats"],
+    queryFn: () => fetchBspsList({ perPage: BSPS_PAGE_LIMIT, collectAllPages: true }),
+    staleTime: QUERY_CONFIG.staleTime,
+    gcTime: QUERY_CONFIG.gcTime,
     enabled: crud.canManage,
   });
 
@@ -151,15 +163,16 @@ export function useAdminBspsPage() {
     : undefined;
 
   const bspsList = bspsQuery.data?.items ?? EMPTY_BSPS_ITEMS;
+  const allBspsList = bspsStatsQuery.data ?? bspsList;
   const bspsMeta = bspsQuery.data?.meta;
   const stats = useMemo(
     () => ({
-      totalLokasi: bspsMeta?.totalRecords ?? 0,
-      totalUnit: bspsList.reduce((sum, item) => sum + item.alokasiUnit, 0),
-      selesai: bspsList.filter((item) => item.status === "selesai").length,
-      proses: bspsList.filter((item) => item.status === "proses").length,
+      totalLokasi: bspsMeta?.totalRecords ?? allBspsList.length,
+      totalUnit: allBspsList.reduce((sum, item) => sum + item.alokasiUnit, 0),
+      selesai: allBspsList.filter((item) => item.status === "selesai").length,
+      proses: allBspsList.filter((item) => item.status === "proses").length,
     }),
-    [bspsList, bspsMeta?.totalRecords]
+    [allBspsList, bspsMeta?.totalRecords]
   );
 
   return {

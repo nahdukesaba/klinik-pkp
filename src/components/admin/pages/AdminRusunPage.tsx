@@ -105,7 +105,6 @@ export default function AdminRusunPage() {
         title="Data Sebaran Rusun"
         description="Kelola data rusun, unit, dan lokasi bangunan."
         icon={<Building2 className="h-5 w-5" />}
-        publicHref="/sebaran-rusun"
         createLabel="Tambah Rusun"
         onCreate={openCreateDialog}
       />
@@ -113,10 +112,8 @@ export default function AdminRusunPage() {
       <AdminStatsGrid
         items={[
           { label: "Total Rusun", value: stats.totalRusun },
-          { label: "Unit Halaman Ini", value: stats.totalUnits.toLocaleString("id-ID") },
-          { label: "Tower Halaman Ini", value: stats.totalTower },
         ]}
-        columnsClassName="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+        columnsClassName="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
       />
 
       {rusunQuery.error ? (

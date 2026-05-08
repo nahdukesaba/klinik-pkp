@@ -5,6 +5,7 @@ import {
   AlertTriangle,
   Building2,
   HandCoins,
+  HelpCircle,
   Map,
   MapPin,
   Palette,
@@ -20,6 +21,11 @@ import { formatDateId } from "@/lib/date";
 import { cn } from "@/lib/utils";
 
 const moduleCards = [
+  {
+    key: "totalFaqs",
+    label: "FAQ",
+    icon: <HelpCircle className="h-4 w-4" />,
+  },
   {
     key: "totalBsps",
     label: "BSPS",
@@ -278,7 +284,7 @@ async function AdminExternalStatsSection() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-6">
         {moduleCards.map((item) => (
           <div
             key={item.key}
@@ -308,8 +314,8 @@ function AdminExternalStatsSkeleton() {
         <Skeleton className="h-4 w-full max-w-2xl" />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        {Array.from({ length: 5 }).map((_, index) => (
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-6">
+        {Array.from({ length: 6 }).map((_, index) => (
           <div
             key={index}
             className="rounded-2xl border border-border bg-card p-4 shadow-sm"

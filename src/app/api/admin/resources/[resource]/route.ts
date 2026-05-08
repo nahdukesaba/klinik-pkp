@@ -1,9 +1,17 @@
 import { NextRequest } from "next/server";
 
-import { handleExternalAdminResourceMutation } from "@/lib/admin/route-handlers";
+import {
+  handleExternalAdminResourceList,
+  handleExternalAdminResourceMutation,
+} from "@/lib/admin/route-handlers";
 
 interface RouteContext {
   params: Promise<{ resource: string }>;
+}
+
+export async function GET(request: NextRequest, context: RouteContext) {
+  const { resource } = await context.params;
+  return handleExternalAdminResourceList(request, resource);
 }
 
 export async function POST(request: NextRequest, context: RouteContext) {

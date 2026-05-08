@@ -8,9 +8,9 @@ import type {
 } from "@/types/admin";
 
 import {
-  ADMIN_CACHE_TAGS,
-  createCachedAdminReader,
-  revalidateAdminTags,
+  ADMIN_STATE_TAGS,
+  createAdminReader,
+  markAdminStatesChanged,
 } from "./cache";
 import {
   normalizeAdminRole,
@@ -50,6 +50,27 @@ async function appendAuditEntry(entry: AuditEntry) {
 
 async function listStoredAuditEntries(limit = 20) {
   return sortAuditDesc(auditEntries).slice(0, Math.max(0, limit));
+}
+
+function listStoredAuditEntriesPage(page = 1, limit = 20) {
+  const normalizedPage = Math.max(1, Math.trunc(page));
+  const normalizedLimit = Math.max(1, Math.trunc(limit));
+  const sortedEntries = sortAuditDesc(auditEntries);
+  const totalRecords = sortedEntries.length;
+  const totalPages = Math.max(1, Math.ceil(totalRecords / normalizedLimit));
+  const start = (normalizedPage - 1) * normalizedLimit;
+
+  return {
+    items: sortedEntries.slice(start, start + normalizedLimit),
+    meta: {
+      totalRecords,
+      page: normalizedPage,
+      limit: normalizedLimit,
+      totalPages,
+      hasNextPage: normalizedPage < totalPages,
+      hasPreviousPage: normalizedPage > 1,
+    },
+  };
 }
 
 function toRecentActivity(entry: AuditEntry): RecentActivity {
@@ -111,9 +132,9 @@ export async function createAuditEntry(params: {
   };
 
   await appendAuditEntry(entry);
-  revalidateAdminTags([
-    ADMIN_CACHE_TAGS.auditLog,
-    ADMIN_CACHE_TAGS.dashboardOverview,
+  markAdminStatesChanged([
+    ADMIN_STATE_TAGS.auditLog,
+    ADMIN_STATE_TAGS.dashboardOverview,
   ]);
 }
 
@@ -134,15 +155,18 @@ export async function listAuditEntries(limit = 20) {
   return listStoredAuditEntries(limit);
 }
 
+export async function listAuditEntriesPage(page = 1, limit = 20) {
+  return listStoredAuditEntriesPage(page, limit);
+}
+
 async function readDashboardOverview(options?: {
   includeAudit?: boolean;
   backendAccessToken?: string;
-  origin?: string;
 }) {
   const includeAudit = options?.includeAudit ?? true;
 
   const [usersPage, auditEntries] = await Promise.all([
-    listUsersPage(options?.backendAccessToken, options?.origin, {
+    listUsersPage(options?.backendAccessToken, {
       page: 1,
     }).catch(() => ({
       items: [],
@@ -174,15 +198,15 @@ async function readDashboardOverview(options?: {
   };
 }
 
-const getCachedDashboardOverview = createCachedAdminReader(
+const readDashboardOverviewFresh = createAdminReader(
   "admin-dashboard-overview",
   readDashboardOverview,
   {
     revalidate: 60,
     tags: [
-      ADMIN_CACHE_TAGS.dashboardOverview,
-      ADMIN_CACHE_TAGS.usersDirectory,
-      ADMIN_CACHE_TAGS.auditLog,
+      ADMIN_STATE_TAGS.dashboardOverview,
+      ADMIN_STATE_TAGS.usersDirectory,
+      ADMIN_STATE_TAGS.auditLog,
     ],
   }
 );
@@ -190,7 +214,6 @@ const getCachedDashboardOverview = createCachedAdminReader(
 export async function getDashboardOverview(options?: {
   includeAudit?: boolean;
   backendAccessToken?: string;
-  origin?: string;
 }) {
-  return getCachedDashboardOverview(options);
+  return readDashboardOverviewFresh(options);
 }

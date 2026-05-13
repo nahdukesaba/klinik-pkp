@@ -7,8 +7,6 @@
 
 import { useCallback, useState } from "react";
 
-import { Building2 } from "lucide-react";
-
 import { Footer, Navbar } from "@/components/layout";
 import { BspsMapSection } from "@/components/penerimaan-bsps/BspsMapSection";
 import {
@@ -60,26 +58,8 @@ export default function PenerimaanBspsPage() {
     <div className="flex min-h-screen flex-col bg-background">
       <Navbar />
 
-      <section className="relative pb-12 pt-24">
+      <section className="relative pt-20">
         <BspsBackgroundPattern />
-        <div className="container mx-auto px-4">
-          <div className="mx-auto max-w-3xl text-center">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-sm font-medium text-primary">
-              <Building2 className="h-4 w-4" />
-              <span>BSPS</span>
-            </div>
-
-            <h1 className="mb-4 text-3xl font-bold text-foreground md:text-4xl lg:text-5xl">
-              Penerimaan BSPS
-            </h1>
-
-            <p className="mb-6 text-lg leading-relaxed text-muted-foreground">
-              Informasi sebaran, persyaratan, dan tahapan Bantuan Stimulan
-              Perumahan Swadaya (BSPS) bagi masyarakat yang membutuhkan
-              peningkatan kualitas hunian.
-            </p>
-          </div>
-        </div>
       </section>
 
       {/* eslint-disable react-hooks/refs -- useLazyMount returns a callback ref plus a mounted flag */}

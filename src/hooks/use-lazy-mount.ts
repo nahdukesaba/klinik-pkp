@@ -20,6 +20,12 @@ export function useLazyMount(options: { rootMargin?: string } = {}) {
       elementRef.current = node;
       if (isMounted || !node) return;
 
+      if (typeof IntersectionObserver === "undefined") {
+        setIsVisible(true);
+        setIsMounted(true);
+        return;
+      }
+
       const observer = new IntersectionObserver(
         ([entry]) => {
           if (entry.isIntersecting) {

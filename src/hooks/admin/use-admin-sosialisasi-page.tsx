@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ImageIcon,
   PencilLine,
@@ -30,17 +30,22 @@ import { getStringFormValue } from "@/lib/admin/form";
 import { canManageContent } from "@/lib/admin/roles";
 import {
   AdminApiError,
-  adminFetch,
   normalizeAdminFieldErrors,
 } from "@/lib/admin-client";
-import { QUERY_CONFIG } from "@/lib/constants";
+import {
+  ADMIN_TABLE_PAGE_SIZE,
+  QUERY_CONFIG,
+  QUERY_KEYS,
+} from "@/lib/constants";
 import {
   buildSosialisasiResultFromLocations,
+  createAdminSosialisasi,
+  deleteAdminSosialisasi,
   fetchSosialisasiPage,
+  updateAdminSosialisasi,
   type SosialisasiLocation,
 } from "@/services/sosialisasi.service";
-
-const SOSIALISASI_PAGE_LIMIT = 10;
+import type { SortDirection } from "@/types/api";
 
 export function useAdminSosialisasiPage(view: SosialisasiAdminView) {
   const { user } = useAdminAuth();
@@ -59,6 +64,9 @@ export function useAdminSosialisasiPage(view: SosialisasiAdminView) {
     jadwal: 1,
     berita: 1,
   });
+  const [searchKeyword, setSearchKeyword] = useState("");
+  const [sortBy, setSortBy] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
   const canManage = canManageContent(user.role);
   const currentPage = pagesByView[view];
@@ -70,15 +78,22 @@ export function useAdminSosialisasiPage(view: SosialisasiAdminView) {
     );
 
   const sosialisasiQuery = useQuery({
-    queryKey: ["admin-sosialisasi", currentPage],
+    queryKey: [
+      QUERY_KEYS.adminSosialisasi,
+      view,
+      currentPage,
+      searchKeyword,
+      sortBy,
+      sortDirection,
+    ],
     queryFn: () =>
       fetchSosialisasiPage({
         page: currentPage,
-        perPage: SOSIALISASI_PAGE_LIMIT,
+        perPage: ADMIN_TABLE_PAGE_SIZE,
       }),
     staleTime: QUERY_CONFIG.staleTime,
     gcTime: QUERY_CONFIG.gcTime,
-    placeholderData: (previousData) => previousData,
+    placeholderData: keepPreviousData,
     enabled: canManage,
   });
 
@@ -126,6 +141,29 @@ export function useAdminSosialisasiPage(view: SosialisasiAdminView) {
       setPagesByView((current) => ({
         ...current,
         [view]: page,
+      }));
+    },
+    [view]
+  );
+
+  const handleSearchChange = useCallback(
+    (keyword: string) => {
+      setSearchKeyword(keyword);
+      setPagesByView((current) => ({
+        ...current,
+        [view]: 1,
+      }));
+    },
+    [view]
+  );
+
+  const handleSortChange = useCallback(
+    (state: { sortKey: string; sortDirection: SortDirection }) => {
+      setSortBy(state.sortKey);
+      setSortDirection(state.sortDirection);
+      setPagesByView((current) => ({
+        ...current,
+        [view]: 1,
       }));
     },
     [view]
@@ -181,7 +219,7 @@ export function useAdminSosialisasiPage(view: SosialisasiAdminView) {
   const sosialisasiMeta = liveSosialisasiData?.meta;
 
   const refreshSosialisasi = useCallback(async () => {
-    await queryClient.invalidateQueries({ queryKey: ["admin-sosialisasi"] });
+    await queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.adminSosialisasi] });
   }, [queryClient]);
 
   const handleSubmit = useCallback(
@@ -196,15 +234,9 @@ export function useAdminSosialisasiPage(view: SosialisasiAdminView) {
         });
 
         if (editingItem) {
-          await adminFetch(`/api/admin/resources/sosialisasi/${editingItem.id}`, {
-            method: "PUT",
-            body: formData,
-          });
+          await updateAdminSosialisasi(editingItem.id, formData);
         } else {
-          await adminFetch("/api/admin/resources/sosialisasi", {
-            method: "POST",
-            body: formData,
-          });
+          await createAdminSosialisasi(formData);
         }
 
         await refreshSosialisasi();
@@ -259,9 +291,7 @@ export function useAdminSosialisasiPage(view: SosialisasiAdminView) {
       }
 
       try {
-        await adminFetch(`/api/admin/resources/sosialisasi/${item.id}`, {
-          method: "DELETE",
-        });
+        await deleteAdminSosialisasi(item.id);
         await refreshSosialisasi();
         toast({
           title: "Kegiatan dihapus",
@@ -322,6 +352,9 @@ export function useAdminSosialisasiPage(view: SosialisasiAdminView) {
     formErrors,
     isSaving,
     currentPage,
+    searchKeyword,
+    sortBy,
+    sortDirection,
     sosialisasiQuery,
     viewConfig,
     sosialisasiMeta,
@@ -330,6 +363,8 @@ export function useAdminSosialisasiPage(view: SosialisasiAdminView) {
     actions,
     openCreateDialog,
     handlePageChange,
+    handleSearchChange,
+    handleSortChange,
     handleSubmit,
     handleFormOpenChange,
     setDraftValues,

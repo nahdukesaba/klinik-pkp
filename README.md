@@ -1,378 +1,279 @@
 # Klinik PKP Frontend
 
-Frontend Klinik PKP adalah aplikasi Next.js untuk halaman publik dan dashboard admin layanan Perumahan dan Kawasan Permukiman. Halaman publik dipakai masyarakat untuk melihat informasi layanan, peta, katalog desain, sosialisasi, dan FAQ. Dashboard admin dipakai untuk mengelola konten dinamis seperti BSPS, Rusun, Kawasan Kumuh, Bank Desain, Sosialisasi, FAQ, dan user internal.
+Klinik PKP Frontend adalah aplikasi web untuk portal publik dan dashboard admin BP3KP Provinsi Sumatera Utara. Aplikasi ini dibangun dengan Next.js App Router dan menggunakan pola BFF (Backend For Frontend). Browser tidak memanggil backend Golang secara langsung; semua request melewati route internal Next.js di `src/app/api`.
+
+## Status Singkat
+
+- Performa: sudah memakai dynamic import untuk halaman peta/client-heavy, React Query cache, `keepPreviousData`, skeleton loading, endpoint service terpusat, dan `optimizePackageImports` di Next.js. Hasil akhir tetap perlu diuji dengan Lighthouse/Web Vitals di environment production.
+- Privasi data sensitif: `API_URL`, secret JWT, dan helper server-only tidak masuk client bundle. Cookie session admin memakai HTTP-only cookie, mutasi admin memakai CSRF, dan request backend lewat BFF.
+- Arsitektur: struktur sudah mengikuti clean architecture pragmatis untuk frontend Next.js, yaitu route tipis, UI di component, logic di hook, API call di service, dan server-only logic di route handler/lib server.
+- Rendering: project ini hybrid. Route Next.js memakai Server Component/SSR by default, fitur interaktif memakai CSR, dan beberapa halaman informasi memakai `generateStaticParams` untuk SSG. Karena banyak halaman membaca data runtime/API, hasil build juga menampilkan route dynamic server-rendered on demand.
 
 ## Tech Stack
 
 | Bagian | Teknologi |
 | --- | --- |
-| Framework | Next.js 16 App Router |
-| UI | React 19, TypeScript |
-| Styling | Tailwind CSS 4 |
-| UI primitive | Radix UI |
-| Data client | TanStack Query |
-| Validasi | Zod |
-| Peta | Leaflet |
-| Auth/session | JWT cookie dengan `jose` |
-| Icon | `lucide-react` |
+| Framework | Next.js 16.2.4 App Router |
+| Runtime UI | React 19.2.4, React DOM 19.2.4 |
+| Bahasa | TypeScript 6.0.2 |
+| Styling | Tailwind CSS 4.2.2, PostCSS 8.5.14 |
+| UI Primitive | Radix UI |
+| Async State | TanStack React Query 5.95.2 |
+| Form/Validasi | Zod 4.3.6 dan validasi ringan client-side |
+| Peta | Leaflet 1.9.4 |
+| Auth Token | jose 6.2.2 |
+| Icon | lucide-react 1.7.0 |
+| Utility UI | clsx, tailwind-merge, class-variance-authority |
 
-## Menjalankan Project
+## Cara Menjalankan
+
+Install dependency:
 
 ```bash
 npm install
+```
+
+Jalankan development server:
+
+```bash
 npm run dev
 ```
 
-Server development berjalan di:
+Buka:
 
 ```text
 http://localhost:3000
 ```
 
-Build production:
+Validasi sebelum deploy:
 
 ```bash
 npm run lint
+npx tsc --noEmit
 npm run build
+```
+
+Jalankan production build:
+
+```bash
 npm run start
 ```
 
 ## Environment
 
-Salin `.env.example` menjadi `.env.local`, lalu isi nilainya.
+Buat `.env.local` dari `.env.example`.
 
-| Variable | Wajib | Keterangan |
+| Variable | Wajib | Fungsi |
 | --- | --- | --- |
-| `API_URL` | Ya | Base URL backend, contoh `http://103.197.190.87/api/v1`. Hanya dipakai server/proxy frontend. |
-| `JWT_SECRET` | Ya | Secret untuk sign dan verify cookie session admin. Minimal 32 karakter. |
-| `AUTH_API_URL` | Tidak | Full URL endpoint login backend jika berbeda dari default. |
-| `AUTH_API_PATH` | Tidak | Path login backend. Default frontend: `/authentications`. |
+| `API_URL` | Ya | Base URL backend Golang. Hanya dipakai server Next.js/BFF. |
+| `JWT_SECRET` | Ya | Secret untuk session admin frontend. Minimal 32 karakter. |
+| `AUTH_API_URL` | Tidak | Full URL login backend jika berbeda dari default. |
+| `AUTH_API_PATH` | Tidak | Path login backend. Default: `/authentications`. |
 
-File rahasia seperti `.env`, `.env.local`, dan `.env.*` sudah masuk `.gitignore`. `.env.example` tetap boleh di-commit sebagai contoh.
+Jangan commit `.env.local`.
+
+## Alur Rendering
+
+```text
+Server Component / SSR
+-> route di src/app
+-> render shell awal, metadata, layout
+
+CSR
+-> komponen interaktif: admin table, form, map, filter, upload, toast
+
+SSG
+-> halaman informasi statis yang memakai generateStaticParams
+```
+
+Kesimpulan: project ini bukan SSR murni, CSR murni, atau SSG murni. Modelnya hybrid sesuai kebutuhan halaman.
+
+## Alur Request Publik
+
+```text
+Browser
+-> component halaman
+-> hook fitur
+-> service fitur di src/services
+-> src/lib/api-client.ts
+-> /api/ext/*
+-> src/app/api/ext/[...path]/route.ts
+-> backend Golang
+```
+
+Kegunaan:
+
+- Service menentukan endpoint dan transform response.
+- `api-client.ts` membangun URL, timeout, retry, parsing response, dan error.
+- `/api/ext/*` menjadi proxy publik agar `API_URL` tidak bocor ke browser.
+
+## Alur Request Admin
+
+```text
+Browser admin
+-> component admin
+-> hook admin
+-> service admin/domain
+-> src/lib/admin-client.ts
+-> /api/admin/*
+-> route handler BFF
+-> backend Golang
+```
+
+Kegunaan:
+
+- `admin-client.ts` mengambil CSRF sebelum mutasi.
+- Route handler `/api/admin/*` memverifikasi session dan meneruskan request ke backend.
+- Backend tetap menentukan otorisasi final.
+
+## Alur Auth
+
+```text
+Login page
+-> auth service
+-> GET /api/auth/csrf
+-> POST /api/auth/login
+-> backend auth
+-> set HTTP-only cookie
+-> masuk dashboard admin
+```
+
+File penting:
+
+- `src/services/auth-endpoints.ts`: daftar endpoint auth internal.
+- `src/services/auth-token.service.ts`: ambil CSRF dan refresh session.
+- `src/services/auth.service.ts`: operasi login/logout/forgot password dari browser.
+- `src/lib/auth.ts`: helper session frontend.
+- `src/app/api/auth/*`: route handler auth BFF.
+
+## Alur Membuat Feature Baru
+
+Urutan yang dipakai:
+
+1. Buat route tipis di `src/app/<nama-feature>/page.tsx`.
+2. Buat komponen halaman di `src/components/<nama-feature>`.
+3. Buat hook data/state di `src/hooks/<nama-feature>`.
+4. Buat service API di `src/services/<nama-feature>.service.ts`.
+5. Tambahkan query key di `src/lib/constants.ts`.
+6. Jika butuh endpoint backend baru, pastikan route BFF/proxy mengizinkan path tersebut.
+7. Tambahkan loading, error, empty, dan success state.
+8. Jalankan lint, typecheck, dan build.
+
+Aturan penting:
+
+- Component tidak boleh memanggil `fetch()` langsung.
+- Hook tidak boleh menyimpan URL endpoint hardcoded.
+- Service adalah satu-satunya tempat pemanggilan endpoint.
+- File di `src/lib/server` tidak boleh diimpor dari client component, hook, atau service browser.
 
 ## Struktur Folder
 
 ```text
 src/
-|-- app/                 Route Next.js, layout, loading, error, dan API route internal
-|-- components/          UI global, layout, admin shell, shared component, dan primitive UI
-|-- hooks/               Hook reusable lintas fitur
-|-- services/            Fetch dan transform data backend
-|-- lib/                 Utility umum, auth, security, admin helper, server helper
-|-- content/             Konten statis halaman informasi/landing
-`-- types/               Tipe bersama lintas modul
+|-- app/                 Route Next.js, layout, error, loading, dan BFF API
+|-- components/          UI, halaman fitur, shared component, admin shell
+|-- hooks/               React Query, state filter, pagination, dialog, map state
+|-- services/            API call dan transform data
+|-- lib/                 HTTP client, constants, error normalizer, auth, utils
+|-- lib/server/          Helper server-only untuk route handler
+|-- lib/admin/           Helper admin/server-side untuk auth, users, external resource
+|-- types/               Tipe global lintas fitur
+|-- content/             Konten statis
+`-- proxy.ts             Proxy/middleware untuk security dan proteksi route
 ```
 
-Pola yang dipakai untuk fitur baru:
+## File Penting
 
-```text
-src/app/<route>/page.tsx
--> src/components/<fitur>
--> src/hooks/<fitur>
--> src/services/<fitur>.service.ts
--> src/lib/api-client.ts atau src/lib/admin-client.ts
--> API route internal
--> backend
-```
+### `src/services`
 
-Untuk admin, page tetap tipis di `src/app/admin/<fitur>/page.tsx`, UI halaman berada di `src/components/admin/pages`, dan logic halaman berada di `src/hooks/admin`.
-
-## Prinsip Clean Architecture
-
-Struktur project ini memakai pendekatan pragmatic clean architecture untuk Next.js:
-
-```text
-Route tipis
--> UI component
--> hook/controller halaman
--> service data
--> client/proxy internal
--> backend
-```
-
-Aturan penempatan:
-
-- `src/app` hanya untuk route entry, layout, loading, error, dan API route internal.
-- `src/components/<fitur>` untuk UI satu fitur.
-- `src/components/admin/pages` untuk halaman dashboard admin.
-- `src/hooks/<fitur>` untuk state, filter, pagination, dan orchestration fitur publik.
-- `src/hooks/admin` untuk logic halaman admin.
-- `src/services` untuk fetch dan transform data backend.
-- `src/lib/server` hanya untuk helper server-only.
-- `src/lib/admin` untuk helper server-side admin, role, audit, proxy backend admin, dan cache admin.
-- `src/types` untuk tipe yang benar-benar dipakai lintas fitur.
-
-Pola ini lebih cocok untuk ukuran project sekarang daripada memaksa folder `features` baru di sebagian modul saja. Jika nanti semua modul ingin dipindahkan ke feature-based architecture, lakukan sekaligus dan bertahap dengan test, bukan satu modul saja.
-
-## Alur Data Publik
-
-```text
-Browser
--> hook fitur
--> service/api fitur
--> src/lib/api-client.ts
--> /api/ext/*
--> src/app/api/ext/[...path]/route.ts
--> API_URL backend
-```
-
-Browser tidak memanggil backend langsung. Semua data publik lewat `/api/ext/*` supaya CORS, timeout, error handling, dan allowlist tetap dikendalikan frontend.
-
-Endpoint publik yang boleh lewat proxy diatur di `src/proxy.ts` pada `ALLOWED_API_PATHS`. Jika backend menambah endpoint baru, path itu harus ditambahkan di allowlist.
-
-## Alur Data Admin
-
-List admin dapat memakai service publik jika datanya memang aman dan sama persis dengan tampilan publik.
-
-```text
-Admin page
--> hook admin/fitur
--> service/api fitur
--> /api/ext/*
--> backend
-```
-
-Untuk data yang punya status draft/nonaktif, list admin sebaiknya lewat API internal agar backend bisa mengembalikan data lengkap memakai session admin.
-
-```text
-Admin page
--> hook admin/fitur
--> service admin fitur
--> /api/admin/resources/<resource>
--> authorizeAdminRequest()
--> backend dengan token admin
-```
-
-Create, update, dan delete admin juga lewat API internal agar role, CSRF, audit, dan token backend tetap aman.
-
-```text
-Admin page
--> useAdminCrud / hook admin
--> src/lib/admin-client.ts
--> /api/admin/resources/<resource>
--> authorizeAdminRequest()
--> src/lib/admin/external-resource.ts
--> backend
-```
-
-## FAQ
-
-FAQ mengikuti pola folder yang sama dengan modul lain:
-
-```text
-src/app/faq/page.tsx
-src/app/admin/faq/page.tsx
-src/components/faq/FaqPage.tsx
-src/components/admin/pages/AdminFaqPage.tsx
-src/hooks/faq/use-faq-page.ts
-src/hooks/admin/use-admin-faq-page.tsx
-src/services/faq.service.ts
-```
-
-Kontrak backend FAQ yang dipakai frontend:
-
-```json
-{
-  "id": 1,
-  "question": "Pertanyaan",
-  "answer": "Jawaban",
-  "is_active": true,
-  "created_at": "2026-05-05T09:47:44+07:00",
-  "updated_at": "2026-05-05T09:47:44+07:00",
-  "deleted_at": null
-}
-```
-
-Halaman publik hanya menampilkan FAQ aktif. Admin mengirim payload:
-
-```json
-{
-  "question": "Pertanyaan",
-  "answer": "Jawaban",
-  "is_active": true
-}
-```
-
-Frontend juga menormalisasi beberapa bentuk status lain seperti `isActive`, `active`, `status`, `0/1`, `true/false`, `aktif/nonaktif`, dan `active/inactive`. Ini menjaga tampilan publik tetap aman jika backend berubah sedikit, tetapi bentuk utama yang disarankan tetap `is_active: boolean`.
-
-Filter FAQ publik dibuat sederhana:
-
-- search dengan kata kunci
-- tombol topik cepat: Semua, Layanan, Konsultasi, BSPS, Rusun, Bank Desain
-- accordion pertanyaan dengan target sentuh besar untuk mobile
-
-Filter FAQ admin:
-
-- Semua
-- Aktif
-- Nonaktif
-
-Setelah admin menyimpan atau menghapus FAQ, cache query admin dan query publik FAQ akan di-invalidate.
-
-Catatan status FAQ:
-
-- Halaman publik tetap mengambil data lewat `/api/ext/faqs` dan memfilter `is_active === true`.
-- Dashboard admin mengambil data lewat `/api/admin/resources/faq?include_inactive=true`.
-- Jika backend belum mengembalikan FAQ nonaktif untuk request admin, filter `Nonaktif` di frontend tidak punya data untuk ditampilkan.
-
-## Cache
-
-Cache yang ada di frontend:
-
-- TanStack Query di browser, in-memory, hilang saat browser refresh penuh.
-- Konfigurasi umum ada di `src/lib/constants.ts` melalui `QUERY_CONFIG`.
-- Default: data fresh 5 menit, garbage collection 10 menit, retry 2 kali, tidak refetch saat window focus.
-- FAQ memakai request `cache: "no-store"` agar browser tidak menyimpan respons lama.
-- Mutasi admin FAQ menghapus cache `admin-faq` dan `faq-public`.
-
-Cache server-side frontend:
-
-- Dashboard admin membaca beberapa statistik backend melalui cache server Next.js.
-- Cache statistik eksternal memakai tag dan revalidate sekitar 60 detik.
-- Audit log dan rate limit masih in-memory per instance server.
-
-Yang tidak dibuat frontend:
-
-- Frontend tidak membuat cache database.
-- Frontend tidak menyimpan data publik ke localStorage/sessionStorage.
-- Jika backend punya cache sendiri, frontend hanya menerima hasil dari backend/proxy.
-
-## Session dan Auth
-
-Session admin dibuat di frontend dengan cookie HTTP-only.
-
-| Cookie | Fungsi | Umur |
-| --- | --- | --- |
-| `klinik-pkp-token` | Access token JWT frontend | 15 menit |
-| `klinik-pkp-refresh` | Refresh token JWT frontend | 7 hari |
-| `klinik-pkp-csrf` | Token CSRF untuk login dan mutasi admin | pendek, dipakai per request |
-| backend access cookie | Token akses backend bila backend login mengembalikan token | mengikuti konfigurasi frontend |
-| backend refresh cookie | Refresh token backend bila tersedia | mengikuti konfigurasi frontend |
-
-Flow login:
-
-```text
-GET /api/auth/csrf
-POST /api/auth/login
--> validasi Zod
--> cek origin + CSRF
--> rate limit
--> auth local env bila tersedia
--> auth backend bila local env tidak dipakai
--> ambil/normalisasi user
--> hanya role admin yang boleh masuk dashboard
--> set cookie HTTP-only
-```
-
-Frontend membutuhkan backend untuk:
-
-- endpoint login (`/authentications` atau yang diatur di env)
-- endpoint refresh session jika backend memakai refresh token
-- endpoint `users/me` untuk membaca profil setelah login backend
-- token akses backend bila endpoint admin membutuhkan Authorization Bearer
-
-## Route Utama
-
-### Publik
-
-| Route | Fungsi |
+| File | Fungsi |
 | --- | --- |
-| `/` | Landing page |
-| `/lokasi-klinik` | Alamat, kontak, dan peta lokasi |
-| `/sebaran-rusun` | Peta dan daftar rusun |
-| `/kawasan-kumuh` | Data dan peta kawasan kumuh |
-| `/penerimaan-bsps` | Informasi penerimaan BSPS |
-| `/bank-desain` | Katalog bank desain |
-| `/sosialisasi-klinik-pkp` | Peta, jadwal, dan berita sosialisasi |
-| `/faq` | FAQ publik aktif |
-| `/hubungi-kami` | Kontak |
-| `/konsultasi` | Kanal konsultasi |
-| `/informasi/[slug]` | Halaman informasi statis |
-| `/login` | Login admin |
+| `auth-endpoints.ts` | Sumber endpoint auth internal. |
+| `auth-token.service.ts` | Mengambil CSRF token dan refresh session. |
+| `auth.service.ts` | Service login/logout/forgot password. |
+| `admin-resource.service.ts` | CRUD generik untuk resource admin. |
+| `admin-users.service.ts` | Service khusus Control User dan audit. |
+| `bank-desain.service.ts` | Data Bank Desain dan transform upload/image. |
+| `bsps.service.ts` | Data BSPS, status, dan koordinat. |
+| `kawasan-kumuh.service.ts` | Data kawasan kumuh, status, tahun, dan koordinat. |
+| `rusun.service.ts` | Data rusun dan lokasi. |
+| `sosialisasi.service.ts` | Lokasi, jadwal, berita, dan status sosialisasi. |
+| `faq.service.ts` | Data FAQ publik/admin. |
+| `location.service.ts` | Region, district, village untuk filter lokasi. |
 
-### Admin
+### `src/lib`
 
-| Route | Fungsi |
+| File | Fungsi |
 | --- | --- |
-| `/admin` | Dashboard |
-| `/admin/faq` | CRUD FAQ |
-| `/admin/bsps` | CRUD BSPS |
-| `/admin/rusun` | CRUD Rusun |
-| `/admin/kawasan-kumuh` | CRUD Kawasan Kumuh |
-| `/admin/bank-desain` | CRUD Bank Desain |
-| `/admin/sosialisasi/lokasi` | CRUD titik sosialisasi |
-| `/admin/sosialisasi/jadwal` | CRUD jadwal sosialisasi |
-| `/admin/sosialisasi/berita` | Upload dokumentasi berita |
-| `/admin/users` | CRUD user internal |
+| `api-client.ts` | HTTP client publik ke `/api/ext/*`. |
+| `admin-client.ts` | HTTP client admin dengan CSRF dan auth handling. |
+| `api-response.ts` | Normalisasi response dan error API. |
+| `constants.ts` | Query key, config query, upload constraint, dan nilai global. |
+| `auth.ts` | Helper session/auth frontend. |
+| `security.ts` | Sanitasi input client-side. |
+| `utils.ts` | Utility umum seperti merge class. |
 
-## Kebutuhan Backend Saat Ini
+### `src/app/api`
 
-Endpoint yang sudah dipakai frontend:
+| Folder | Fungsi |
+| --- | --- |
+| `auth/*` | Login, logout, refresh, CSRF. |
+| `admin/*` | Endpoint BFF untuk dashboard admin. |
+| `ext/[...path]` | Proxy publik ke backend Golang. |
+| `health` | Health check frontend. |
 
-- `GET /faqs`, `POST /faqs`, `PUT /faqs/:id`, `DELETE /faqs/:id`
-- `GET /bsps`, `POST /bsps`, `PUT /bsps/:id`, `DELETE /bsps/:id`
-- `GET /rusun`, `POST /rusun`, `PUT /rusun/:id`, `DELETE /rusun/:id`
-- `GET /kumuh`, `POST /kumuh`, `PUT /kumuh/:id`, `DELETE /kumuh/:id`
-- `GET /bank-desain`, `POST /bank-desain`, `PUT /bank-desain/:id`, `DELETE /bank-desain/:id`
-- `GET /sosialisasi`, `POST /sosialisasi`, `PUT /sosialisasi/:id`, `DELETE /sosialisasi/:id`
-- `GET /regions`, `GET /districts`, `GET /villages`
-- `GET /uploads/*`
-- auth endpoint sesuai `AUTH_API_PATH` atau `AUTH_API_URL`
-- `GET /users/me`
-- endpoint user admin sesuai implementasi backend
+## Fitur
 
-Kebutuhan backend yang penting untuk FAQ:
+Publik:
 
-- `GET /faqs` untuk publik sebaiknya hanya mengembalikan FAQ aktif.
-- `GET /faqs?include_inactive=true` dengan Authorization admin harus mengembalikan FAQ aktif dan nonaktif.
-- `GET /faqs?is_active=false` sebaiknya mengembalikan FAQ nonaktif jika dipanggil admin.
-- `POST /faqs` menerima `question`, `answer`, dan `is_active`.
-- `PUT /faqs/:id` harus benar-benar menyimpan perubahan `is_active`.
-- Respons list tetap menyertakan `is_active`, `created_at`, `updated_at`, dan `deleted_at`.
+- Landing page: pengantar layanan Klinik PKP.
+- Informasi: halaman statis edukasi dan panduan.
+- Bank Desain: katalog desain rumah dan file RAB.
+- Kawasan Kumuh: data, filter, dan peta kawasan kumuh.
+- Sebaran Rusun: data, filter, dan peta rusun.
+- Penerimaan BSPS: data, filter, dan peta BSPS.
+- Sosialisasi Klinik PKP: jadwal, berita, dan peta sosialisasi.
+- FAQ: pertanyaan umum.
+- Hubungi Kami dan Konsultasi: kanal kontak layanan.
 
-Peningkatan backend yang disarankan:
+Admin:
 
-- Bedakan endpoint publik dan admin untuk resource yang punya status publikasi.
-- Tambahkan filter standar: `search`, `page`, `limit`, `is_active`, `include_inactive`.
-- Tambahkan endpoint ringkasan/agregat untuk dashboard admin, misalnya `/bsps/summary`, `/kumuh/summary`, `/rusun/summary`, dan `/bank-desain/summary`.
-- Validasi input FAQ: pertanyaan dan jawaban wajib, trim string, panjang maksimum jelas.
-- Kembalikan error validasi dengan format `details` per field.
-- Simpan audit log admin di database, bukan hanya bergantung ke frontend.
-- Pakai rate limit terpusat atau Redis jika deploy multi-instance.
-- Buat cache/invalidation backend untuk data publik yang sering dibaca.
-- Pastikan upload punya batas ukuran dan pesan error JSON, bukan HTML proxy.
-- Tambahkan endpoint health yang memeriksa koneksi database.
+- Dashboard: ringkasan data admin.
+- Control User: kelola akun internal.
+- Bank Desain: tambah, edit, hapus desain dan file.
+- Kawasan Kumuh: kelola data kawasan kumuh.
+- Rusun: kelola data rusun.
+- BSPS: kelola data penerimaan BSPS.
+- Sosialisasi: kelola lokasi, jadwal, dan dokumentasi berita.
+- FAQ: kelola pertanyaan aktif/nonaktif.
 
-Catatan performa statistik admin:
+## Checklist Pekerjaan Selesai
 
-- Halaman admin tidak boleh mengambil semua data hanya untuk menghitung card statistik, misalnya request `limit=1000` dari frontend. Pola itu membuat halaman lambat dan mudah memicu `502/504` ketika backend sedang berat.
-- Card yang aman ditampilkan dari frontend adalah angka yang sudah tersedia dari metadata pagination, seperti `totalRecords`.
-- Statistik agregat lintas semua data, seperti total unit BSPS, jumlah status selesai/proses, total luas kumuh, total penduduk, atau jumlah kategori berat/sedang/ringan, sebaiknya dihitung oleh backend lewat endpoint summary/agregat. Frontend cukup membaca hasil ringkasan tersebut.
-- Jika endpoint summary belum tersedia, prioritaskan kecepatan load halaman: tampilkan total record dari metadata dan hindari fetch-all di sisi client.
+- [x] Route `page.tsx` dibuat tipis.
+- [x] API call dipindahkan ke service layer.
+- [x] Client tidak mengimpor `src/lib/server`.
+- [x] Error handling dipusatkan di `src/lib/api-response.ts`.
+- [x] Query key dipusatkan di `src/lib/constants.ts`.
+- [x] CSRF admin mutation ditangani lewat `admin-client.ts`.
+- [x] Control User tidak mengirim password saat edit.
+- [x] Control User menjaga ID sebagai UUID string.
+- [x] Tombol edit/hapus user mengikuti metadata backend.
+- [x] Upload edit Bank Desain/Rusun/Sosialisasi tidak memaksa re-upload.
+- [x] Preview file upload memiliki cleanup object URL.
+- [x] Search/sort/pagination admin diteruskan ke service/BFF.
+- [x] Komponen reusable dipindahkan ke `shared`.
+- [x] Route client dynamic dipisah ke `components/route-clients`.
+- [x] Tidak ada `console.log/warn/error` debug.
+- [x] Tidak ada direct `fetch()` di component/hook.
+- [x] `npm run lint` lolos.
+- [x] `npx tsc --noEmit` lolos.
+- [x] `npm run build` lolos.
 
-Format list yang paling aman untuk frontend:
+## Rekomendasi Frontend Berikutnya
 
-```json
-{
-  "success": true,
-  "message": "success",
-  "data": {
-    "data": [],
-    "limit": 10,
-    "page": 1,
-    "total": 0,
-    "total_page": 1
-  }
-}
-```
-
-Frontend juga masih bisa membaca beberapa variasi key list seperti `items`, `rows`, `records`, `results`, dan `list`.
-
-## Catatan Maintenance
-
-- Jangan panggil `API_URL` langsung dari browser.
-- Tambahkan endpoint baru ke allowlist `src/proxy.ts`.
-- Jangan taruh logic panjang di `src/app/**/page.tsx`; page cukup jadi entry route.
-- Untuk fitur baru, ikuti pola folder yang sudah ada: `components/<fitur>`, `hooks/<fitur>`, dan `services/<fitur>.service.ts`.
-- Untuk helper lintas fitur, baru pindahkan ke `components/shared`, `hooks`, atau `lib` jika benar-benar dipakai lebih dari satu modul.
-- Jalankan `npm run lint` dan `npm run build` sebelum deploy.
+- [ ] Jalankan Lighthouse/Web Vitals di production untuk mengukur LCP, INP, CLS, dan bundle size.
+- [ ] Tambahkan Playwright smoke test untuk login admin, CRUD user, upload edit file, dan halaman peta.
+- [ ] Tambahkan monitoring client error seperti Sentry atau alternatif self-hosted.
+- [ ] Evaluasi image optimization untuk gambar backend agar LCP halaman publik lebih cepat.
+- [ ] Tambahkan bundle analyzer untuk melihat modul terbesar sebelum deploy besar.
+- [ ] Samakan nama query search/sort dengan kontrak backend final jika backend tidak memakai `keyword`, `sort_by`, dan `sort_order`.

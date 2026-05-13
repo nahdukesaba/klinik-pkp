@@ -13,6 +13,7 @@ import {
   type RegionApi,
 } from "@/lib/api-client";
 import { buildImageUrl } from "@/lib/constants";
+import type { ApiListQueryControls } from "@/types/api";
 
 // --- Tipe API ---
 
@@ -59,9 +60,7 @@ export interface RusunData {
   image?: string;
 }
 
-export interface RusunListParams {
-  page?: number;
-  perPage?: number;
+export interface RusunListParams extends ApiListQueryControls {
   regionId?: string;
   districtId?: string;
   villageId?: string;
@@ -109,6 +108,9 @@ export async function fetchRusunList(
     query: {
       page: params.page,
       limit: params.perPage,
+      keyword: params.keyword,
+      sort_by: params.sortBy,
+      sort_order: params.sortBy ? params.sortDirection : undefined,
       region_id: params.regionId,
       district_id: params.districtId,
       village_id: params.villageId,
@@ -126,6 +128,9 @@ export async function fetchRusunPage(
     query: {
       page: params.page,
       limit: params.perPage,
+      keyword: params.keyword,
+      sort_by: params.sortBy,
+      sort_order: params.sortBy ? params.sortDirection : undefined,
       region_id: params.regionId,
       district_id: params.districtId,
       village_id: params.villageId,

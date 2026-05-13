@@ -82,19 +82,27 @@ export function RoleBadge({ role }: { role: string }) {
   );
 }
 
-export function editAction<T>(onClick: (item: T) => void): TableAction<T> {
+export function editAction<T>(
+  onClick: (item: T) => void,
+  options: Pick<TableAction<T>, "isVisible" | "isDisabled" | "disabledReason"> = {}
+): TableAction<T> {
   return {
     label: "Edit",
     icon: <Edit className="h-4 w-4" />,
     onClick,
+    ...options,
   };
 }
 
-export function deleteAction<T>(onClick: (item: T) => void): TableAction<T> {
+export function deleteAction<T>(
+  onClick: (item: T) => void,
+  options: Pick<TableAction<T>, "isVisible" | "isDisabled" | "disabledReason"> = {}
+): TableAction<T> {
   return {
     label: "Hapus",
     icon: <Trash2 className="h-4 w-4" />,
     onClick,
     variant: "destructive",
+    ...options,
   };
 }

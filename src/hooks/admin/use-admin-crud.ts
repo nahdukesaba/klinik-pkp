@@ -10,16 +10,22 @@ import { useToast } from "@/hooks/use-toast";
 import { canManageContent } from "@/lib/admin/roles";
 import {
   AdminApiError,
-  adminFetch,
   normalizeAdminFieldErrors,
 } from "@/lib/admin-client";
+import {
+  createAdminResource,
+  deleteAdminResource,
+  updateAdminResource,
+  type AdminResourceName,
+} from "@/services/admin-resource.service";
+import type { SortDirection } from "@/types/api";
 
 import { useAdminCreateIntent } from "./use-admin-create-intent";
 
 export interface UseAdminCrudOptions<TItem extends { id: string | number }> {
   queryKey: string;
   relatedQueryKeys?: readonly string[];
-  resourcePath: string;
+  resource: AdminResourceName;
   label: string;
   buildPayload: (values: AdminFormValues) => unknown | FormData;
   getDeleteLabel: (item: TItem) => string;
@@ -39,6 +45,9 @@ export function useAdminCrud<TItem extends { id: string | number }>(
   const [draftValues, setDraftValues] = useState<AdminFormValues>({});
   const [isSaving, setIsSaving] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchKeyword, setSearchKeyword] = useState("");
+  const [sortBy, setSortBy] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
   const canManage = canManageContent(user.role);
 
@@ -81,23 +90,12 @@ export function useAdminCrud<TItem extends { id: string | number }>(
       try {
         const payload = options.buildPayload(values);
 
-        const fetchOptions: RequestInit = {
-          method: editingItem ? "PUT" : "POST",
-          body:
-            payload instanceof FormData
-              ? payload
-              : JSON.stringify(payload),
-        };
-
-        if (!(payload instanceof FormData)) {
-          fetchOptions.headers = { "Content-Type": "application/json" };
+        if (editingItem) {
+          await updateAdminResource(options.resource, editingItem.id, payload);
+        } else {
+          await createAdminResource(options.resource, payload);
         }
 
-        const url = editingItem
-          ? `${options.resourcePath}/${editingItem.id}`
-          : options.resourcePath;
-
-        await adminFetch(url, fetchOptions);
         await refreshData();
         setFormOpen(false);
         setEditingItem(null);
@@ -143,9 +141,7 @@ export function useAdminCrud<TItem extends { id: string | number }>(
       }
 
       try {
-        await adminFetch(`${options.resourcePath}/${item.id}`, {
-          method: "DELETE",
-        });
+        await deleteAdminResource(options.resource, item.id);
         await refreshData();
         toast({
           title: `Data ${options.label} dihapus`,
@@ -175,6 +171,20 @@ export function useAdminCrud<TItem extends { id: string | number }>(
     }
   }, []);
 
+  const handleSearchChange = useCallback((keyword: string) => {
+    setSearchKeyword(keyword);
+    setCurrentPage(1);
+  }, []);
+
+  const handleSortChange = useCallback(
+    (state: { sortKey: string; sortDirection: SortDirection }) => {
+      setSortBy(state.sortKey);
+      setSortDirection(state.sortDirection);
+      setCurrentPage(1);
+    },
+    []
+  );
+
   return {
     canManage,
     formOpen,
@@ -183,8 +193,13 @@ export function useAdminCrud<TItem extends { id: string | number }>(
     draftValues,
     isSaving,
     currentPage,
+    searchKeyword,
+    sortBy,
+    sortDirection,
     setDraftValues,
     setCurrentPage,
+    handleSearchChange,
+    handleSortChange,
     openCreateDialog,
     openEditDialog,
     handleSubmit,

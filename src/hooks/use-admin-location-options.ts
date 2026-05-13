@@ -4,7 +4,12 @@ import { useMemo } from "react";
 
 import { useQuery } from "@tanstack/react-query";
 
-import { QUERY_CONFIG } from "@/lib/constants";
+import {
+  LONG_LIVED_QUERY_STALE_TIME_MS,
+  QUERY_CONFIG,
+  QUERY_KEY_PARTS,
+  QUERY_KEYS,
+} from "@/lib/constants";
 import {
   fetchDistrictOptions,
   fetchRegionOptions,
@@ -21,26 +26,32 @@ export function useAdminLocationOptions(
   const shouldLoadVillages = enabled && Boolean(selectedDistrictId);
 
   const regionsQuery = useQuery({
-    queryKey: ["admin-location-regions"],
+    queryKey: [QUERY_KEYS.adminLocationRegions],
     queryFn: fetchRegionOptions,
     enabled: shouldLoadRegions,
-    staleTime: QUERY_CONFIG.staleTime,
+    staleTime: LONG_LIVED_QUERY_STALE_TIME_MS,
     gcTime: QUERY_CONFIG.gcTime,
   });
 
   const districtsQuery = useQuery({
-    queryKey: ["admin-location-districts", selectedRegionId ?? "none"],
+    queryKey: [
+      QUERY_KEYS.adminLocationDistricts,
+      selectedRegionId ?? QUERY_KEY_PARTS.none,
+    ],
     queryFn: () => fetchDistrictOptions(selectedRegionId),
     enabled: shouldLoadDistricts,
-    staleTime: QUERY_CONFIG.staleTime,
+    staleTime: LONG_LIVED_QUERY_STALE_TIME_MS,
     gcTime: QUERY_CONFIG.gcTime,
   });
 
   const villagesQuery = useQuery({
-    queryKey: ["admin-location-villages", selectedDistrictId ?? "none"],
+    queryKey: [
+      QUERY_KEYS.adminLocationVillages,
+      selectedDistrictId ?? QUERY_KEY_PARTS.none,
+    ],
     queryFn: () => fetchVillageOptions(selectedDistrictId),
     enabled: shouldLoadVillages,
-    staleTime: QUERY_CONFIG.staleTime,
+    staleTime: LONG_LIVED_QUERY_STALE_TIME_MS,
     gcTime: QUERY_CONFIG.gcTime,
   });
 

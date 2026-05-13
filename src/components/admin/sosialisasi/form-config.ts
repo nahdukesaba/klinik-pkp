@@ -9,6 +9,7 @@ import {
   toDateTimeLocalValue,
   toIsoStringFromDateTimeLocal,
 } from "@/lib/admin/form";
+import { UPLOAD_CONSTRAINTS } from "@/lib/constants";
 import type { SosialisasiLocation } from "@/services/sosialisasi.service";
 
 import type { FormSelectOption, SosialisasiAdminView } from "./types";
@@ -56,8 +57,11 @@ export function buildSosialisasiFormFields(params: {
         name: "images",
         label: "Gambar Berita",
         type: "file",
-        accept: "image/*",
+        accept: UPLOAD_CONSTRAINTS.sosialisasiImages.accept,
         multiple: true,
+        maxFiles: UPLOAD_CONSTRAINTS.sosialisasiImages.maxFiles,
+        maxSizeMb: UPLOAD_CONSTRAINTS.sosialisasiImages.maxSizeMb,
+        maxTotalSizeMb: UPLOAD_CONSTRAINTS.sosialisasiImages.maxTotalSizeMb,
         required: !editingItem,
         existingFiles: editingItem
           ? buildExistingUploadFiles(editingItem.images, "Gambar")
@@ -66,16 +70,16 @@ export function buildSosialisasiFormFields(params: {
           ? buildUploadFieldHelperText({
               subject: "1 sampai 4 gambar berita",
               mode: "edit",
-              requiresReuploadOnEdit: true,
+              optional: true,
               validationLabel: "format gambar",
-              maxSizeMb: 2,
-              totalUploadMb: 4,
+              maxSizeMb: UPLOAD_CONSTRAINTS.sosialisasiImages.maxSizeMb,
+              totalUploadMb: UPLOAD_CONSTRAINTS.sosialisasiImages.maxTotalSizeMb,
             })
           : buildUploadFieldHelperText({
               subject: "1 sampai 4 gambar berita",
               validationLabel: "format gambar",
-              maxSizeMb: 2,
-              totalUploadMb: 4,
+              maxSizeMb: UPLOAD_CONSTRAINTS.sosialisasiImages.maxSizeMb,
+              totalUploadMb: UPLOAD_CONSTRAINTS.sosialisasiImages.maxTotalSizeMb,
             }),
       },
     ] satisfies FormFieldDef[];
@@ -149,8 +153,11 @@ export function buildSosialisasiFormFields(params: {
       name: "images",
       label: "Gambar Kegiatan",
       type: "file",
-      accept: "image/*",
+      accept: UPLOAD_CONSTRAINTS.sosialisasiImages.accept,
       multiple: true,
+      maxFiles: UPLOAD_CONSTRAINTS.sosialisasiImages.maxFiles,
+      maxSizeMb: UPLOAD_CONSTRAINTS.sosialisasiImages.maxSizeMb,
+      maxTotalSizeMb: UPLOAD_CONSTRAINTS.sosialisasiImages.maxTotalSizeMb,
       existingFiles: editingItem
         ? buildExistingUploadFiles(editingItem.images, "Gambar")
         : undefined,
@@ -159,8 +166,8 @@ export function buildSosialisasiFormFields(params: {
         mode: editingItem ? "edit" : "create",
         optional: true,
         validationLabel: "format gambar",
-        maxSizeMb: 2,
-        totalUploadMb: 4,
+        maxSizeMb: UPLOAD_CONSTRAINTS.sosialisasiImages.maxSizeMb,
+        totalUploadMb: UPLOAD_CONSTRAINTS.sosialisasiImages.maxTotalSizeMb,
       }),
     },
   ] satisfies FormFieldDef[];

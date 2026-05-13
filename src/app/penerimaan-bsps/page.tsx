@@ -6,14 +6,12 @@
  * Komponen utama di-lazy-load melalui route client reusable.
  */
 
-import { PenerimaanBspsRouteClient } from "@/components/shared/AppRouteClients";
+import { PenerimaanBspsRouteClient } from "@/components/route-clients/AppRouteClients";
 
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Penerimaan BSPS - Klinik PKP",
-  description:
-    "Informasi penerimaan BSPS di Sumatera Utara, termasuk sebaran lokasi, persyaratan, tahapan, dan kriteria penerima.",
 };
 
 export default function Page() {

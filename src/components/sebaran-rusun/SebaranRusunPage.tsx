@@ -6,8 +6,6 @@
 
 "use client";
 
-import { Loader2 } from "lucide-react";
-
 import { Navbar } from "@/components/layout";
 import {
   RusunHeader,
@@ -43,29 +41,22 @@ export default function SebaranRusunPage() {
   const mapLazyRef = mapLazy.ref;
   const isMapMounted = mapLazy.isMounted;
 
-  // Status data (loading / error / ready)
-  const dataReady = !isLoading && !isError;
-
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden">
       <Navbar />
 
       <div className="flex-1 flex flex-col pt-16 lg:pt-20">
-        {/* Header — tampilkan hanya jika data siap */}
-        {dataReady && (
-          <RusunHeader
-            searchQuery={filters.searchQuery}
-            totalRusun={stats.totalRusun}
-            totalUnits={stats.totalUnits}
-            onBack={handleBack}
-            onSearchChange={setSearchQuery}
-            onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-          />
-        )}
+        <RusunHeader
+          searchQuery={filters.searchQuery}
+          totalRusun={stats.totalRusun}
+          totalUnits={stats.totalUnits}
+          onBack={handleBack}
+          onSearchChange={setSearchQuery}
+          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+        />
 
         <div className="flex-1 flex relative overflow-hidden">
-          {/* Sidebar — tampilkan hanya jika data siap */}
-          {dataReady && (
+          {(
             <>
               {sidebarOpen && (
                 <div
@@ -99,17 +90,12 @@ export default function SebaranRusunPage() {
             </>
           )}
 
-          {/* Area Peta — SELALU dirender agar ref lazy mount tetap di DOM */}
+          {/* Area peta selalu dirender agar ref lazy mount tetap tersedia. */}
           {/* eslint-disable react-hooks/refs -- useLazyMount returns a callback ref plus a mounted flag */}
           <div ref={mapLazyRef} className="flex-1 relative">
             {/* Loading overlay — saat menunggu data API */}
             {isLoading && (
-              <div className="absolute inset-0 z-20 flex items-center justify-center bg-background">
-                <div className="text-center space-y-3">
-                  <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto" />
-                  <p className="text-muted-foreground text-sm">Memuat data rusun...</p>
-                </div>
-              </div>
+              <div className="absolute inset-0 z-20 bg-background/40 backdrop-blur-[1px]" />
             )}
 
             {/* Error overlay */}
@@ -124,14 +110,14 @@ export default function SebaranRusunPage() {
             )}
 
             {/*
-             * Peta / Skeleton — tiga state:
-             * 1. isLoading → overlay di atas menutupi area ini (tidak render skeleton)
-             * 2. Data siap tapi map belum dimount → MapSkeleton
-             * 3. Data siap dan map dimount → RusunMapContainer
+             * Peta / skeleton:
+             * 1. Loading -> overlay di atas skeleton peta.
+             * 2. Map belum dimount -> MapSkeleton.
+             * 3. Data siap dan map dimount -> RusunMapContainer.
              */}
-            {!isLoading && isMapMounted && dataReady ? (
+            {!isLoading && isMapMounted && !isError ? (
               <RusunMapContainer mapRef={mapRef} />
-            ) : !isLoading ? (
+            ) : !isError ? (
               <MapSkeleton className="w-full h-full" />
             ) : null}
           </div>

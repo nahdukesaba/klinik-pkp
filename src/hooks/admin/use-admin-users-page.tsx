@@ -2,7 +2,7 @@
 
 import { startTransition, useCallback, useMemo, useState } from "react";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { useAdminAuth, type AdminFormValues, type FormFieldDef } from "@/components/admin";
 import { useConfirmDialog } from "@/components/providers/ConfirmDialogProvider";
@@ -11,59 +11,73 @@ import { getStringFormValue } from "@/lib/admin/form";
 import { canManageUsers } from "@/lib/admin/roles";
 import {
   AdminApiError,
-  adminFetch,
   normalizeAdminFieldErrors,
 } from "@/lib/admin-client";
-import { QUERY_CONFIG } from "@/lib/constants";
+import {
+  ADMIN_TABLE_PAGE_SIZE,
+  QUERY_CONFIG,
+  QUERY_KEY_PARTS,
+  QUERY_KEYS,
+} from "@/lib/constants";
 import { sanitizeNip } from "@/lib/security";
+import {
+  createAdminUser,
+  deleteAdminUser,
+  fetchAdminAuditEntries,
+  fetchAdminUserDetail,
+  fetchAdminUsersPage,
+  updateAdminUser,
+  type ControlUserCreatePayload,
+  type ControlUserPayload,
+} from "@/services/admin-users.service";
 import type {
   AdminDirectoryUser,
   AdminPaginationMeta,
-  AuditEntry,
   UserRole,
 } from "@/types/admin";
+import type { SortDirection } from "@/types/api";
 
 import { useAdminCreateIntent } from "./use-admin-create-intent";
 
-const USERS_PAGE_LIMIT = 10;
-
+function buildControlUsersPayload(
+  values: AdminFormValues,
+  options: { allowPassword: true }
+): ControlUserCreatePayload;
+function buildControlUsersPayload(
+  values: AdminFormValues,
+  options?: { allowPassword?: false }
+): ControlUserPayload;
 function buildControlUsersPayload(
   values: AdminFormValues,
   options?: { allowPassword?: boolean }
 ) {
+  if (!options?.allowPassword) {
+    return {
+      name: getStringFormValue(values, "name"),
+      phone: getStringFormValue(values, "phone"),
+    } satisfies ControlUserPayload;
+  }
+
   const role = getStringFormValue(values, "role") === "admin" ? "admin" : "user";
 
-  const payload = {
+  const payload: ControlUserCreatePayload = {
     name: getStringFormValue(values, "name"),
     email: getStringFormValue(values, "email"),
     nip: sanitizeNip(getStringFormValue(values, "nip")).slice(0, 18),
     phone: getStringFormValue(values, "phone"),
     role,
     isActive: getStringFormValue(values, "isActive") !== "inactive",
-  } satisfies {
-    name: string;
-    email: string;
-    nip: string;
-    phone: string;
-    role: UserRole;
-    isActive: boolean;
-  };
-
-  if (!options?.allowPassword) {
-    return payload;
-  }
-
-  return {
-    ...payload,
     password: getStringFormValue(values, "password"),
   };
+
+  return payload;
 }
 
 function createDefaultPaginationMeta(page: number): AdminPaginationMeta {
   return {
     totalRecords: 0,
     page,
-    limit: USERS_PAGE_LIMIT,
+    limit: ADMIN_TABLE_PAGE_SIZE,
     totalPages: 1,
     hasNextPage: false,
     hasPreviousPage: false,
@@ -77,6 +91,9 @@ export function useAdminUsersPage() {
   const queryClient = useQueryClient();
 
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchKeyword, setSearchKeyword] = useState("");
+  const [sortBy, setSortBy] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [roleFilter, setRoleFilter] = useState<"all" | UserRole>("all");
   const [statusFilter, setStatusFilter] = useState<
     "all" | "active" | "inactive"
@@ -101,21 +118,30 @@ export function useAdminUsersPage() {
   });
 
   const usersQuery = useQuery({
-    queryKey: ["admin-users", currentPage],
+    queryKey: [
+      QUERY_KEYS.adminUsers,
+      currentPage,
+      searchKeyword,
+      sortBy,
+      sortDirection,
+    ],
     queryFn: () =>
-      adminFetch<{ data: AdminDirectoryUser[]; meta: AdminPaginationMeta }>(
-        `/api/admin/users?page=${currentPage}&limit=${USERS_PAGE_LIMIT}`
-      ),
+      fetchAdminUsersPage({
+        page: currentPage,
+        limit: ADMIN_TABLE_PAGE_SIZE,
+        keyword: searchKeyword,
+        sortBy,
+        sortDirection,
+      }),
     staleTime: QUERY_CONFIG.staleTime,
     gcTime: QUERY_CONFIG.gcTime,
-    placeholderData: (previousData) => previousData,
+    placeholderData: keepPreviousData,
     enabled: canManage,
   });
 
   const auditQuery = useQuery({
-    queryKey: ["admin-audit", "users"],
-    queryFn: async () =>
-      (await adminFetch<{ data: AuditEntry[] }>("/api/admin/audit?limit=8")).data,
+    queryKey: [QUERY_KEYS.adminAudit, QUERY_KEY_PARTS.users],
+    queryFn: () => fetchAdminAuditEntries({ limit: 8 }),
     staleTime: QUERY_CONFIG.staleTime,
     gcTime: QUERY_CONFIG.gcTime,
     enabled: canManage,
@@ -143,7 +169,24 @@ export function useAdminUsersPage() {
   );
 
   const formFields = useMemo<FormFieldDef[]>(
-    () => [
+    () =>
+      editingUser
+        ? [
+            {
+              name: "name",
+              label: "Nama Lengkap",
+              type: "text",
+              required: true,
+              placeholder: "Contoh: Rina Sari",
+            },
+            {
+              name: "phone",
+              label: "Nomor Telepon",
+              type: "text",
+              placeholder: "Contoh: 081234567890",
+            },
+          ]
+        : [
       {
         name: "name",
         label: "Nama Lengkap",
@@ -194,18 +237,14 @@ export function useAdminUsersPage() {
         ],
         defaultValue: "active",
       },
-      ...(!editingUser
-        ? [
-            {
-              name: "password",
-              label: "Password",
-              type: "password" as const,
-              required: true,
-              placeholder: "Minimal 8 karakter",
-              helperText: "Isi password hanya saat membuat akun baru.",
-            },
-          ]
-        : []),
+      {
+        name: "password",
+        label: "Password",
+        type: "password" as const,
+        required: true,
+        placeholder: "Minimal 8 karakter",
+        helperText: "Isi password hanya saat membuat akun baru.",
+      },
     ],
     [editingUser]
   );
@@ -231,8 +270,8 @@ export function useAdminUsersPage() {
 
   const refreshUsers = useCallback(async () => {
     await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ["admin-users"] }),
-      queryClient.invalidateQueries({ queryKey: ["admin-audit"] }),
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.adminUsers] }),
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.adminAudit] }),
     ]);
   }, [queryClient]);
 
@@ -242,15 +281,13 @@ export function useAdminUsersPage() {
       setFormErrors({});
 
       try {
-        const detail = await adminFetch<{ data: AdminDirectoryUser }>(
-          `/api/admin/users/${item.id}`
-        );
+        const detail = await fetchAdminUserDetail(item.id);
 
-        setEditingUser(detail.data);
+        setEditingUser(detail);
         setFormOpen(true);
       } catch (error) {
         toast({
-          title: "Gagal memuat detail user",
+          title: "Gagal mengambil detail user",
           description:
             error instanceof Error
               ? error.message
@@ -270,26 +307,14 @@ export function useAdminUsersPage() {
       setFormErrors({});
 
       try {
-        const payload = buildControlUsersPayload(values, {
-          allowPassword: !editingUser,
-        });
-
         if (editingUser) {
-          await adminFetch(`/api/admin/users/${editingUser.id}`, {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(payload),
-          });
+          const payload = buildControlUsersPayload(values);
+          await updateAdminUser(editingUser.id, payload);
         } else {
-          await adminFetch("/api/admin/users", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(payload),
+          const payload = buildControlUsersPayload(values, {
+            allowPassword: true,
           });
+          await createAdminUser(payload);
         }
 
         await refreshUsers();
@@ -337,9 +362,7 @@ export function useAdminUsersPage() {
       const shouldMoveToPreviousPage = currentPage > 1 && pageUsers.length === 1;
 
       try {
-        await adminFetch(`/api/admin/users/${item.id}`, {
-          method: "DELETE",
-        });
+        await deleteAdminUser(item.id);
 
         if (shouldMoveToPreviousPage) {
           startTransition(() => {
@@ -381,8 +404,30 @@ export function useAdminUsersPage() {
     });
   }, []);
 
+  const handleSearchChange = useCallback((keyword: string) => {
+    setSearchKeyword(keyword);
+    startTransition(() => {
+      setCurrentPage(1);
+    });
+  }, []);
+
+  const handleSortChange = useCallback(
+    (state: { sortKey: string; sortDirection: SortDirection }) => {
+      setSortBy(state.sortKey);
+      setSortDirection(state.sortDirection);
+      startTransition(() => {
+        setCurrentPage(1);
+      });
+    },
+    []
+  );
+
   return {
     canManage,
+    currentUserId: user.id,
+    searchKeyword,
+    sortBy,
+    sortDirection,
     roleFilter,
     setRoleFilter,
     statusFilter,
@@ -406,5 +451,7 @@ export function useAdminUsersPage() {
     handleDelete,
     handleFormOpenChange,
     handlePageChange,
+    handleSearchChange,
+    handleSortChange,
   };
 }

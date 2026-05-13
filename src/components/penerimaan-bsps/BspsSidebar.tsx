@@ -113,7 +113,7 @@ export interface BspsSidebarProps {
   filterLists: FilterLists;
   statusLabels: StatusLabels;
   statusColors: StatusColors;
-  selectedDesaId: number | null;
+  selectedDesaId: string | null;
   onDesaClick: (desa: BspsData) => void;
   onCloseSidebar: () => void;
 }

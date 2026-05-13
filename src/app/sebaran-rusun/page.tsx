@@ -6,7 +6,7 @@
  * Komponen utama di-lazy-load melalui route client reusable.
  */
 
-import { SebaranRusunRouteClient } from "@/components/shared/AppRouteClients";
+import { SebaranRusunRouteClient } from "@/components/route-clients/AppRouteClients";
 
 import type { Metadata } from "next";
 

@@ -18,6 +18,7 @@ interface AdminDataTableDesktopProps<T extends object> {
   emptyMessage: string;
   sortKey: string | null;
   sortDir: "asc" | "desc";
+  useSortField: boolean;
   onSort: (key: string) => void;
   renderCellValue: (item: T, column: Column<T>) => React.ReactNode;
 }
@@ -31,6 +32,7 @@ export function AdminDataTableDesktop<T extends object>({
   emptyMessage,
   sortKey,
   sortDir,
+  useSortField,
   onSort,
   renderCellValue,
 }: AdminDataTableDesktopProps<T>) {
@@ -41,35 +43,40 @@ export function AdminDataTableDesktop<T extends object>({
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-border bg-muted/30">
-            {columns.map((column) => (
-              <th
-                key={column.key}
-                className={cn(
-                  "px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground",
-                  column.sortable &&
-                    "cursor-pointer select-none transition-colors hover:text-foreground",
-                  column.className
-                )}
-                onClick={() => column.sortable && onSort(column.key)}
-              >
-                <div className="flex items-center gap-1.5">
-                  {column.label}
-                  {column.sortable && (
-                    <span className="flex flex-col">
-                      {sortKey === column.key ? (
-                        sortDir === "asc" ? (
-                          <ChevronUp className="h-3.5 w-3.5" />
-                        ) : (
-                          <ChevronDown className="h-3.5 w-3.5" />
-                        )
-                      ) : (
-                        <ChevronsUpDown className="h-3.5 w-3.5 opacity-40" />
-                      )}
-                    </span>
+            {columns.map((column) => {
+              const sortField = column.sortField ?? column.key;
+              const activeSortKey = useSortField ? sortField : column.key;
+
+              return (
+                <th
+                  key={column.key}
+                  className={cn(
+                    "px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground",
+                    column.sortable &&
+                      "cursor-pointer select-none transition-colors hover:text-foreground",
+                    column.className
                   )}
-                </div>
-              </th>
-            ))}
+                  onClick={() => column.sortable && onSort(activeSortKey)}
+                >
+                  <div className="flex items-center gap-1.5">
+                    {column.label}
+                    {column.sortable && (
+                      <span className="flex flex-col">
+                        {sortKey === activeSortKey ? (
+                          sortDir === "asc" ? (
+                            <ChevronUp className="h-3.5 w-3.5" />
+                          ) : (
+                            <ChevronDown className="h-3.5 w-3.5" />
+                          )
+                        ) : (
+                          <ChevronsUpDown className="h-3.5 w-3.5 opacity-40" />
+                        )}
+                      </span>
+                    )}
+                  </div>
+                </th>
+              );
+            })}
             {hasActions && (
               <th className="w-[200px] px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Aksi
@@ -110,22 +117,34 @@ export function AdminDataTableDesktop<T extends object>({
                   {hasActions && (
                     <td className="px-4 py-3.5">
                       <div className="flex flex-wrap justify-end gap-2">
-                        {actions?.map((action) => (
-                          <button
-                            key={`${rowKey}-${action.label}`}
-                            type="button"
-                            onClick={() => action.onClick(item)}
-                            className={cn(
-                              "inline-flex min-h-9 items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors",
-                              action.variant === "destructive"
-                                ? "border-destructive/30 text-destructive hover:bg-destructive/10"
-                                : "border-border bg-card text-foreground hover:bg-muted"
-                            )}
-                          >
-                            {action.icon}
-                            <span>{action.label}</span>
-                          </button>
-                        ))}
+                        {actions
+                          ?.filter((action) => action.isVisible?.(item) ?? true)
+                          .map((action) => {
+                            const isDisabled = action.isDisabled?.(item) ?? false;
+
+                            return (
+                              <button
+                                key={`${rowKey}-${action.label}`}
+                                type="button"
+                                onClick={() => {
+                                  if (!isDisabled) {
+                                    action.onClick(item);
+                                  }
+                                }}
+                                disabled={isDisabled}
+                                title={isDisabled ? action.disabledReason : undefined}
+                                className={cn(
+                                  "inline-flex min-h-9 items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+                                  action.variant === "destructive"
+                                    ? "border-destructive/30 text-destructive hover:bg-destructive/10"
+                                    : "border-border bg-card text-foreground hover:bg-muted"
+                                )}
+                              >
+                                {action.icon}
+                                <span>{action.label}</span>
+                              </button>
+                            );
+                          })}
                       </div>
                     </td>
                   )}

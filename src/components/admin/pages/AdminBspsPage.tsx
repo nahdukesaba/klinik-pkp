@@ -22,6 +22,7 @@ const bspsColumns: Column<BspsData>[] = [
     key: "nama",
     label: "Desa/Kelurahan",
     sortable: true,
+    sortField: "village_id",
     render: (item) => (
       <div>
         <p className="font-medium text-foreground">{item.kelurahan || item.nama}</p>
@@ -35,11 +36,13 @@ const bspsColumns: Column<BspsData>[] = [
     key: "kabupaten",
     label: "Kabupaten/Kota",
     sortable: true,
+    sortField: "region_id",
   },
   {
     key: "alokasiUnit",
     label: "Alokasi Unit",
     sortable: true,
+    sortField: "unit_count",
     render: (item) => (
       <span className="font-semibold text-foreground">
         {item.alokasiUnit.toLocaleString("id-ID")} unit
@@ -51,12 +54,14 @@ const bspsColumns: Column<BspsData>[] = [
     key: "yearGiven",
     label: "Tahun",
     sortable: true,
+    sortField: "year_given",
     className: "text-center",
   },
   {
     key: "status",
     label: "Status",
     sortable: true,
+    sortField: "status",
     render: (item) => <StatusBadge status={item.status} />,
   },
   {
@@ -90,6 +95,11 @@ export default function AdminBspsPage() {
     handleDelete,
     handleFormOpenChange,
     setCurrentPage,
+    searchKeyword,
+    sortBy,
+    sortDirection,
+    handleSearchChange,
+    handleSortChange,
   } = useAdminBspsPage();
 
   if (!canManage) {
@@ -112,17 +122,18 @@ export default function AdminBspsPage() {
         items={[
           { label: "Total Lokasi", value: stats.totalLokasi },
           {
-            label: "Total Unit",
-            value: stats.totalUnit.toLocaleString("id-ID"),
+            label: "Unit Halaman Ini",
+            value: stats.pageUnit.toLocaleString("id-ID"),
           },
-          { label: "Selesai", value: stats.selesai },
-          { label: "Dalam Proses", value: stats.proses },
+          { label: "Selesai Halaman Ini", value: stats.pageSelesai },
+          { label: "Proses Halaman Ini", value: stats.pageProses },
+          { label: "Rencana Halaman Ini", value: stats.pageRencana },
         ]}
         columnsClassName="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
       />
 
       {bspsQuery.error ? (
-        <AdminErrorAlert message={`Gagal memuat data: ${bspsQuery.error.message}`} />
+        <AdminErrorAlert message={`Gagal mengambil data: ${bspsQuery.error.message}`} />
       ) : null}
 
       <AdminDataTable<BspsData>
@@ -132,6 +143,7 @@ export default function AdminBspsPage() {
         searchPlaceholder="Cari lokasi BSPS..."
         actions={[editAction(openEditDialog), deleteAction(handleDelete)]}
         isLoading={bspsQuery.isLoading}
+        isRefreshing={bspsQuery.isFetching && !bspsQuery.isLoading}
         emptyMessage="Belum ada data BSPS."
         pagination={{
           currentPage: bspsMeta?.page ?? 1,
@@ -139,6 +151,13 @@ export default function AdminBspsPage() {
           totalItems: bspsMeta?.totalRecords ?? bspsList.length,
           pageSize: bspsMeta?.limit ?? 10,
           onPageChange: setCurrentPage,
+          searchValue: searchKeyword,
+          onSearchChange: handleSearchChange,
+          searchMode: "local",
+          sortKey: sortBy,
+          sortDirection,
+          onSortChange: handleSortChange,
+          sortMode: "local",
         }}
       />
 

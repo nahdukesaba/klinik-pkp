@@ -8,6 +8,8 @@ import {
   readJsonRequestBody,
 } from "@/lib/server/http";
 import {
+  adminExternalResourceIdSchema,
+  adminExternalResourceNameSchema,
   adminFaqMutationSchema,
   adminUserCreateSchema,
   adminUserUpdateSchema,
@@ -20,7 +22,6 @@ import {
   markAdminStatesChanged,
 } from "./cache";
 import {
-  type ExternalAdminResource,
   proxyExternalAdminResource,
   readExternalAdminRequestBody,
   resolveExternalAdminResource,
@@ -116,6 +117,28 @@ function markUsersAdminStateChanged() {
   ]);
 }
 
+function validateExternalResourceName(resource: string) {
+  const validation = adminExternalResourceNameSchema.safeParse(resource);
+  return validation.success ? validation.data : null;
+}
+
+function validateExternalResourceId(id: string) {
+  const validation = adminExternalResourceIdSchema.safeParse(id);
+  return validation.success ? validation.data : null;
+}
+
+function buildFaqMutationFormData(data: {
+  question: string;
+  answer: string;
+  is_active: boolean;
+}) {
+  const formData = new FormData();
+  formData.set("question", data.question);
+  formData.set("answer", data.answer);
+  formData.set("is_active", String(data.is_active));
+  return formData;
+}
+
 async function recordAudit(
   request: NextRequest,
   actor: AdminSessionUser,
@@ -174,7 +197,14 @@ async function readExternalMutationBody(request: NextRequest, resource: string) 
       };
     }
 
-    return { ok: true as const, body: validation.data };
+    if (!validation.data) {
+      return {
+        ok: false as const,
+        response: createJsonErrorResponse("Data FAQ tidak valid.", 400),
+      };
+    }
+
+    return { ok: true as const, body: buildFaqMutationFormData(validation.data) };
   }
 
   return { ok: true as const, body };
@@ -189,12 +219,14 @@ export async function handleExternalAdminResourceList(
     return auth.response;
   }
 
-  if (!resolveExternalAdminResource(resource)) {
+  const validatedResource = validateExternalResourceName(resource);
+
+  if (!validatedResource || !resolveExternalAdminResource(validatedResource)) {
     return createJsonErrorResponse("Resource admin tidak ditemukan.", 404);
   }
 
   const result = await proxyExternalAdminResource({
-    resource: resource as ExternalAdminResource,
+    resource: validatedResource,
     method: "GET",
     accessToken: auth.user.backendAccessToken,
     searchParams: sanitizeAdminResourceSearchParams(request.nextUrl.searchParams),
@@ -213,7 +245,10 @@ export async function handleExternalAdminResourceDetail(
     return auth.response;
   }
 
-  if (!resolveExternalAdminResource(resource)) {
+  const validatedResource = validateExternalResourceName(resource);
+  const validatedId = validateExternalResourceId(id);
+
+  if (!validatedResource || !resolveExternalAdminResource(validatedResource)) {
     return createJsonErrorResponse(
       "Resource admin tidak ditemukan.",
       404,
@@ -222,10 +257,17 @@ export async function handleExternalAdminResourceDetail(
     );
   }
 
+  if (!validatedId) {
+    return createValidationErrorResponse(
+      "ID resource admin tidak valid.",
+      { id: ["ID resource harus berupa angka positif."] }
+    );
+  }
+
   const result = await proxyExternalAdminResource({
-    resource: resource as ExternalAdminResource,
+    resource: validatedResource,
     method: "GET",
-    id,
+    id: validatedId,
     accessToken: auth.user.backendAccessToken,
     searchParams: request.nextUrl.searchParams,
   });
@@ -245,13 +287,28 @@ export async function handleExternalAdminResourceMutation(
     return auth.response;
   }
 
-  if (!resolveExternalAdminResource(options.resource)) {
+  const validatedResource = validateExternalResourceName(options.resource);
+  let validatedId: string | undefined;
+
+  if (!validatedResource || !resolveExternalAdminResource(validatedResource)) {
     return createJsonErrorResponse("Resource admin tidak ditemukan.", 404);
+  }
+
+  if (options.id) {
+    const resourceId = validateExternalResourceId(options.id);
+    if (!resourceId) {
+      return createValidationErrorResponse(
+        "ID resource admin tidak valid.",
+        { id: ["ID resource harus berupa angka positif."] }
+      );
+    }
+
+    validatedId = resourceId;
   }
 
   const requiresBody = options.method !== "DELETE";
   const bodyResult = requiresBody
-    ? await readExternalMutationBody(request, options.resource)
+    ? await readExternalMutationBody(request, validatedResource)
     : { ok: true as const, body: null };
 
   if (!bodyResult.ok) {
@@ -260,12 +317,19 @@ export async function handleExternalAdminResourceMutation(
 
   const body = bodyResult.body;
   const result = await proxyExternalAdminResource({
-    resource: options.resource as ExternalAdminResource,
+    resource: validatedResource,
     method: options.method,
-    id: options.id,
+    id: validatedId,
     body,
     accessToken: auth.user.backendAccessToken,
-  });
+  }).catch(() => ({
+    ok: false,
+    status: 502,
+    payload: {
+      error:
+        "Gagal meneruskan permintaan ke backend. Silakan coba lagi setelah koneksi stabil.",
+    },
+  }));
 
   if (!result.ok) {
     if (result.status === 413 && body instanceof FormData) {
@@ -280,8 +344,8 @@ export async function handleExternalAdminResourceMutation(
 
   await recordAudit(request, auth.user, {
     action: options.action,
-    module: options.resource,
-    details: options.details({ resource: options.resource, id: options.id }),
+    module: validatedResource,
+    details: options.details({ resource: validatedResource, id: validatedId }),
   });
 
   markAdminStateChanged(ADMIN_STATE_TAGS.externalStats);
@@ -304,9 +368,24 @@ export async function handleListUsers(request: NextRequest) {
         ADMIN_USERS_PAGE_LIMIT
       )
     );
+    const keyword = request.nextUrl.searchParams.get("keyword") ?? undefined;
+    const sortBy = request.nextUrl.searchParams.get("sort_by");
+    const sortOrder = request.nextUrl.searchParams.get("sort_order");
+    const sortDirection =
+      sortOrder === "desc"
+        ? "desc"
+        : sortOrder === "asc"
+          ? "asc"
+          : undefined;
     const users = await listUsersPage(
       auth.user.backendAccessToken,
-      { page, limit }
+      {
+        page,
+        limit,
+        keyword,
+        sortBy,
+        sortDirection,
+      }
     );
 
     return createJsonResponse({
@@ -401,16 +480,18 @@ export async function handleUpdateUser(request: NextRequest, id: string) {
     return auth.response;
   }
 
+  if (id !== auth.user.id) {
+    return createJsonErrorResponse(
+      "Backend hanya mengizinkan pengguna memperbarui profil sendiri.",
+      403,
+      undefined,
+      "PROFILE_UPDATE_FORBIDDEN"
+    );
+  }
+
   const body = await readJsonRequestBody<Record<string, unknown>>(request);
   if (!body) {
     return createJsonErrorResponse("Payload pengguna tidak valid.", 400);
-  }
-
-  if (typeof body.password === "string" && body.password.trim() !== "") {
-    return createJsonErrorResponse(
-      "Password pengguna yang sudah ada tidak dapat diubah dari Control Users.",
-      403
-    );
   }
 
   const validation = validateForm(adminUserUpdateSchema, body);
@@ -428,7 +509,7 @@ export async function handleUpdateUser(request: NextRequest, id: string) {
 
   try {
     const result = await updateUser(
-      id,
+      "me",
       validatedData,
       auth.user.backendAccessToken
     );
@@ -436,7 +517,7 @@ export async function handleUpdateUser(request: NextRequest, id: string) {
     await recordAudit(request, auth.user, {
       action: "UPDATE",
       module: "users",
-      details: `Memperbarui pengguna ${validatedData.email} pada Control Users.`,
+      details: `Memperbarui profil pengguna ${validatedData.name} pada Control Users.`,
     });
 
     markUsersAdminStateChanged();

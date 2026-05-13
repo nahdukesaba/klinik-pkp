@@ -14,7 +14,7 @@ import { ApiLoadingState, ApiErrorState } from "@/components/shared";
 import { useBeritaDetail } from "@/hooks/berita/use-berita-detail";
 
 interface BeritaDetailPageProps {
-  id: number;
+  id: string;
 }
 
 export default function BeritaDetailPage({ id }: BeritaDetailPageProps) {
@@ -38,7 +38,7 @@ export default function BeritaDetailPage({ id }: BeritaDetailPageProps) {
 
   // Tampilkan loading state saat data sedang dimuat dari API
   if (isLoading) {
-    return <ApiLoadingState message="Memuat detail berita..." />;
+    return <ApiLoadingState />;
   }
 
   // Tampilkan error state jika gagal mengambil data

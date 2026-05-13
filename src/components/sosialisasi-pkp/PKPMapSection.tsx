@@ -10,8 +10,9 @@ import { YearFilterSelect } from "@/components/shared/YearFilterSelect";
 interface PKPMapSectionProps {
   mapRef: RefObject<HTMLDivElement | null>;
   mapReady: boolean;
+  mapError?: string | null;
   filteredLocations: Array<{
-    id: number;
+    id: string;
     name: string;
     kabupaten: string;
     kecamatan?: string;
@@ -44,6 +45,7 @@ interface PKPMapSectionProps {
 export function PKPMapSection({
   mapRef,
   mapReady,
+  mapError,
   filteredLocations,
   mapYear,
   setMapYear,
@@ -69,7 +71,7 @@ export function PKPMapSection({
   const currentYear = new Date().getFullYear().toString();
   const DEFAULT_STATUS = "all";
 
-  // Check if any filter is active (exclude defaults)
+  // Cek filter aktif selain nilai default.
   const activeFilterCount = useMemo(() => {
     let count = 0;
     if (mapYear !== "all" && mapYear !== currentYear) count++;
@@ -116,13 +118,8 @@ export function PKPMapSection({
             <div>
               <h2 className={`${compact ? 'text-base sm:text-lg' : 'text-lg sm:text-xl md:text-2xl'} font-bold text-foreground flex items-center gap-2`}>
                 <MapPin className={`${compact ? 'w-4 h-4 sm:w-5 sm:h-5' : 'w-5 h-5 sm:w-6 sm:h-6'} text-primary flex-shrink-0`} />
-                <span>Peta Lokasi Sosialisasi</span>
+                <span>Peta Lokasi Kegiatan</span>
               </h2>
-              {!compact && (
-                <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-                  Temukan lokasi kegiatan sosialisasi Klinik PKP
-                </p>
-              )}
             </div>
 
             {/* Stats Badges - More Compact */}
@@ -187,13 +184,14 @@ export function PKPMapSection({
             style={{ minHeight: "400px" }}
           />
 
-          {!mapReady && (
-            <div className="absolute inset-0 flex items-center justify-center bg-background/70 backdrop-blur-[1px]">
-              <div className="flex items-center gap-3 rounded-full border border-border bg-card px-4 py-2 text-sm text-muted-foreground shadow-lg">
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                <span>Memuat peta...</span>
+          {mapError ? (
+            <div className="absolute inset-0 flex items-center justify-center bg-background/80 p-4 text-center backdrop-blur-[1px]">
+              <div className="max-w-sm rounded-xl border border-destructive/30 bg-card px-4 py-3 text-sm text-destructive shadow-lg">
+                {mapError}
               </div>
             </div>
+          ) : !mapReady && (
+            <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px]" />
           )}
 
           {mapReady && filteredLocations.length === 0 && (

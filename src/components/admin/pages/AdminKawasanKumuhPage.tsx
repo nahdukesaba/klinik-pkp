@@ -57,6 +57,7 @@ const kumuhColumns: Column<KawasanKumuhData>[] = [
     key: "name",
     label: "Nama Kawasan",
     sortable: true,
+    sortField: "area_name",
     render: (item) => (
       <div className="max-w-[240px]">
         <p className="font-medium text-foreground break-words">{item.name}</p>
@@ -70,11 +71,13 @@ const kumuhColumns: Column<KawasanKumuhData>[] = [
     key: "kabupaten",
     label: "Kabupaten/Kota",
     sortable: true,
+    sortField: "region_id",
   },
   {
     key: "luas",
     label: "Luas (Ha)",
     sortable: true,
+    sortField: "total_area",
     render: (item) => (
       <span className="font-semibold text-foreground">
         {item.luas.toLocaleString("id-ID")} Ha
@@ -86,6 +89,7 @@ const kumuhColumns: Column<KawasanKumuhData>[] = [
     key: "penduduk",
     label: "Penduduk",
     sortable: true,
+    sortField: "total_population",
     render: (item) => item.penduduk.toLocaleString("id-ID"),
     className: "text-right",
   },
@@ -93,12 +97,14 @@ const kumuhColumns: Column<KawasanKumuhData>[] = [
     key: "status",
     label: "Status",
     sortable: true,
+    sortField: "slum_value",
     render: (item) => <KumuhStatusBadge status={item.status} />,
   },
   {
     key: "yearInspected",
     label: "Tahun",
     sortable: true,
+    sortField: "year_inspected",
     className: "text-center",
   },
 ];
@@ -123,6 +129,11 @@ export default function AdminKawasanKumuhPage() {
     handleDelete,
     handleFormOpenChange,
     setCurrentPage,
+    searchKeyword,
+    sortBy,
+    sortDirection,
+    handleSearchChange,
+    handleSortChange,
   } = useAdminKawasanKumuhPage();
 
   if (!canManage) {
@@ -145,22 +156,21 @@ export default function AdminKawasanKumuhPage() {
         items={[
           { label: "Total Kawasan", value: stats.totalKawasan },
           {
-            label: "Total Luas",
-            value: `${stats.totalLuas.toLocaleString("id-ID")} Ha`,
+            label: "Luas Halaman Ini",
+            value: `${stats.pageLuas.toLocaleString("id-ID")} Ha`,
           },
           {
-            label: "Total Penduduk",
-            value: stats.totalPenduduk.toLocaleString("id-ID"),
+            label: "Penduduk Halaman Ini",
+            value: stats.pagePenduduk.toLocaleString("id-ID"),
           },
-          { label: "Berat", value: stats.berat },
-          { label: "Sedang", value: stats.sedang },
-          { label: "Ringan", value: stats.ringan },
+          { label: "Sedang Halaman Ini", value: stats.pageSedang },
+          { label: "Ringan Halaman Ini", value: stats.pageRingan },
         ]}
-        columnsClassName="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6"
+        columnsClassName="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
       />
 
       {kumuhQuery.error ? (
-        <AdminErrorAlert message={`Gagal memuat data: ${kumuhQuery.error.message}`} />
+        <AdminErrorAlert message={`Gagal mengambil data: ${kumuhQuery.error.message}`} />
       ) : null}
 
       <AdminDataTable<KawasanKumuhData>
@@ -170,6 +180,7 @@ export default function AdminKawasanKumuhPage() {
         searchPlaceholder="Cari kawasan..."
         actions={[editAction(openEditDialog), deleteAction(handleDelete)]}
         isLoading={kumuhQuery.isLoading}
+        isRefreshing={kumuhQuery.isFetching && !kumuhQuery.isLoading}
         emptyMessage="Belum ada data kawasan kumuh."
         pagination={{
           currentPage: kumuhMeta?.page ?? 1,
@@ -177,6 +188,12 @@ export default function AdminKawasanKumuhPage() {
           totalItems: kumuhMeta?.totalRecords ?? kumuhList.length,
           pageSize: kumuhMeta?.limit ?? 10,
           onPageChange: setCurrentPage,
+          searchValue: searchKeyword,
+          onSearchChange: handleSearchChange,
+          sortKey: sortBy,
+          sortDirection,
+          onSortChange: handleSortChange,
+          sortMode: "local",
         }}
       />
 

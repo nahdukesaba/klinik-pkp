@@ -12,7 +12,15 @@ import { useQuery, keepPreviousData } from "@tanstack/react-query";
 
 import { useCascadingFilter } from "@/hooks/use-cascading-filter";
 import { useDebounce } from "@/hooks/use-debounce";
-import { CURRENT_YEAR, CURRENT_YEAR_NUM, QUERY_CONFIG } from "@/lib/constants";
+import {
+  CURRENT_YEAR,
+  CURRENT_YEAR_NUM,
+  DEFAULT_DEBOUNCE_DELAY_MS,
+  LONG_LIVED_QUERY_STALE_TIME_MS,
+  QUERY_CONFIG,
+  QUERY_KEY_PARTS,
+  QUERY_KEYS,
+} from "@/lib/constants";
 import { sanitizeInput } from "@/lib/security";
 import { fetchBspsList, type BspsData } from "@/services/bsps.service";
 
@@ -24,15 +32,16 @@ export function usePenerimaanBsps() {
   const yearParam = yearFilter === "all" ? undefined : (parseInt(yearFilter, 10) || CURRENT_YEAR_NUM);
 
   const dataQuery = useQuery({
-    queryKey: ["bsps", yearParam ?? "all"],
+    queryKey: [QUERY_KEYS.publicBsps, yearParam ?? QUERY_KEY_PARTS.all],
     queryFn: () => fetchBspsList(yearParam),
     placeholderData: keepPreviousData,
     ...QUERY_CONFIG,
   });
   const yearsQuery = useQuery({
-    queryKey: ["bsps-years"],
+    queryKey: [QUERY_KEYS.publicBspsYears],
     queryFn: () => fetchBspsList(),
     ...QUERY_CONFIG,
+    staleTime: LONG_LIVED_QUERY_STALE_TIME_MS,
     select: (data) => {
       const years = [...new Set(data.map((item) => item.yearGiven))];
       if (!years.includes(CURRENT_YEAR_NUM)) {
@@ -47,7 +56,7 @@ export function usePenerimaanBsps() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const debouncedSearch = useDebounce(searchQuery, 300);
+  const debouncedSearch = useDebounce(searchQuery, DEFAULT_DEBOUNCE_DELAY_MS);
 
   // Map data agar kelurahan tersedia untuk cascading filter
   const desaWithKelurahan = useMemo(

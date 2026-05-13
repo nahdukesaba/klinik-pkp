@@ -8,6 +8,7 @@ import {
   type DistrictApi,
   type RegionApi,
 } from "@/lib/api-client";
+import type { ApiListQueryControls } from "@/types/api";
 
 export interface KumuhApiItem {
   id: string;
@@ -46,10 +47,8 @@ export interface KawasanKumuhData {
   yearInspected: number;
 }
 
-export interface KumuhListParams {
+export interface KumuhListParams extends ApiListQueryControls {
   year?: number;
-  page?: number;
-  perPage?: number;
   regionId?: string;
   districtId?: string;
   collectAllPages?: boolean;
@@ -112,6 +111,7 @@ export async function fetchKumuhList(
       year_inspected: params.year,
       page: params.page,
       limit,
+      area_name: params.keyword,
       region_id: params.regionId,
       district_id: params.districtId,
     },
@@ -147,6 +147,7 @@ export async function fetchKumuhPage(
       year_inspected: params.year,
       page: params.page,
       limit: params.perPage,
+      area_name: params.keyword,
       region_id: params.regionId,
       district_id: params.districtId,
     },

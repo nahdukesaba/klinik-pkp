@@ -197,7 +197,7 @@ export function PKPBeritaSection({
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-foreground flex items-center gap-2">
             <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0" />
-            <span>Berita Sosialisasi</span>
+            <span>Berita Kegiatan</span>
             <span className="text-xs sm:text-sm font-normal text-muted-foreground">
               ({filteredBerita.length} berita)
             </span>

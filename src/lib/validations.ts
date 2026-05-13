@@ -51,12 +51,14 @@ const phoneSchema = z
     sanitizeInput(value).replace(/[^\d+\-\s()]/g, "").trim()
   );
 
+const adminUserNameSchema = z
+  .string()
+  .min(1, "Nama wajib diisi")
+  .max(120, "Nama terlalu panjang")
+  .transform((value) => sanitizeInput(value).replace(/\s+/g, " ").trim());
+
 const adminUserBaseSchema = z.object({
-  name: z
-    .string()
-    .min(1, "Nama wajib diisi")
-    .max(120, "Nama terlalu panjang")
-    .transform((value) => sanitizeInput(value).replace(/\s+/g, " ").trim()),
+  name: adminUserNameSchema,
   email: z
     .string()
     .min(1, "Email wajib diisi")
@@ -82,12 +84,9 @@ export const adminUserCreateSchema = adminUserBaseSchema.extend({
     .max(128, "Password terlalu panjang"),
 });
 
-export const adminUserUpdateSchema = adminUserBaseSchema.extend({
-  password: z
-    .string()
-    .max(128, "Password terlalu panjang")
-    .optional()
-    .transform((value) => value?.trim() ?? ""),
+export const adminUserUpdateSchema = z.object({
+  name: adminUserNameSchema,
+  phone: phoneSchema.optional().default(""),
 });
 
 export const adminFaqMutationSchema = z.object({
@@ -105,6 +104,20 @@ export const adminFaqMutationSchema = z.object({
     error: "Status publikasi tidak valid.",
   }),
 });
+
+export const adminExternalResourceNameSchema = z.enum([
+  "faq",
+  "bsps",
+  "kumuh",
+  "rusun",
+  "bank-desain",
+  "sosialisasi",
+]);
+
+export const adminExternalResourceIdSchema = z
+  .string()
+  .trim()
+  .regex(/^\d+$/, "ID resource harus berupa angka positif.");
 
 // --- Validation Helper ---
 

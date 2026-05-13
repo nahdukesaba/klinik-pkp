@@ -1,15 +1,12 @@
-"use client";
-
-// --- ProgressIndicator Component ---
-// Menampilkan indikator progress untuk step-step
-// Hanya menyala pada step yang sedang di-hover
-
 interface ProgressIndicatorProps {
   totalSteps: number;
   hoveredStep: number | null;
 }
 
-export function ProgressIndicator({ totalSteps, hoveredStep }: ProgressIndicatorProps) {
+export function ProgressIndicator({
+  totalSteps,
+  hoveredStep,
+}: ProgressIndicatorProps) {
   return (
     <div className="mt-8 text-center">
       <div className="inline-flex items-center gap-2 px-4 py-2 bg-card rounded-full border border-border shadow-sm">
@@ -17,9 +14,7 @@ export function ProgressIndicator({ totalSteps, hoveredStep }: ProgressIndicator
           {Array.from({ length: totalSteps }).map((_, index) => {
             const stepNumber = index + 1;
             const isCurrentlyHovered = hoveredStep === stepNumber;
-            const isLastStep = stepNumber === 6;
-            // Only the last step (step 6) should be green when hovered
-            // All other steps including step 4 should be blue (primary)
+            const isLastStep = stepNumber === totalSteps;
             const shouldBeGreen = isLastStep && isCurrentlyHovered;
 
             return (

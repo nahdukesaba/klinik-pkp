@@ -7,7 +7,7 @@
  * Komponen utama di-lazy-load melalui route client reusable.
  */
 
-import { LokasiKlinikRouteClient } from "@/components/shared/AppRouteClients";
+import { LokasiKlinikRouteClient } from "@/components/route-clients/AppRouteClients";
 
 import type { Metadata } from "next";
 

@@ -4,6 +4,8 @@ import { escapeHtml, escapeAttr, sanitizeUrl } from "@/lib/security";
 
 import type * as L from "leaflet";
 
+export type LatLngTuple = [number, number];
+
 // Hoist RegExp ke module-level untuk popup HTML sanitization
 const RE_SCRIPT_TAGS = /<script[^>]*>[\s\S]*?<\/script>/gi;
 const RE_SELF_CLOSING_SCRIPT = /<script[^>]*\/>/gi;
@@ -40,6 +42,61 @@ export function destroyMap(map: L.Map | null): void {
   } catch {
     // Abaikan error saat cleanup
   }
+}
+
+export function isValidMapCoordinate(
+  coordinate: readonly [number, number] | null | undefined
+) {
+  if (!coordinate) {
+    return false;
+  }
+
+  const [lat, lng] = coordinate;
+
+  return (
+    Number.isFinite(lat) &&
+    Number.isFinite(lng) &&
+    lat >= -90 &&
+    lat <= 90 &&
+    lng >= -180 &&
+    lng <= 180 &&
+    !(lat === 0 && lng === 0)
+  );
+}
+
+export function getOffsetMapCoordinate<T>(
+  items: readonly T[],
+  index: number,
+  getCoordinate: (item: T) => LatLngTuple,
+  options: {
+    overlapThreshold?: number;
+    offsetStep?: number;
+  } = {}
+): LatLngTuple {
+  const coordinate = getCoordinate(items[index]);
+  const overlapThreshold = options.overlapThreshold ?? 0.00035;
+  const offsetStep = options.offsetStep ?? 0.00055;
+  const overlapIndex = items
+    .slice(0, index)
+    .filter((item) => {
+      const other = getCoordinate(item);
+      return (
+        Math.abs(other[0] - coordinate[0]) <= overlapThreshold &&
+        Math.abs(other[1] - coordinate[1]) <= overlapThreshold
+      );
+    }).length;
+
+  if (overlapIndex === 0) {
+    return coordinate;
+  }
+
+  const angle = overlapIndex * 2.399963229728653;
+  const radius = offsetStep * Math.sqrt(overlapIndex);
+
+  return [
+    coordinate[0] + radius * Math.cos(angle),
+    coordinate[1] + radius * Math.sin(angle),
+  ];
 }
 
 /**

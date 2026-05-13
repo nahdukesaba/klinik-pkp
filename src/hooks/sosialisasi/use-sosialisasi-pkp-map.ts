@@ -4,9 +4,16 @@ import { useState, useRef, useMemo, useCallback, useEffect } from "react";
 
 import { useCascadingFilter } from "@/hooks/use-cascading-filter";
 import { useDebounce } from "@/hooks/use-debounce";
-import { CURRENT_YEAR } from "@/lib/constants";
+import { CURRENT_YEAR, DEFAULT_DEBOUNCE_DELAY_MS } from "@/lib/constants";
 import { formatDateId, getSortedUniqueYears } from "@/lib/date";
-import { loadLeaflet, cleanupMapContainer, destroyMap, bindMarkerInteraction } from "@/lib/map-utils";
+import {
+  bindMarkerInteraction,
+  cleanupMapContainer,
+  destroyMap,
+  getOffsetMapCoordinate,
+  isValidMapCoordinate,
+  loadLeaflet,
+} from "@/lib/map-utils";
 import { escapeHtml, escapeAttr, sanitizeUrl } from "@/lib/security";
 import { type SosialisasiLocation } from "@/services/sosialisasi.service";
 
@@ -17,6 +24,7 @@ import "leaflet/dist/leaflet.css";
 interface UseSosialisasiPKPMapReturn {
   mapRef: React.RefObject<HTMLDivElement | null>;
   mapReady: boolean;
+  mapError: string | null;
   flyTo: (lat: number, lng: number, zoom?: number) => void;
   // Filter states
   mapYear: string;
@@ -61,8 +69,10 @@ export function useSosialisasiPKPMap(
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<Leaflet.Map | null>(null);
   const markersRef = useRef<Leaflet.Marker[]>([]);
+  const resizeObserverRef = useRef<ResizeObserver | null>(null);
 
   const [mapReady, setMapReady] = useState(false);
+  const [mapError, setMapError] = useState<string | null>(null);
   // Default: tahun sekarang agar peta langsung fokus ke data tahun ini
   const [mapYear, setMapYear] = useState<string>(CURRENT_YEAR);
   const [mapStatusFilter, setMapStatusFilter] = useState<string>("all");
@@ -72,7 +82,10 @@ export function useSosialisasiPKPMap(
   const onImageClickRef = useRef(onImageClick);
 
   // Debounce search query for better performance
-  const debouncedSearchQuery = useDebounce(mapSearchQuery, 300);
+  const debouncedSearchQuery = useDebounce(
+    mapSearchQuery,
+    DEFAULT_DEBOUNCE_DELAY_MS
+  );
 
   // Use shared cascading filter for kabupaten/kecamatan/kelurahan
   const cascading = useCascadingFilter(allLocations);
@@ -151,31 +164,19 @@ export function useSosialisasiPKPMap(
       });
       markersRef.current = [];
 
-      // Add filtered markers - use filteredMapLocations
-      filteredMapLocations.forEach((loc: SosialisasiLocation, index: number) => {
+      const displayedLocations = filteredMapLocations.filter((loc) =>
+        isValidMapCoordinate(loc.coordinates)
+      );
+
+      displayedLocations.forEach((loc: SosialisasiLocation, index: number) => {
         const isUpcoming = loc.status === "mendatang";
         const markerColor = isUpcoming ? "#eab308" : "#0E5B73";
-
-        // Calculate offset for overlapping markers using spiral pattern
-        // This ensures markers at same location don't overlap
-        const sameLocationMarkers = filteredMapLocations.filter(
-          (l: SosialisasiLocation, i: number) =>
-            i < index &&
-            Math.abs(l.coordinates[0] - loc.coordinates[0]) < 0.001 &&
-            Math.abs(l.coordinates[1] - loc.coordinates[1]) < 0.001
+        const offsetCoordinates = getOffsetMapCoordinate(
+          displayedLocations,
+          index,
+          (item) => item.coordinates,
+          { overlapThreshold: 0.001, offsetStep: 0.0008 }
         );
-
-        const overlapIndex = sameLocationMarkers.length;
-        const angle = overlapIndex * 2.4; // Golden angle for spiral
-        const radius = 0.0008 * Math.sqrt(overlapIndex); // Spiral radius grows
-
-        const offsetCoordinates: [number, number] =
-          overlapIndex > 0
-            ? [
-              loc.coordinates[0] + radius * Math.cos(angle),
-              loc.coordinates[1] + radius * Math.sin(angle),
-            ]
-            : loc.coordinates;
 
         // Gunakan variabel L dari parameter, bukan global
         const markerIcon = L.divIcon({
@@ -350,7 +351,7 @@ export function useSosialisasiPKPMap(
 
     const container = mapRef.current;
 
-    // Clean up any existing Leaflet instance
+    // Bersihkan instance Leaflet sebelum membuat instance baru.
     cleanupMapContainer(container);
 
     loadLeaflet()
@@ -358,11 +359,13 @@ export function useSosialisasiPKPMap(
         if (mapInstanceRef.current) return;
 
         try {
+          setMapError(null);
           // Initialize map with smooth zoom options
           const map = L.map(container, {
             center: [3.2, 99.0],
             zoom: 8,
             zoomControl: true,
+            scrollWheelZoom: true,
             // Smooth zoom options
             zoomSnap: 0.25,
             zoomDelta: 0.5,
@@ -410,12 +413,15 @@ export function useSosialisasiPKPMap(
           map.addControl(new LegendControl());
 
           // Aggressive invalidation for lazy-loaded/dynamic containers
-          const resizeObserver = new ResizeObserver(() => {
-            if (mapInstanceRef.current) {
-              mapInstanceRef.current.invalidateSize();
-            }
-          });
-          resizeObserver.observe(container);
+          if (typeof ResizeObserver !== "undefined") {
+            const resizeObserver = new ResizeObserver(() => {
+              if (mapInstanceRef.current) {
+                mapInstanceRef.current.invalidateSize();
+              }
+            });
+            resizeObserver.observe(container);
+            resizeObserverRef.current = resizeObserver;
+          }
 
           setTimeout(() => map.invalidateSize(), 100);
           setTimeout(() => map.invalidateSize(), 500);
@@ -426,19 +432,22 @@ export function useSosialisasiPKPMap(
             map.invalidateSize();
           });
         } catch {
-          // Map initialization failed silently
+          setMapError("Peta gagal disiapkan. Muat ulang halaman untuk mencoba lagi.");
         }
       })
       .catch(() => {
-        // Leaflet loading failed silently
+        setMapError("Library peta gagal dimuat. Periksa jaringan lalu muat ulang halaman.");
       });
 
     return () => {
+      resizeObserverRef.current?.disconnect();
+      resizeObserverRef.current = null;
       destroyMap(mapInstanceRef.current);
       mapInstanceRef.current = null;
       markersRef.current = [];
       cleanupMapContainer(container);
       setMapReady(false);
+      setMapError(null);
     };
   }, [isEnabled]);
 
@@ -461,6 +470,7 @@ export function useSosialisasiPKPMap(
     if (!mapInstanceRef.current) return;
 
     const coordinates: [number, number] = [lat, lng];
+    if (!isValidMapCoordinate(coordinates)) return;
 
     const mapSection = document.getElementById("peta-sosialisasi");
     if (mapSection) {
@@ -495,6 +505,7 @@ export function useSosialisasiPKPMap(
   return {
     mapRef,
     mapReady,
+    mapError,
     flyTo,
     mapYear,
     setMapYear,

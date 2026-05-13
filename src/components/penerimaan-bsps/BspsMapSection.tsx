@@ -75,7 +75,7 @@ interface BspsMapSectionProps {
   mapRef: RefObject<HTMLDivElement | null>;
   isMapReady: boolean;
   filteredDesa: BspsData[];
-  selectedDesaId: number | null;
+  selectedDesaId: string | null;
   sidebarOpen: boolean;
   onDesaClick: (desa: BspsData) => void;
   onToggleSidebar: () => void;
@@ -120,7 +120,7 @@ const BspsHeader = memo(function BspsHeader({
               <ArrowLeft className="h-5 w-5" />
             </Link>
             <div>
-              <p className="text-xs text-muted-foreground">Penerimaan BSPS</p>
+              <p className="text-xs text-muted-foreground">Bantuan Perumahan</p>
               <h1 className="text-lg font-bold text-foreground">Lokasi Penerima</h1>
             </div>
           </div>
@@ -246,14 +246,7 @@ function BspsMapSection({
 
         <div className="relative flex-1 overflow-hidden">
           {!isMapReady && (
-            <div className="absolute inset-0 z-20 flex items-center justify-center bg-muted animate-pulse">
-              <div className="flex flex-col items-center gap-2">
-                <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                <span className="text-sm font-medium text-muted-foreground">
-                  Memuat Peta...
-                </span>
-              </div>
-            </div>
+            <div className="absolute inset-0 z-20 bg-muted animate-pulse" />
           )}
 
           <div

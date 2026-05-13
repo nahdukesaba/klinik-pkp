@@ -8,6 +8,8 @@ export interface AdminDirectoryUser {
   phone: string;
   role: UserRole;
   isActive: boolean;
+  isEditable?: boolean;
+  canDelete?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -50,5 +52,7 @@ export interface DashboardStats {
   totalUsers: number;
   usersLoaded: number;
   adminUsersLoaded: number;
+  activeUsersLoaded: number;
+  inactiveUsersLoaded: number;
   totalRecordedActivities: number;
 }

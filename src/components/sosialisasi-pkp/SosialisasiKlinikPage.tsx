@@ -2,8 +2,6 @@
 
 import { useCallback, useState } from "react";
 
-import { BookOpen } from "lucide-react";
-
 import "./sosialisasi.css";
 
 import { Footer, Navbar } from "@/components/layout";
@@ -11,25 +9,8 @@ import { ApiErrorState, ImageZoomDialog } from "@/components/shared";
 import { PKPBeritaSection } from "@/components/sosialisasi-pkp/PKPBeritaSection";
 import { PKPJadwalSection } from "@/components/sosialisasi-pkp/PKPJadwalSection";
 import { PKPMapSection } from "@/components/sosialisasi-pkp/PKPMapSection";
-import { MapSkeleton } from "@/components/ui/skeleton";
 import { useSosialisasiPKPPage } from "@/hooks/sosialisasi/use-sosialisasi-pkp-page";
 import { useScrollAnimation } from "@/hooks/use-scroll-animation";
-
-function SosialisasiSidebarSkeleton() {
-  return (
-    <div className="rounded-xl border border-border bg-card/95 p-4 shadow-lg sm:rounded-2xl">
-      <div className="mb-4 h-6 w-40 animate-pulse rounded bg-muted" />
-      <div className="space-y-3">
-        {Array.from({ length: 3 }).map((_, index) => (
-          <div
-            key={index}
-            className="h-28 animate-pulse rounded-xl bg-muted"
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
 
 function SosialisasiBeritaSkeleton() {
   return (
@@ -94,7 +75,6 @@ function SosialisasiKlinikPKPContent() {
   } = useSosialisasiPKPPage(handleImageClick);
   const mapLazyRef = mapLazy.ref;
   const isMapMounted = mapLazy.isMounted;
-  const isInitialMapLoading = isLoading && map.filteredMapLocations.length === 0;
   const isInitialJadwalLoading = isLoading && jadwal.filteredJadwal.length === 0;
   const isInitialBeritaLoading = isLoading && berita.filteredBerita.length === 0;
 
@@ -115,30 +95,16 @@ function SosialisasiKlinikPKPContent() {
         </div>
 
         <div className="container mx-auto px-4">
-          {/* Header */}
-          <div className="text-center mb-8 animate-on-scroll">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-full text-sm font-medium mb-4 border border-primary/20">
-              <BookOpen className="w-4 h-4" />
-              <span>Sosialisasi</span>
-            </div>
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4">
-              Sosialisasi Klinik PKP
-            </h1>
-            <p className="mx-auto max-w-2xl text-base text-muted-foreground md:text-lg">
-              Jadwal kegiatan, peta lokasi, dan rangkaian berita sosialisasi
-              Klinik PKP yang dapat diikuti masyarakat di wilayah layanan.
-            </p>
-          </div>
-
           {/* Map + Jadwal Side by Side on Desktop */}
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-12">
             {/* Map Section - Larger (3/5) */}
             {/* eslint-disable react-hooks/refs -- useLazyMount returns a callback ref plus a mounted flag */}
             <div ref={mapLazyRef} className="lg:col-span-3 lg:sticky lg:top-24 lg:self-start sosialisasi-map">
-              {isMapMounted && !isInitialMapLoading ? (
+              {isMapMounted ? (
                 <PKPMapSection
                   mapRef={map.mapRef}
                   mapReady={map.mapReady}
+                  mapError={map.mapError}
                   filteredLocations={map.filteredMapLocations}
                   mapYear={map.mapYear}
                   setMapYear={map.setMapYear}
@@ -161,39 +127,37 @@ function SosialisasiKlinikPKPContent() {
                   compact={true}
                 />
               ) : (
-                <MapSkeleton className="h-[400px] sm:h-[450px] md:h-[550px] lg:h-[650px] xl:h-[750px]" />
+                <div className="rounded-xl border border-border bg-card/95 p-6 text-sm text-muted-foreground shadow-lg">
+                </div>
               )}
             </div>
             {/* eslint-enable react-hooks/refs */}
 
             {/* Jadwal Section - Scrollable (2/5) */}
             <div id="jadwal-section" className="lg:col-span-2 scroll-mt-24">
-              {isInitialJadwalLoading ? (
-                <SosialisasiSidebarSkeleton />
-              ) : (
-                <PKPJadwalSection
-                  jadwalYear={jadwal.jadwalYear}
-                  setJadwalYear={jadwal.setJadwalYear}
-                  jadwalMonth={jadwal.jadwalMonth}
-                  setJadwalMonth={jadwal.setJadwalMonth}
-                  jadwalStartDate={jadwal.jadwalStartDate}
-                  setJadwalStartDate={jadwal.setJadwalStartDate}
-                  jadwalEndDate={jadwal.jadwalEndDate}
-                  setJadwalEndDate={jadwal.setJadwalEndDate}
-                  jadwalSearch={jadwal.jadwalSearch}
-                  setJadwalSearch={jadwal.setJadwalSearch}
-                  jadwalKabupatenFilter={jadwal.jadwalKabupatenFilter}
-                  setJadwalKabupatenFilter={jadwal.setJadwalKabupatenFilter}
-                  jadwalYears={jadwal.jadwalYears}
-                  filteredJadwal={jadwal.filteredJadwal}
-                  totalResults={jadwal.filteredJadwal.length}
-                  kabupatenList={jadwal.kabupatenList}
-                  resetFilters={jadwal.resetFilters}
-                  hasActiveFilters={jadwal.hasActiveFilters}
-                  onCardClick={flyToLocation}
-                  compact={true}
-                />
-              )}
+              <PKPJadwalSection
+                jadwalYear={jadwal.jadwalYear}
+                setJadwalYear={jadwal.setJadwalYear}
+                jadwalMonth={jadwal.jadwalMonth}
+                setJadwalMonth={jadwal.setJadwalMonth}
+                jadwalStartDate={jadwal.jadwalStartDate}
+                setJadwalStartDate={jadwal.setJadwalStartDate}
+                jadwalEndDate={jadwal.jadwalEndDate}
+                setJadwalEndDate={jadwal.setJadwalEndDate}
+                jadwalSearch={jadwal.jadwalSearch}
+                setJadwalSearch={jadwal.setJadwalSearch}
+                jadwalKabupatenFilter={jadwal.jadwalKabupatenFilter}
+                setJadwalKabupatenFilter={jadwal.setJadwalKabupatenFilter}
+                jadwalYears={jadwal.jadwalYears}
+                filteredJadwal={jadwal.filteredJadwal}
+                totalResults={jadwal.filteredJadwal.length}
+                kabupatenList={jadwal.kabupatenList}
+                resetFilters={jadwal.resetFilters}
+                hasActiveFilters={jadwal.hasActiveFilters}
+                onCardClick={flyToLocation}
+                compact={true}
+                isLoading={isInitialJadwalLoading}
+              />
             </div>
           </div>
 

@@ -4,10 +4,8 @@ import { useEffect } from "react";
 
 import { usePathname } from "next/navigation";
 
-const DIALOG_OVERLAY_SELECTOR = "[data-ui-dialog-overlay]";
 const DIALOG_CONTENT_SELECTOR = "[data-ui-dialog-content]";
 const ROUTE_OVERLAY_SELECTOR = "[data-ui-route-overlay]";
-const FOCUS_GUARD_SELECTOR = "[data-radix-focus-guard]";
 
 function restoreBodyInteractivity() {
   if (typeof document === "undefined") {
@@ -18,12 +16,6 @@ function restoreBodyInteractivity() {
   document.body.style.removeProperty("overflow");
   document.documentElement.style.removeProperty("overflow");
   document.body.removeAttribute("data-scroll-locked");
-}
-
-function removeMatchedNodes(selector: string) {
-  document.querySelectorAll(selector).forEach((node) => {
-    node.remove();
-  });
 }
 
 function hasOpenDialog() {
@@ -37,18 +29,12 @@ function cleanupClosedDialogArtifacts() {
     return;
   }
 
-  removeMatchedNodes(
-    `${DIALOG_OVERLAY_SELECTOR}[data-state='closed'], ${DIALOG_CONTENT_SELECTOR}[data-state='closed']`
-  );
-
   if (!hasOpenDialog()) {
     window.requestAnimationFrame(() => {
       if (hasOpenDialog()) {
         return;
       }
 
-      removeMatchedNodes(`${DIALOG_OVERLAY_SELECTOR}, ${DIALOG_CONTENT_SELECTOR}`);
-      removeMatchedNodes(FOCUS_GUARD_SELECTOR);
       restoreBodyInteractivity();
     });
   }
@@ -59,14 +45,11 @@ function cleanupTransientLayersForRouteChange() {
     return;
   }
 
-  removeMatchedNodes(
-    [
-      DIALOG_OVERLAY_SELECTOR,
-      DIALOG_CONTENT_SELECTOR,
-      ROUTE_OVERLAY_SELECTOR,
-      FOCUS_GUARD_SELECTOR,
-    ].join(", ")
-  );
+  if (document.querySelector(ROUTE_OVERLAY_SELECTOR) === null) {
+    restoreBodyInteractivity();
+    return;
+  }
+
   restoreBodyInteractivity();
 }
 

@@ -54,6 +54,9 @@ export interface FormFieldDef {
   defaultValue?: string;
   accept?: string;
   multiple?: boolean;
+  maxFiles?: number;
+  maxSizeMb?: number;
+  maxTotalSizeMb?: number;
   helperText?: string;
   existingFiles?: ExistingUploadFile[];
 }
@@ -168,6 +171,311 @@ function parseExistingFiles(value: AdminFormValue | undefined) {
   }
 }
 
+function isImageUploadField(field: FormFieldDef) {
+  return field.accept?.includes("image") ?? false;
+}
+
+function formatFileSize(bytes: number) {
+  if (bytes < 1024 * 1024) {
+    return `${(bytes / 1024).toFixed(0)} KB`;
+  }
+
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
+
+function isAcceptedFile(file: File, accept?: string) {
+  if (!accept) {
+    return true;
+  }
+
+  const fileName = file.name.toLowerCase();
+  const fileType = file.type.toLowerCase();
+  const acceptedTokens = accept
+    .split(",")
+    .map((token) => token.trim().toLowerCase())
+    .filter(Boolean);
+
+  return acceptedTokens.some((token) => {
+    if (token.endsWith("/*")) {
+      return fileType.startsWith(token.slice(0, -1));
+    }
+
+    if (token.startsWith(".")) {
+      return fileName.endsWith(token);
+    }
+
+    return fileType === token;
+  });
+}
+
+function validateUploadFiles(
+  field: FormFieldDef,
+  currentFiles: File[],
+  nextFiles: File[],
+  existingFileCount: number
+) {
+  const mergedFiles = mergeFiles(currentFiles, nextFiles, Boolean(field.multiple));
+  const maxFiles = field.maxFiles ?? (field.multiple ? undefined : 1);
+  const totalPlannedFiles = field.multiple
+    ? existingFileCount + mergedFiles.length
+    : mergedFiles.length;
+
+  if (maxFiles && totalPlannedFiles > maxFiles) {
+    return {
+      files: currentFiles,
+      error: `Maksimal ${maxFiles} file untuk ${field.label.toLowerCase()}.`,
+    };
+  }
+
+  const unsupportedFile = nextFiles.find((file) => !isAcceptedFile(file, field.accept));
+  if (unsupportedFile) {
+    return {
+      files: currentFiles,
+      error: `Format file "${unsupportedFile.name}" tidak didukung.`,
+    };
+  }
+
+  if (field.maxSizeMb) {
+    const maxSizeBytes = field.maxSizeMb * 1024 * 1024;
+    const oversizedFile = nextFiles.find((file) => file.size > maxSizeBytes);
+
+    if (oversizedFile) {
+      return {
+        files: currentFiles,
+        error: `"${oversizedFile.name}" melebihi batas ${field.maxSizeMb} MB.`,
+      };
+    }
+  }
+
+  if (field.maxTotalSizeMb) {
+    const totalSizeBytes = mergedFiles.reduce((sum, file) => sum + file.size, 0);
+    const maxTotalSizeBytes = field.maxTotalSizeMb * 1024 * 1024;
+
+    if (totalSizeBytes > maxTotalSizeBytes) {
+      return {
+        files: currentFiles,
+        error: `Total upload melebihi batas ${field.maxTotalSizeMb} MB.`,
+      };
+    }
+  }
+
+  return { files: mergedFiles, error: "" };
+}
+
+function useObjectUrlPreviews(files: File[], enabled: boolean) {
+  const previewUrls = useMemo(
+    () => (enabled ? files.map((file) => URL.createObjectURL(file)) : []),
+    [enabled, files]
+  );
+
+  useEffect(() => {
+    return () => {
+      previewUrls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [previewUrls]);
+
+  return previewUrls;
+}
+
+interface UploadFieldProps {
+  field: FormFieldDef;
+  fileValue: File[];
+  existingFiles: ExistingUploadFile[];
+  existingFieldName: string;
+  error?: string;
+  onChange: (name: string, value: AdminFormValue) => void;
+}
+
+function UploadField({
+  field,
+  fileValue,
+  existingFiles,
+  existingFieldName,
+  error,
+  onChange,
+}: UploadFieldProps) {
+  const [localError, setLocalError] = useState("");
+  const isImageUpload = isImageUploadField(field);
+  const previewUrls = useObjectUrlPreviews(fileValue, isImageUpload);
+  const displayedError = localError || error;
+
+  const handleRemoveExistingFile = useCallback(
+    (url: string) => {
+      onChange(
+        existingFieldName,
+        JSON.stringify(
+          existingFiles.filter((existingFile) => existingFile.url !== url)
+        )
+      );
+    },
+    [existingFieldName, existingFiles, onChange]
+  );
+
+  const handleRemoveNewFile = useCallback(
+    (index: number) => {
+      setLocalError("");
+      onChange(
+        field.name,
+        fileValue.filter((_, fileIndex) => fileIndex !== index)
+      );
+    },
+    [field.name, fileValue, onChange]
+  );
+
+  return (
+    <div className="space-y-2">
+      <Input
+        id={`admin-form-${field.name}`}
+        type="file"
+        accept={field.accept}
+        multiple={field.multiple}
+        required={
+          field.required &&
+          fileValue.length === 0 &&
+          existingFiles.length === 0
+        }
+        onChange={(event) => {
+          const nextFiles = Array.from(event.target.files ?? []);
+          const result = validateUploadFiles(
+            field,
+            fileValue,
+            nextFiles,
+            existingFiles.length
+          );
+
+          if (result.error) {
+            setLocalError(result.error);
+          } else {
+            setLocalError("");
+            onChange(field.name, result.files);
+          }
+
+          event.currentTarget.value = "";
+        }}
+        className={cn(
+          "cursor-pointer",
+          displayedError &&
+            "border-destructive focus-visible:ring-destructive"
+        )}
+      />
+
+      {existingFiles.length > 0 && (
+        <div className="rounded-md border border-border bg-muted/20 px-3 py-2">
+          <p className="text-xs font-medium text-foreground">File saat ini</p>
+          <div
+            className={cn(
+              "mt-2 gap-2",
+              isImageUpload ? "grid grid-cols-2 sm:grid-cols-3" : "space-y-2"
+            )}
+          >
+            {existingFiles.map((file) => (
+              <div
+                key={file.url}
+                className={cn(
+                  "relative rounded-md border border-border/70 bg-background/80",
+                  isImageUpload ? "overflow-hidden" : "px-2.5 py-2"
+                )}
+              >
+                {isImageUpload ? (
+                  <a
+                    href={file.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block aspect-video bg-muted bg-cover bg-center"
+                    style={{ backgroundImage: `url(${file.url})` }}
+                    aria-label={`Buka ${file.name}`}
+                  />
+                ) : (
+                  <a
+                    href={file.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block min-w-0 truncate pr-9 text-xs font-medium text-foreground underline-offset-2 hover:underline"
+                  >
+                    {file.name}
+                  </a>
+                )}
+                {isImageUpload && (
+                  <p className="truncate px-2 py-1.5 text-[11px] font-medium text-foreground">
+                    {file.name}
+                  </p>
+                )}
+                <button
+                  type="button"
+                  onClick={() => handleRemoveExistingFile(file.url)}
+                  className="absolute right-1.5 top-1.5 inline-flex h-7 w-7 items-center justify-center rounded-full border border-border bg-background/90 text-muted-foreground shadow-sm transition-colors hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive"
+                  aria-label={`Hapus ${file.name}`}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {fileValue.length > 0 && (
+        <div className="rounded-md border border-border bg-muted/30 px-3 py-2">
+          <p className="text-xs font-medium text-foreground">File baru</p>
+          <div
+            className={cn(
+              "mt-2 gap-2",
+              isImageUpload ? "grid grid-cols-2 sm:grid-cols-3" : "space-y-2"
+            )}
+          >
+            {fileValue.map((file, index) => (
+              <div
+                key={`${file.name}-${file.lastModified}-${index}`}
+                className={cn(
+                  "relative rounded-md border border-border/70 bg-background/80",
+                  isImageUpload ? "overflow-hidden" : "px-2.5 py-2"
+                )}
+              >
+                {isImageUpload ? (
+                  <div
+                    className="aspect-video bg-muted bg-cover bg-center"
+                    style={{
+                      backgroundImage: previewUrls[index]
+                        ? `url(${previewUrls[index]})`
+                        : undefined,
+                    }}
+                    aria-label={file.name}
+                  />
+                ) : null}
+                <div className={isImageUpload ? "px-2 py-1.5" : "pr-9"}>
+                  <p className="truncate text-xs font-medium text-foreground">
+                    {file.name}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {formatFileSize(file.size)}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveNewFile(index)}
+                  className="absolute right-1.5 top-1.5 inline-flex h-7 w-7 items-center justify-center rounded-full border border-border bg-background/90 text-muted-foreground shadow-sm transition-colors hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive"
+                  aria-label={`Hapus ${file.name}`}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+          {field.multiple && (
+            <p className="mt-2 text-[11px] text-muted-foreground">
+              Pilih file lagi kapan pun untuk menambahkan gambar lainnya.
+            </p>
+          )}
+        </div>
+      )}
+
+      {displayedError && (
+        <p className="text-xs text-destructive">{displayedError}</p>
+      )}
+    </div>
+  );
+}
+
 function AdminFormDialogBody({
   fields,
   initialValues,
@@ -262,116 +570,14 @@ function AdminFormDialogBody({
                 ))}
               </select>
             ) : field.type === "file" ? (
-              <div className="space-y-2">
-                <Input
-                  id={`admin-form-${field.name}`}
-                  type="file"
-                  accept={field.accept}
-                  multiple={field.multiple}
-                  required={
-                    field.required &&
-                    fileValue.length === 0 &&
-                    existingFiles.length === 0
-                  }
-                  onChange={(event) => {
-                    const nextFiles = Array.from(event.target.files ?? []);
-                    handleChange(
-                      field.name,
-                      mergeFiles(fileValue, nextFiles, Boolean(field.multiple))
-                    );
-                    event.currentTarget.value = "";
-                  }}
-                  className={cn(
-                    "cursor-pointer",
-                    errors[field.name] &&
-                      "border-destructive focus-visible:ring-destructive"
-                  )}
-                />
-                {existingFiles.length > 0 && (
-                  <div className="rounded-md border border-border bg-muted/20 px-3 py-2">
-                    <p className="text-xs font-medium text-foreground">
-                      File saat ini
-                    </p>
-                    <div className="mt-2 space-y-2">
-                      {existingFiles.map((file) => (
-                        <div
-                          key={file.url}
-                          className="flex items-center justify-between gap-3 rounded-md border border-border/70 bg-background/80 px-2.5 py-2"
-                        >
-                          <a
-                            href={file.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="min-w-0 truncate text-xs font-medium text-foreground underline-offset-2 hover:underline"
-                          >
-                            {file.name}
-                          </a>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleChange(
-                                existingFieldName,
-                                JSON.stringify(
-                                  existingFiles.filter(
-                                    (existingFile) =>
-                                      existingFile.url !== file.url
-                                  )
-                                )
-                              )
-                            }
-                            className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive"
-                            aria-label={`Hapus ${file.name}`}
-                          >
-                            <X className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {fileValue.length > 0 && (
-                  <div className="rounded-md border border-border bg-muted/30 px-3 py-2">
-                    <p className="text-xs font-medium text-foreground">
-                      File baru
-                    </p>
-                    <div className="mt-2 space-y-2">
-                      {fileValue.map((file, index) => (
-                        <div
-                          key={`${file.name}-${file.lastModified}-${index}`}
-                          className="flex items-center justify-between gap-3 rounded-md border border-border/70 bg-background/80 px-2.5 py-2"
-                        >
-                          <div className="min-w-0">
-                            <p className="truncate text-xs font-medium text-foreground">
-                              {file.name}
-                            </p>
-                            <p className="text-[11px] text-muted-foreground">
-                              {(file.size / (1024 * 1024)).toFixed(2)} MB
-                            </p>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleChange(
-                                field.name,
-                                fileValue.filter((_, fileIndex) => fileIndex !== index)
-                              )
-                            }
-                            className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive"
-                            aria-label={`Hapus ${file.name}`}
-                          >
-                            <X className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                    {field.multiple && (
-                      <p className="mt-2 text-[11px] text-muted-foreground">
-                        Pilih file lagi kapan pun untuk menambahkan gambar lainnya.
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
+              <UploadField
+                field={field}
+                fileValue={fileValue}
+                existingFiles={existingFiles}
+                existingFieldName={existingFieldName}
+                error={errors[field.name]}
+                onChange={handleChange}
+              />
             ) : (
               <Input
                 id={`admin-form-${field.name}`}
@@ -391,7 +597,7 @@ function AdminFormDialogBody({
               <p className="text-xs text-muted-foreground">{field.helperText}</p>
             )}
 
-            {errors[field.name] && (
+            {field.type !== "file" && errors[field.name] && (
               <p className="text-xs text-destructive">{errors[field.name]}</p>
             )}
           </div>

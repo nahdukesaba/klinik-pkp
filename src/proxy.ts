@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 
-import { apiError } from "@/lib/api-response";
+import { createApiErrorBody } from "@/lib/api-response";
 
 // --- Rate Limiting Store (in-memory, per server instance) ---
 
@@ -132,12 +132,17 @@ export function proxy(request: NextRequest) {
     shouldApplyRateLimit(request, pathname, isDev) &&
     isRateLimited(clientAddress)
   ) {
-    return apiError(429, "Terlalu banyak permintaan.", {
-      code: "RATE_LIMITED",
-      headers: {
+    return NextResponse.json(
+      createApiErrorBody(429, "Terlalu banyak permintaan.", {
+        code: "RATE_LIMITED",
+      }),
+      {
+        status: 429,
+        headers: {
         "Retry-After": String(Math.ceil(RATE_LIMIT_WINDOW / 1000)),
       },
-    });
+      }
+    );
   }
 
   // ---- API Requests ----
@@ -145,9 +150,12 @@ export function proxy(request: NextRequest) {
   // Biarkan proxy fokus pada rate limiting + allowlist path publik.
   if (pathname.startsWith("/api/")) {
     if (pathname.startsWith("/api/ext/") && !isAllowedApiPath(pathname)) {
-      return apiError(403, "Endpoint API tidak diizinkan.", {
-        code: "FORBIDDEN",
-      });
+      return NextResponse.json(
+        createApiErrorBody(403, "Endpoint API tidak diizinkan.", {
+          code: "FORBIDDEN",
+        }),
+        { status: 403 }
+      );
     }
 
     return NextResponse.next();

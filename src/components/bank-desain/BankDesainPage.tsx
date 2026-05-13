@@ -39,6 +39,9 @@ const DesignCard = memo(function DesignCard({
   getDownloadUrl,
 }: DesignCardProps) {
   const hasPreviewImages = design.previewImages.length > 0;
+  const hasThumbnail = design.thumbnail.trim().length > 0;
+  const hasDesignFile = getDownloadUrl(design).trim().length > 0;
+  const hasRabFile = design.rabPdfUrl.trim().length > 0;
 
   return (
     <div
@@ -49,14 +52,21 @@ const DesignCard = memo(function DesignCard({
       }}
     >
       <div className="relative aspect-[4/3] overflow-hidden bg-secondary">
-        <Image
-          src={design.thumbnail}
-          alt={design.title}
-          fill
-          className="object-cover transition-transform duration-500 group-hover:scale-105"
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          loading={index === 0 ? "eager" : "lazy"}
-        />
+        {hasThumbnail ? (
+          <Image
+            src={design.thumbnail}
+            alt={design.title}
+            fill
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            loading={index === 0 ? "eager" : "lazy"}
+            unoptimized
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+            <Palette className="h-12 w-12 opacity-40" />
+          </div>
+        )}
       </div>
 
       <div className="p-5">
@@ -97,7 +107,12 @@ const DesignCard = memo(function DesignCard({
               href={getDownloadUrl(design)}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-accent px-3 py-3 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent/80"
+              aria-disabled={!hasDesignFile}
+              className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-3 text-sm font-medium transition-colors ${
+                hasDesignFile
+                  ? "bg-accent text-accent-foreground hover:bg-accent/80"
+                  : "pointer-events-none cursor-not-allowed bg-muted text-muted-foreground opacity-60"
+              }`}
             >
               <FileText className="h-4 w-4" />
               Unduh Desain
@@ -106,7 +121,12 @@ const DesignCard = memo(function DesignCard({
               href={design.rabPdfUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-3 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              aria-disabled={!hasRabFile}
+              className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-3 text-sm font-medium transition-colors ${
+                hasRabFile
+                  ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                  : "pointer-events-none cursor-not-allowed bg-muted text-muted-foreground opacity-60"
+              }`}
             >
               <Download className="h-4 w-4" />
               Unduh RAB
@@ -340,9 +360,6 @@ export default function BankDesainPage() {
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-20">
               <div className="mb-4 h-10 w-10 animate-spin rounded-full border-3 border-primary border-t-transparent" />
-              <p className="text-sm text-muted-foreground">
-                Memuat data desain rumah...
-              </p>
             </div>
           ) : paginatedDesigns.length > 0 ? (
             <>

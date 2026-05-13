@@ -10,8 +10,6 @@
 
 "use client";
 
-import { useEffect } from "react";
-
 import Link from "next/link";
 
 import { AlertTriangle, RefreshCw, Home } from "lucide-react";
@@ -26,13 +24,7 @@ export default function GlobalError({
   reset?: () => void;
 }) {
   const retry = unstableRetry ?? reset;
-
-  useEffect(() => {
-    // Log error ke console di development
-    if (process.env.NODE_ENV === "development") {
-      console.error("[ErrorBoundary]", error);
-    }
-  }, [error]);
+  void error;
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -45,7 +37,7 @@ export default function GlobalError({
           Terjadi Kesalahan
         </h2>
         <p className="text-muted-foreground mb-8">
-          Maaf, terjadi kesalahan saat memuat halaman ini.
+          Maaf, terjadi kesalahan saat membuka halaman ini.
           Silakan coba lagi atau kembali ke beranda.
         </p>
 

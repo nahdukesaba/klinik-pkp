@@ -12,6 +12,7 @@ import {
   type DistrictApi,
   type RegionApi,
 } from "@/lib/api-client";
+import type { ApiListQueryControls } from "@/types/api";
 
 // --- Tipe API ---
 
@@ -41,7 +42,7 @@ export interface PenerimaBsps {
 
 /** Data desa penerima BSPS untuk UI (camelCase) */
 export interface BspsData {
-  id: number;
+  id: string;
   villageId: string;
   districtId: string;
   regionId: string;
@@ -86,17 +87,16 @@ export const bspsRequirements: string[] = [
 export interface BspsProcessStep {
   step: number;
   title: string;
-  description: string;
 }
 
 /** Langkah proses BSPS (konten statis) */
 export const bspsProcessSteps: BspsProcessStep[] = [
-  { step: 1, title: "Pendaftaran", description: "Mengisi formulir pendaftaran di kantor desa atau kelurahan" },
-  { step: 2, title: "Verifikasi", description: "Tim melakukan verifikasi data dan survei lapangan" },
-  { step: 3, title: "Seleksi", description: "Penetapan calon penerima berdasarkan kriteria" },
-  { step: 4, title: "Pencairan", description: "Bantuan disalurkan secara bertahap sesuai progres" },
-  { step: 5, title: "Pembangunan", description: "Pelaksanaan pembangunan dengan pendampingan" },
-  { step: 6, title: "Serah Terima", description: "Verifikasi akhir dan serah terima rumah" },
+  { step: 1, title: "Pendaftaran" },
+  { step: 2, title: "Verifikasi" },
+  { step: 3, title: "Seleksi" },
+  { step: 4, title: "Pencairan" },
+  { step: 5, title: "Pembangunan" },
+  { step: 6, title: "Serah Terima" },
 ];
 
 /** Kriteria utama penerima BSPS */
@@ -121,10 +121,8 @@ const STATUS_MAP: Record<string, "selesai" | "proses" | "rencana"> = {
   "Rencana": "rencana",
 };
 
-export interface BspsListParams {
+export interface BspsListParams extends ApiListQueryControls {
   year?: number;
-  page?: number;
-  perPage?: number;
   regionId?: string;
   districtId?: string;
   villageId?: string;
@@ -136,7 +134,7 @@ export interface BspsListParams {
 /** Transform data API → format frontend */
 export function transformBspsItem(item: BspsApiItem): BspsData {
   return {
-    id: parseInt(item.id, 10) || 0,
+    id: item.id,
     villageId: item.village_id,
     districtId: item.district_id,
     regionId: item.region_id,
@@ -171,6 +169,9 @@ export async function fetchBspsList(
       year_given: params.year,
       page: params.page,
       limit: params.perPage,
+      keyword: params.keyword,
+      sort_by: params.sortBy,
+      sort_order: params.sortBy ? params.sortDirection : undefined,
       region_id: params.regionId,
       district_id: params.districtId,
       village_id: params.villageId,
@@ -194,6 +195,9 @@ export async function fetchBspsPage(
       year_given: params.year,
       page: params.page,
       limit: params.perPage,
+      keyword: params.keyword,
+      sort_by: params.sortBy,
+      sort_order: params.sortBy ? params.sortDirection : undefined,
       region_id: params.regionId,
       district_id: params.districtId,
       village_id: params.villageId,

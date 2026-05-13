@@ -18,6 +18,7 @@ const lokasiColumns: Column<SosialisasiLocation>[] = [
     key: "name",
     label: "Nama Kegiatan",
     sortable: true,
+    sortField: "title",
     render: (item) => (
       <div className="max-w-[280px]">
         <p className="break-words font-medium text-foreground">{item.name}</p>
@@ -31,11 +32,13 @@ const lokasiColumns: Column<SosialisasiLocation>[] = [
     key: "kabupaten",
     label: "Kabupaten/Kota",
     sortable: true,
+    sortField: "region_id",
   },
   {
     key: "date",
     label: "Tanggal",
     sortable: true,
+    sortField: "scheduled_at_start",
     render: (item) => (
       <div>
         <p className="text-sm text-foreground">{item.date}</p>
@@ -47,6 +50,7 @@ const lokasiColumns: Column<SosialisasiLocation>[] = [
     key: "status",
     label: "Status",
     sortable: true,
+    sortField: "scheduled_at_end",
     render: (item) => <StatusBadge status={item.status} />,
   },
   {
@@ -65,6 +69,7 @@ const jadwalColumns: Column<SosialisasiLocation>[] = [
     key: "name",
     label: "Agenda",
     sortable: true,
+    sortField: "title",
     render: (item) => (
       <div className="max-w-[280px]">
         <p className="break-words font-medium text-foreground">{item.name}</p>
@@ -79,6 +84,7 @@ const jadwalColumns: Column<SosialisasiLocation>[] = [
     key: "scheduledAtStart",
     label: "Jadwal",
     sortable: true,
+    sortField: "scheduled_at_start",
     render: (item) => (
       <div>
         <p className="text-sm text-foreground">
@@ -102,6 +108,7 @@ const jadwalColumns: Column<SosialisasiLocation>[] = [
     key: "status",
     label: "Status",
     sortable: true,
+    sortField: "scheduled_at_end",
     render: (item) => <StatusBadge status={item.status} />,
   },
 ];
@@ -111,6 +118,7 @@ const beritaColumns: Column<SosialisasiLocation>[] = [
     key: "name",
     label: "Berita Sosialisasi",
     sortable: true,
+    sortField: "title",
     render: (item) => (
       <div className="max-w-[320px]">
         <p className="break-words font-medium text-foreground">{item.name}</p>
@@ -125,6 +133,7 @@ const beritaColumns: Column<SosialisasiLocation>[] = [
     key: "scheduledAtStart",
     label: "Tanggal",
     sortable: true,
+    sortField: "scheduled_at_start",
     render: (item) => (
       <div>
         <p className="text-sm text-foreground">
@@ -147,6 +156,7 @@ const beritaColumns: Column<SosialisasiLocation>[] = [
     key: "status",
     label: "Status",
     sortable: true,
+    sortField: "scheduled_at_end",
     render: (item) => <StatusBadge status={item.status} />,
   },
 ];

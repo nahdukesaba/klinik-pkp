@@ -5,8 +5,6 @@ import Link from "next/link";
 
 import { ArrowUpRight, Building2, CircleAlert } from "lucide-react";
 
-import BuildingStepsSection from "@/components/landing/BuildingStepsSection";
-import HousingIndicatorsSection from "@/components/landing/HousingIndicatorsSection";
 import { Footer, Navbar } from "@/components/layout";
 import {
   complaintChannels,
@@ -16,6 +14,9 @@ import {
   type InformasiResourceItem,
   type InformasiResourcePageContent,
 } from "@/content/informasi.content";
+
+import BuildingStepsSection from "./BuildingStepsSection";
+import HousingIndicatorsSection from "./HousingIndicatorsSection";
 
 import type { LucideIcon } from "lucide-react";
 

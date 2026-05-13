@@ -16,8 +16,8 @@ import {
   Users,
 } from "lucide-react";
 
-import { ProgressIndicator } from "@/components/landing/ProgressIndicator";
-import { StepArrow } from "@/components/landing/StepArrow";
+import { ProgressIndicator } from "@/components/shared/ProgressIndicator";
+import { StepArrow } from "@/components/shared/StepArrow";
 import { HUBUNGI_KAMI_HREF } from "@/lib/constants";
 import type { BspsProcessStep } from "@/services/bsps.service";
 
@@ -42,11 +42,10 @@ interface InfoCardProps {
   id: string;
   icon: ReactNode;
   title: string;
-  description: string;
   delay?: string;
 }
 
-function InfoCard({ id, icon, title, description, delay }: InfoCardProps) {
+function InfoCard({ id, icon, title, delay }: InfoCardProps) {
   const scrollTo = () => {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
   };
@@ -60,8 +59,7 @@ function InfoCard({ id, icon, title, description, delay }: InfoCardProps) {
       <div className="w-14 h-14 bg-gradient-to-br from-primary to-accent rounded-xl flex items-center justify-center text-primary-foreground mb-4 group-hover:scale-110 transition-transform">
         {icon}
       </div>
-      <h3 className="font-semibold text-foreground text-lg mb-2">{title}</h3>
-      <p className="text-muted-foreground">{description}</p>
+      <h3 className="font-semibold text-foreground text-lg">{title}</h3>
     </button>
   );
 }
@@ -73,20 +71,17 @@ export function BspsInfoCards() {
         id="persyaratan"
         icon={<ClipboardList className="w-7 h-7" />}
         title="Persyaratan"
-        description="Informasi lengkap persyaratan untuk mendaftar program BSPS."
       />
       <InfoCard
         id="prosedur"
         icon={<FileCheck className="w-7 h-7" />}
         title="Prosedur Pendaftaran"
-        description="Langkah-langkah untuk mengajukan bantuan BSPS."
         delay="0.1s"
       />
       <InfoCard
         id="kriteria"
         icon={<Users className="w-7 h-7" />}
         title="Kriteria Penerima"
-        description="Kriteria masyarakat yang berhak menerima BSPS."
         delay="0.2s"
       />
     </div>
@@ -133,7 +128,7 @@ const stepIcons: Record<number, LucideIcon> = {
 };
 
 interface ProcessStepCardProps {
-  step: { step: number; title: string; description: string };
+  step: { step: number; title: string };
   isHovered: boolean;
   isAnyHovered: boolean;
 }
@@ -176,9 +171,6 @@ const ProcessStepCard = memo(function ProcessStepCard({ step, isHovered, isAnyHo
             </h3>
           </div>
         </div>
-        <p className="text-muted-foreground text-xs leading-relaxed flex-grow line-clamp-3">
-          {step.description}
-        </p>
       </div>
     </div>
   );
@@ -345,9 +337,6 @@ export function BspsCta() {
     <div className="p-8 bg-card rounded-2xl border border-border animate-on-scroll text-center">
       <AlertCircle className="w-12 h-12 text-primary mx-auto mb-4" />
       <h3 className="text-xl font-bold text-foreground mb-2">Butuh Bantuan?</h3>
-      <p className="text-muted-foreground mb-6">
-        Hubungi kami untuk informasi lebih lanjut tentang program BSPS
-      </p>
       <Link
         href={HUBUNGI_KAMI_HREF}
         className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary-hover transition-colors"

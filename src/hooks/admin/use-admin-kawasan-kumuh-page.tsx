@@ -2,21 +2,24 @@
 
 import { useMemo } from "react";
 
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
 import { type AdminFormValues, type FormFieldDef } from "@/components/admin";
 import { useAdminLocationOptions } from "@/hooks/use-admin-location-options";
 import { getNumberFormValue, getStringFormValue } from "@/lib/admin/form";
-import { QUERY_CONFIG } from "@/lib/constants";
 import {
-  fetchKumuhList,
+  ADMIN_TABLE_PAGE_SIZE,
+  QUERY_CONFIG,
+  QUERY_KEYS,
+} from "@/lib/constants";
+import { ADMIN_RESOURCE_NAMES } from "@/services/admin-resource.service";
+import {
   fetchKumuhPage,
   type KawasanKumuhData,
 } from "@/services/kawasan-kumuh.service";
 
 import { useAdminCrud } from "./use-admin-crud";
 
-const KUMUH_PAGE_LIMIT = 10;
 const EMPTY_KAWASAN_KUMUH_ITEMS: KawasanKumuhData[] = [];
 
 function buildKumuhPayload(values: AdminFormValues) {
@@ -55,8 +58,8 @@ function kumuhToFormValues(item: KawasanKumuhData): AdminFormValues {
 
 export function useAdminKawasanKumuhPage() {
   const crud = useAdminCrud<KawasanKumuhData>({
-    queryKey: "admin-kawasan-kumuh",
-    resourcePath: "/api/admin/resources/kumuh",
+    queryKey: QUERY_KEYS.adminKawasanKumuh,
+    resource: ADMIN_RESOURCE_NAMES.kumuh,
     label: "kawasan",
     buildPayload: buildKumuhPayload,
     getDeleteLabel: (item) => item.name,
@@ -69,23 +72,24 @@ export function useAdminKawasanKumuhPage() {
   );
 
   const kumuhQuery = useQuery({
-    queryKey: ["admin-kawasan-kumuh", crud.currentPage],
+    queryKey: [
+      QUERY_KEYS.adminKawasanKumuh,
+      crud.currentPage,
+      crud.searchKeyword,
+      crud.sortBy,
+      crud.sortDirection,
+    ],
     queryFn: () =>
       fetchKumuhPage({
         page: crud.currentPage,
-        perPage: KUMUH_PAGE_LIMIT,
+        perPage: ADMIN_TABLE_PAGE_SIZE,
+        keyword: crud.searchKeyword,
+        sortBy: crud.sortBy,
+        sortDirection: crud.sortDirection,
       }),
     staleTime: QUERY_CONFIG.staleTime,
     gcTime: QUERY_CONFIG.gcTime,
-    placeholderData: (previousData) => previousData,
-    enabled: crud.canManage,
-  });
-
-  const kumuhStatsQuery = useQuery({
-    queryKey: ["admin-kawasan-kumuh-stats"],
-    queryFn: () => fetchKumuhList({ perPage: KUMUH_PAGE_LIMIT, collectAllPages: true }),
-    staleTime: QUERY_CONFIG.staleTime,
-    gcTime: QUERY_CONFIG.gcTime,
+    placeholderData: keepPreviousData,
     enabled: crud.canManage,
   });
 
@@ -173,18 +177,16 @@ export function useAdminKawasanKumuhPage() {
     : undefined;
 
   const kumuhList = kumuhQuery.data?.items ?? EMPTY_KAWASAN_KUMUH_ITEMS;
-  const allKumuhList = kumuhStatsQuery.data ?? kumuhList;
   const kumuhMeta = kumuhQuery.data?.meta;
   const stats = useMemo(
     () => ({
-      totalKawasan: kumuhMeta?.totalRecords ?? allKumuhList.length,
-      totalLuas: allKumuhList.reduce((sum, item) => sum + item.luas, 0),
-      totalPenduduk: allKumuhList.reduce((sum, item) => sum + item.penduduk, 0),
-      berat: allKumuhList.filter((item) => item.status === "berat").length,
-      sedang: allKumuhList.filter((item) => item.status === "sedang").length,
-      ringan: allKumuhList.filter((item) => item.status === "ringan").length,
+      totalKawasan: kumuhMeta?.totalRecords ?? kumuhList.length,
+      pageLuas: kumuhList.reduce((sum, item) => sum + item.luas, 0),
+      pagePenduduk: kumuhList.reduce((sum, item) => sum + item.penduduk, 0),
+      pageSedang: kumuhList.filter((item) => item.status === "sedang").length,
+      pageRingan: kumuhList.filter((item) => item.status === "ringan").length,
     }),
-    [allKumuhList, kumuhMeta?.totalRecords]
+    [kumuhList, kumuhMeta?.totalRecords]
   );
 
   return {
@@ -207,5 +209,10 @@ export function useAdminKawasanKumuhPage() {
     handleDelete: crud.handleDelete,
     handleFormOpenChange: crud.handleFormOpenChange,
     setCurrentPage: crud.setCurrentPage,
+    searchKeyword: crud.searchKeyword,
+    sortBy: crud.sortBy,
+    sortDirection: crud.sortDirection,
+    handleSearchChange: crud.handleSearchChange,
+    handleSortChange: crud.handleSortChange,
   };
 }

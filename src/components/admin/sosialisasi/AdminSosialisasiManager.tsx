@@ -4,7 +4,9 @@ import { PlusCircle } from "lucide-react";
 
 import {
   AdminDataTable,
+  AdminErrorAlert,
   AdminFormDialog,
+  AdminStatsGrid,
 } from "@/components/admin";
 import { Button } from "@/components/ui/button";
 import { useAdminSosialisasiPage } from "@/hooks/admin/use-admin-sosialisasi-page";
@@ -23,6 +25,9 @@ export function AdminSosialisasiManager({
     formErrors,
     isSaving,
     currentPage,
+    searchKeyword,
+    sortBy,
+    sortDirection,
     sosialisasiQuery,
     viewConfig,
     sosialisasiMeta,
@@ -31,6 +36,8 @@ export function AdminSosialisasiManager({
     actions,
     openCreateDialog,
     handlePageChange,
+    handleSearchChange,
+    handleSortChange,
     handleSubmit,
     handleFormOpenChange,
     setDraftValues,
@@ -75,11 +82,14 @@ export function AdminSosialisasiManager({
         </div>
       </div>
 
-      {sosialisasiQuery.error && (
-        <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
-          Gagal memuat data: {sosialisasiQuery.error.message}
-        </div>
-      )}
+      <AdminStatsGrid
+        items={viewConfig.stats}
+        columnsClassName="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
+      />
+
+      {sosialisasiQuery.error ? (
+        <AdminErrorAlert message={`Gagal mengambil data: ${sosialisasiQuery.error.message}`} />
+      ) : null}
 
       <AdminDataTable
         columns={viewConfig.columns}
@@ -88,6 +98,7 @@ export function AdminSosialisasiManager({
         searchPlaceholder={viewConfig.searchPlaceholder}
         actions={actions}
         isLoading={sosialisasiQuery.isLoading}
+        isRefreshing={sosialisasiQuery.isFetching && !sosialisasiQuery.isLoading}
         emptyMessage={viewConfig.emptyMessage}
         pagination={{
           currentPage: sosialisasiMeta?.page ?? currentPage,
@@ -95,6 +106,13 @@ export function AdminSosialisasiManager({
           totalItems: sosialisasiMeta?.totalRecords ?? viewConfig.data.length,
           pageSize: sosialisasiMeta?.limit ?? 10,
           onPageChange: handlePageChange,
+          searchValue: searchKeyword,
+          onSearchChange: handleSearchChange,
+          searchMode: "local",
+          sortKey: sortBy,
+          sortDirection,
+          onSortChange: handleSortChange,
+          sortMode: "local",
         }}
       />
 

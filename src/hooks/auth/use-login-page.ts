@@ -5,13 +5,10 @@ import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { useToast } from "@/hooks/use-toast";
-import {
-  adminFetch,
-  ensureAdminCsrfToken,
-  warmUpAdminCsrfToken,
-} from "@/lib/admin-client";
+import { warmUpAdminCsrfToken } from "@/lib/admin-client";
 import { checkRateLimit, sanitizeNip } from "@/lib/security";
 import { loginSchema, validateForm } from "@/lib/validations";
+import { loginAdminSession } from "@/services/auth.service";
 
 function resolveRedirectTarget(candidate: string | null) {
   if (!candidate || !candidate.startsWith("/") || candidate.startsWith("//")) {
@@ -71,22 +68,12 @@ export function useLoginPage() {
       setIsLoading(true);
 
       try {
-        await ensureAdminCsrfToken(true);
+        if (!validation.data) {
+          setFormErrors({ email: "Data login belum valid." });
+          return;
+        }
 
-        const sanitizedData = validation.data as {
-          email: string;
-          nip: string;
-          password: string;
-        };
-
-        const data = await adminFetch<{
-          success: boolean;
-          data?: { user?: { name?: string } };
-        }>("/api/auth/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(sanitizedData),
-        });
+        const data = await loginAdminSession(validation.data);
 
         toast({
           title: "Login berhasil!",

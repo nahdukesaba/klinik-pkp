@@ -1,26 +1,23 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
 import { useQuery } from "@tanstack/react-query";
 
 import { type AdminFormValues, type FormFieldDef } from "@/components/admin";
 import { useAdminCrud } from "@/hooks/admin/use-admin-crud";
 import { getStringFormValue } from "@/lib/admin/form";
-import { QUERY_CONFIG } from "@/lib/constants";
+import { QUERY_CONFIG, QUERY_KEYS } from "@/lib/constants";
+import { ADMIN_RESOURCE_NAMES } from "@/services/admin-resource.service";
 import { fetchAdminFaqList, type FaqItem } from "@/services/faq.service";
 
 const EMPTY_FAQ_ITEMS: FaqItem[] = [];
-export type FaqStatusFilter = "all" | "active" | "inactive";
 
 function buildFaqPayload(values: AdminFormValues) {
-  const status = getStringFormValue(values, "isActive");
-  const isActive = status !== "inactive" && status !== "false";
-
   return {
     question: getStringFormValue(values, "question").trim(),
     answer: getStringFormValue(values, "answer").trim(),
-    is_active: isActive,
+    is_active: true,
   };
 }
 
@@ -28,24 +25,21 @@ function faqToFormValues(item: FaqItem): AdminFormValues {
   return {
     question: item.question,
     answer: item.answer,
-    isActive: item.isActive ? "active" : "inactive",
   };
 }
 
 export function useAdminFaqPage() {
-  const [statusFilter, setStatusFilter] = useState<FaqStatusFilter>("all");
-
   const crud = useAdminCrud<FaqItem>({
-    queryKey: "admin-faq",
-    relatedQueryKeys: ["faq-public"],
-    resourcePath: "/api/admin/resources/faq",
+    queryKey: QUERY_KEYS.adminFaq,
+    relatedQueryKeys: [QUERY_KEYS.publicFaq],
+    resource: ADMIN_RESOURCE_NAMES.faq,
     label: "FAQ",
     buildPayload: buildFaqPayload,
     getDeleteLabel: (item) => item.question,
   });
 
   const faqQuery = useQuery({
-    queryKey: ["admin-faq"] as const,
+    queryKey: [QUERY_KEYS.adminFaq],
     queryFn: () => fetchAdminFaqList({ includeInactive: true }),
     staleTime: 0,
     gcTime: QUERY_CONFIG.gcTime,
@@ -53,18 +47,6 @@ export function useAdminFaqPage() {
   });
 
   const faqList = faqQuery.data ?? EMPTY_FAQ_ITEMS;
-
-  const filteredFaqList = useMemo(() => {
-    if (statusFilter === "active") {
-      return faqList.filter((item) => item.isActive);
-    }
-
-    if (statusFilter === "inactive") {
-      return faqList.filter((item) => !item.isActive);
-    }
-
-    return faqList;
-  }, [faqList, statusFilter]);
 
   const formFields = useMemo<FormFieldDef[]>(
     () => [
@@ -82,17 +64,6 @@ export function useAdminFaqPage() {
         required: true,
         placeholder: "Tuliskan jawaban yang jelas dan mudah dipahami.",
       },
-      {
-        name: "isActive",
-        label: "Status Publikasi",
-        type: "select",
-        required: true,
-        defaultValue: "active",
-        options: [
-          { value: "active", label: "Aktif" },
-          { value: "inactive", label: "Nonaktif" },
-        ],
-      },
     ],
     []
   );
@@ -100,8 +71,6 @@ export function useAdminFaqPage() {
   const stats = useMemo(
     () => ({
       total: faqList.length,
-      active: faqList.filter((item) => item.isActive).length,
-      inactive: faqList.filter((item) => !item.isActive).length,
     }),
     [faqList]
   );
@@ -117,9 +86,7 @@ export function useAdminFaqPage() {
     formErrors: crud.formErrors,
     isSaving: crud.isSaving,
     faqQuery,
-    faqList: filteredFaqList,
-    statusFilter,
-    setStatusFilter,
+    faqList,
     stats,
     formFields,
     initialValues,

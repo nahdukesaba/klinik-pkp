@@ -15,11 +15,10 @@ interface PageProps {
 
 export default async function BeritaDetailRoute({ params }: PageProps) {
   const { id } = await params;
-  const parsedId = Number(id);
 
-  if (!Number.isInteger(parsedId) || parsedId < 1) {
+  if (!/^\d+$/.test(id)) {
     notFound();
   }
 
-  return <BeritaDetailPage id={parsedId} />;
+  return <BeritaDetailPage id={id} />;
 }

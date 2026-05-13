@@ -6,7 +6,11 @@ import { useQuery } from "@tanstack/react-query";
 
 import { useDebounce } from "@/hooks/use-debounce";
 import { usePagination } from "@/hooks/use-pagination";
-import { QUERY_CONFIG } from "@/lib/constants";
+import {
+  DEFAULT_DEBOUNCE_DELAY_MS,
+  QUERY_CONFIG,
+  QUERY_KEYS,
+} from "@/lib/constants";
 import { sanitizeInput } from "@/lib/security";
 import { fetchPublicFaqList, type FaqItem } from "@/services/faq.service";
 
@@ -15,7 +19,7 @@ const FAQS_PER_PAGE = 8;
 
 export function useFaqPage() {
   const query = useQuery({
-    queryKey: ["faq-public"] as const,
+    queryKey: [QUERY_KEYS.publicFaq],
     queryFn: () => fetchPublicFaqList(),
     ...QUERY_CONFIG,
     staleTime: 0,
@@ -26,7 +30,7 @@ export function useFaqPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [openItemId, setOpenItemId] = useState<number | null>(null);
 
-  const debouncedSearch = useDebounce(searchQuery, 250);
+  const debouncedSearch = useDebounce(searchQuery, DEFAULT_DEBOUNCE_DELAY_MS);
 
   const filteredFaqs = useMemo(() => {
     const keyword = sanitizeInput(debouncedSearch).toLowerCase();

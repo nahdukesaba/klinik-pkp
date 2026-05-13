@@ -22,7 +22,7 @@ import { ImageZoomDialog } from "@/components/shared";
 import { formatDateId } from "@/lib/date";
 
 interface BeritaDetailItem {
-  id: number;
+  id: string;
   title: string;
   description: string;
   kabupaten: string;
@@ -62,7 +62,7 @@ function RelatedNewsCard({
   rawDate,
   kabupaten,
 }: {
-  id: number;
+  id: string;
   title: string;
   image: string;
   rawDate: string;

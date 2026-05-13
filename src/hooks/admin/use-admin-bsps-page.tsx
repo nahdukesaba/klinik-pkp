@@ -2,21 +2,24 @@
 
 import { useMemo } from "react";
 
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
 import { type AdminFormValues, type FormFieldDef } from "@/components/admin";
 import { useAdminLocationOptions } from "@/hooks/use-admin-location-options";
 import { getNumberFormValue, getStringFormValue } from "@/lib/admin/form";
-import { QUERY_CONFIG } from "@/lib/constants";
 import {
-  fetchBspsList,
+  ADMIN_TABLE_PAGE_SIZE,
+  QUERY_CONFIG,
+  QUERY_KEYS,
+} from "@/lib/constants";
+import { ADMIN_RESOURCE_NAMES } from "@/services/admin-resource.service";
+import {
   fetchBspsPage,
   type BspsData,
 } from "@/services/bsps.service";
 
 import { useAdminCrud } from "./use-admin-crud";
 
-const BSPS_PAGE_LIMIT = 10;
 const EMPTY_BSPS_ITEMS: BspsData[] = [];
 
 const apiStatusMap = {
@@ -58,8 +61,8 @@ function bspsToFormValues(item: BspsData): AdminFormValues {
 
 export function useAdminBspsPage() {
   const crud = useAdminCrud<BspsData>({
-    queryKey: "admin-bsps",
-    resourcePath: "/api/admin/resources/bsps",
+    queryKey: QUERY_KEYS.adminBsps,
+    resource: ADMIN_RESOURCE_NAMES.bsps,
     label: "BSPS",
     buildPayload: buildBspsPayload,
     getDeleteLabel: (item) => item.kelurahan || item.nama,
@@ -73,23 +76,24 @@ export function useAdminBspsPage() {
     );
 
   const bspsQuery = useQuery({
-    queryKey: ["admin-bsps", crud.currentPage],
+    queryKey: [
+      QUERY_KEYS.adminBsps,
+      crud.currentPage,
+      crud.searchKeyword,
+      crud.sortBy,
+      crud.sortDirection,
+    ],
     queryFn: () =>
       fetchBspsPage({
         page: crud.currentPage,
-        perPage: BSPS_PAGE_LIMIT,
+        perPage: ADMIN_TABLE_PAGE_SIZE,
+        keyword: crud.searchKeyword,
+        sortBy: crud.sortBy,
+        sortDirection: crud.sortDirection,
       }),
     staleTime: QUERY_CONFIG.staleTime,
     gcTime: QUERY_CONFIG.gcTime,
-    placeholderData: (previousData) => previousData,
-    enabled: crud.canManage,
-  });
-
-  const bspsStatsQuery = useQuery({
-    queryKey: ["admin-bsps-stats"],
-    queryFn: () => fetchBspsList({ perPage: BSPS_PAGE_LIMIT, collectAllPages: true }),
-    staleTime: QUERY_CONFIG.staleTime,
-    gcTime: QUERY_CONFIG.gcTime,
+    placeholderData: keepPreviousData,
     enabled: crud.canManage,
   });
 
@@ -163,16 +167,16 @@ export function useAdminBspsPage() {
     : undefined;
 
   const bspsList = bspsQuery.data?.items ?? EMPTY_BSPS_ITEMS;
-  const allBspsList = bspsStatsQuery.data ?? bspsList;
   const bspsMeta = bspsQuery.data?.meta;
   const stats = useMemo(
     () => ({
-      totalLokasi: bspsMeta?.totalRecords ?? allBspsList.length,
-      totalUnit: allBspsList.reduce((sum, item) => sum + item.alokasiUnit, 0),
-      selesai: allBspsList.filter((item) => item.status === "selesai").length,
-      proses: allBspsList.filter((item) => item.status === "proses").length,
+      totalLokasi: bspsMeta?.totalRecords ?? bspsList.length,
+      pageUnit: bspsList.reduce((sum, item) => sum + item.alokasiUnit, 0),
+      pageSelesai: bspsList.filter((item) => item.status === "selesai").length,
+      pageProses: bspsList.filter((item) => item.status === "proses").length,
+      pageRencana: bspsList.filter((item) => item.status === "rencana").length,
     }),
-    [allBspsList, bspsMeta?.totalRecords]
+    [bspsList, bspsMeta?.totalRecords]
   );
 
   return {
@@ -195,5 +199,10 @@ export function useAdminBspsPage() {
     handleDelete: crud.handleDelete,
     handleFormOpenChange: crud.handleFormOpenChange,
     setCurrentPage: crud.setCurrentPage,
+    searchKeyword: crud.searchKeyword,
+    sortBy: crud.sortBy,
+    sortDirection: crud.sortDirection,
+    handleSearchChange: crud.handleSearchChange,
+    handleSortChange: crud.handleSortChange,
   };
 }

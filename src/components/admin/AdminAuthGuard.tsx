@@ -2,6 +2,10 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef } from "react";
 
+import {
+  logoutAdminSession,
+  refreshAdminSession,
+} from "@/services/auth.service";
 import type { UserRole } from "@/types/admin";
 
 export interface AdminAuthUser {
@@ -53,10 +57,7 @@ export function AdminAuthProvider({
 
   const logout = useCallback(async () => {
     try {
-      await fetch("/api/auth/logout", {
-        method: "POST",
-        credentials: "include",
-      });
+      await logoutAdminSession();
     } finally {
       window.location.replace(logoutPath);
     }
@@ -93,35 +94,16 @@ export function AdminAuthProvider({
       refreshInFlightRef.current = true;
 
       try {
-        const response = await fetch("/api/auth/refresh", {
-          method: "POST",
-          credentials: "include",
-          cache: "no-store",
-        });
-        const payload = await response.json().catch(() => null);
+        const refreshResult = await refreshAdminSession();
 
-        if (response.ok) {
-          const refreshData =
-            payload &&
-            typeof payload === "object" &&
-            "data" in payload &&
-            payload.data &&
-            typeof payload.data === "object"
-              ? payload.data
-              : payload;
-
+        if (refreshResult.ok) {
           lastRefreshAtRef.current = Date.now();
           expiresAtRef.current =
-            refreshData &&
-            typeof refreshData === "object" &&
-            "accessTokenExpiresAt" in refreshData &&
-            typeof refreshData.accessTokenExpiresAt === "number"
-              ? refreshData.accessTokenExpiresAt
-              : Date.now() + sessionLifetimeMs;
+            refreshResult.accessTokenExpiresAt ?? Date.now() + sessionLifetimeMs;
           return true;
         }
 
-        if (response.status === 401) {
+        if (refreshResult.status === 401) {
           await logout();
         }
 

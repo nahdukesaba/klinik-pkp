@@ -5,6 +5,7 @@ import { useCallback, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { checkRateLimit, sanitizeNip } from "@/lib/security";
 import { forgotPasswordSchema, validateForm } from "@/lib/validations";
+import { submitForgotPasswordRequest } from "@/services/auth.service";
 
 function extractForgotPasswordFieldErrors(payload: unknown) {
   if (!payload || typeof payload !== "object") {
@@ -101,22 +102,19 @@ export function useForgotPasswordPage() {
         setFormErrors(validation.errors ?? {});
         return;
       }
+      const validatedData = validation.data;
+      if (!validatedData) {
+        setFormErrors({ email: "Data belum valid." });
+        return;
+      }
 
       setIsLoading(true);
 
       try {
-        const response = await fetch("/api/ext/forgot-password", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(validation.data),
-        });
+        const result = await submitForgotPasswordRequest(validatedData);
 
-        const payload = await response.json().catch(() => null);
-
-        if (!response.ok) {
-          const backendFieldErrors = extractForgotPasswordFieldErrors(payload);
+        if (!result.ok) {
+          const backendFieldErrors = extractForgotPasswordFieldErrors(result.payload);
           if (backendFieldErrors) {
             setFormErrors(backendFieldErrors);
           }
@@ -124,8 +122,8 @@ export function useForgotPasswordPage() {
           toast({
             title: "Permintaan belum dapat diproses",
             description: normalizeForgotPasswordErrorMessage(
-              response.status,
-              payload
+              result.status,
+              result.payload
             ),
             variant: "destructive",
           });

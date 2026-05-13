@@ -26,3 +26,5 @@ export {
   SosialisasiPageSkeleton,
 } from "./LoadingSkeletons";
 export { YearFilterSelect } from "./YearFilterSelect";
+export { ProgressIndicator } from "./ProgressIndicator";
+export { StepArrow } from "./StepArrow";

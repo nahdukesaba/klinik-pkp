@@ -56,22 +56,34 @@ export function AdminDataTableMobileCards<T extends object>({
 
               {hasActions && (
                 <div className="flex flex-wrap gap-2 border-t border-border pt-3">
-                  {actions?.map((action, actionIndex) => (
-                    <button
-                      key={`${rowKey}-${action.label}-${actionIndex}`}
-                      type="button"
-                      onClick={() => action.onClick(item)}
-                      className={cn(
-                        "inline-flex min-h-10 items-center gap-2 rounded-xl border px-3 py-2 text-sm transition-colors",
-                        action.variant === "destructive"
-                          ? "border-destructive/30 text-destructive hover:bg-destructive/10"
-                          : "border-border bg-card text-foreground hover:bg-muted"
-                      )}
-                    >
-                      {action.icon}
-                      <span>{action.label}</span>
-                    </button>
-                  ))}
+                  {actions
+                    ?.filter((action) => action.isVisible?.(item) ?? true)
+                    .map((action, actionIndex) => {
+                      const isDisabled = action.isDisabled?.(item) ?? false;
+
+                      return (
+                        <button
+                          key={`${rowKey}-${action.label}-${actionIndex}`}
+                          type="button"
+                          onClick={() => {
+                            if (!isDisabled) {
+                              action.onClick(item);
+                            }
+                          }}
+                          disabled={isDisabled}
+                          title={isDisabled ? action.disabledReason : undefined}
+                          className={cn(
+                            "inline-flex min-h-10 items-center gap-2 rounded-xl border px-3 py-2 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+                            action.variant === "destructive"
+                              ? "border-destructive/30 text-destructive hover:bg-destructive/10"
+                              : "border-border bg-card text-foreground hover:bg-muted"
+                          )}
+                        >
+                          {action.icon}
+                          <span>{action.label}</span>
+                        </button>
+                      );
+                    })}
                 </div>
               )}
             </article>

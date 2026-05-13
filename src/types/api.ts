@@ -35,6 +35,18 @@ export interface CoordinateApi {
   longitude: number;
 }
 
+// --- Query list/pagination ---
+
+export type SortDirection = "asc" | "desc";
+
+export interface ApiListQueryControls {
+  page?: number;
+  perPage?: number;
+  keyword?: string;
+  sortBy?: string | null;
+  sortDirection?: SortDirection;
+}
+
 // --- Response standar ---
 
 export interface ApiResponse<T> {

@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
 import { type AdminFormValues, type FormFieldDef } from "@/components/admin";
 import { useAdminLocationOptions } from "@/hooks/use-admin-location-options";
@@ -14,7 +14,13 @@ import {
   getNumberFormValue,
   getStringFormValue,
 } from "@/lib/admin/form";
-import { QUERY_CONFIG } from "@/lib/constants";
+import {
+  ADMIN_TABLE_PAGE_SIZE,
+  QUERY_CONFIG,
+  QUERY_KEYS,
+  UPLOAD_CONSTRAINTS,
+} from "@/lib/constants";
+import { ADMIN_RESOURCE_NAMES } from "@/services/admin-resource.service";
 import {
   fetchRusunPage,
   type RusunData,
@@ -22,7 +28,6 @@ import {
 
 import { useAdminCrud } from "./use-admin-crud";
 
-const RUSUN_PAGE_LIMIT = 10;
 const EMPTY_RUSUN_ITEMS: RusunData[] = [];
 
 function buildRusunFormData(values: AdminFormValues) {
@@ -46,12 +51,13 @@ function buildRusunFormData(values: AdminFormValues) {
     })
   );
 
-  for (const file of getFileFormValue(values, "images")) {
+  const imageFiles = getFileFormValue(values, "images");
+  for (const file of imageFiles) {
     formData.append("images", file);
   }
 
   const existingImages = getExistingFileFormValue(values, "images");
-  if (existingImages) {
+  if (existingImages && imageFiles.length === 0) {
     formData.set("existing_images", existingImages);
   }
 
@@ -78,8 +84,8 @@ function rusunToFormValues(item: RusunData): AdminFormValues {
 
 export function useAdminRusunPage() {
   const crud = useAdminCrud<RusunData>({
-    queryKey: "admin-rusun",
-    resourcePath: "/api/admin/resources/rusun",
+    queryKey: QUERY_KEYS.adminRusun,
+    resource: ADMIN_RESOURCE_NAMES.rusun,
     label: "rusun",
     buildPayload: buildRusunFormData,
     getDeleteLabel: (item) => item.name,
@@ -93,15 +99,24 @@ export function useAdminRusunPage() {
     );
 
   const rusunQuery = useQuery({
-    queryKey: ["admin-rusun", crud.currentPage],
+    queryKey: [
+      QUERY_KEYS.adminRusun,
+      crud.currentPage,
+      crud.searchKeyword,
+      crud.sortBy,
+      crud.sortDirection,
+    ],
     queryFn: () =>
       fetchRusunPage({
         page: crud.currentPage,
-        perPage: RUSUN_PAGE_LIMIT,
+        perPage: ADMIN_TABLE_PAGE_SIZE,
+        keyword: crud.searchKeyword,
+        sortBy: crud.sortBy,
+        sortDirection: crud.sortDirection,
       }),
     staleTime: QUERY_CONFIG.staleTime,
     gcTime: QUERY_CONFIG.gcTime,
-    placeholderData: (previousData) => previousData,
+    placeholderData: keepPreviousData,
     enabled: crud.canManage,
   });
 
@@ -186,8 +201,10 @@ export function useAdminRusunPage() {
         name: "images",
         label: "Gambar Rusun",
         type: "file",
-        accept: "image/*",
+        accept: UPLOAD_CONSTRAINTS.singleImage.accept,
         multiple: false,
+        maxFiles: UPLOAD_CONSTRAINTS.singleImage.maxFiles,
+        maxSizeMb: UPLOAD_CONSTRAINTS.singleImage.maxSizeMb,
         required: !crud.editingItem,
         existingFiles: crud.editingItem
           ? buildExistingUploadFiles([crud.editingItem.image], "Gambar")
@@ -195,9 +212,9 @@ export function useAdminRusunPage() {
         helperText: buildUploadFieldHelperText({
           subject: "1 gambar rusun",
           mode: crud.editingItem ? "edit" : "create",
-          requiresReuploadOnEdit: true,
+          optional: Boolean(crud.editingItem),
           validationLabel: "format gambar",
-          maxSizeMb: 2,
+          maxSizeMb: UPLOAD_CONSTRAINTS.singleImage.maxSizeMb,
         }),
       },
     ],
@@ -213,8 +230,9 @@ export function useAdminRusunPage() {
   const stats = useMemo(
     () => ({
       totalRusun: rusunMeta?.totalRecords ?? rusunList.length,
+      pageUnits: rusunList.reduce((sum, item) => sum + item.units, 0),
     }),
-    [rusunList.length, rusunMeta?.totalRecords]
+    [rusunList, rusunMeta?.totalRecords]
   );
 
   return {
@@ -237,5 +255,10 @@ export function useAdminRusunPage() {
     handleDelete: crud.handleDelete,
     handleFormOpenChange: crud.handleFormOpenChange,
     setCurrentPage: crud.setCurrentPage,
+    searchKeyword: crud.searchKeyword,
+    sortBy: crud.sortBy,
+    sortDirection: crud.sortDirection,
+    handleSearchChange: crud.handleSearchChange,
+    handleSortChange: crud.handleSortChange,
   };
 }

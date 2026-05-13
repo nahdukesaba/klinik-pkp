@@ -14,7 +14,7 @@ import { useSosialisasiQuery } from "@/hooks/sosialisasi/use-sosialisasi-query";
 import { formatDateId, formatDayNameId } from "@/lib/date";
 
 export interface BeritaDetailData {
-  id: number;
+  id: string;
   title: string;
   description: string;
   kabupaten: string;
@@ -26,7 +26,7 @@ export interface BeritaDetailData {
   coordinates: [number, number];
 }
 
-export function useBeritaDetail(id: number) {
+export function useBeritaDetail(id: string) {
   const { berita: beritaList, isLoading, isError, error, refetch } = useSosialisasiQuery();
 
   const berita = useMemo(() => {

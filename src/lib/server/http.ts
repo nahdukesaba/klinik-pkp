@@ -1,10 +1,15 @@
 import "server-only";
 
+import { NextResponse } from "next/server";
+
 import { BackendApiError } from "@/lib/admin/backend-api";
 import {
-  apiError,
-  apiSuccess,
+  createApiErrorBody,
+  createApiSuccessBody,
   getApiErrorCode,
+  getApiErrorCodeFromPayload,
+  getApiErrorDetails,
+  getApiErrorMessage,
   type ApiErrorDetails,
 } from "@/lib/api-response";
 import { applySensitiveResponseHeaders } from "@/lib/server/web-security";
@@ -20,89 +25,60 @@ function normalizeErrorDetails(details?: HttpErrorDetails): ApiErrorDetails | un
 }
 
 function extractErrorMessage(payload: unknown, fallback: string) {
-  if (!isRecord(payload)) {
-    return fallback;
-  }
-
-  if (typeof payload.error === "string" && payload.error.trim()) {
-    return payload.error;
-  }
-
-  if (isRecord(payload.error) && typeof payload.error.message === "string") {
-    return payload.error.message;
-  }
-
-  if (typeof payload.message === "string" && payload.message.trim()) {
-    return payload.message;
-  }
-
-  return fallback;
-}
-
-function extractErrorDetails(payload: unknown) {
-  if (!isRecord(payload)) {
-    return undefined;
-  }
-
-  if (isRecord(payload.error) && isRecord(payload.error.details)) {
-    return payload.error.details;
-  }
-
-  if (isRecord(payload.details)) {
-    return payload.details;
-  }
-
-  return undefined;
-}
-
-function extractErrorCode(payload: unknown, status: number) {
-  if (
-    isRecord(payload) &&
-    isRecord(payload.error) &&
-    typeof payload.error.code === "string"
-  ) {
-    return payload.error.code;
-  }
-
-  return getApiErrorCode(status);
+  return getApiErrorMessage(payload) ?? fallback;
 }
 
 export function createJsonResponse(payload: unknown, status = 200) {
   if (status >= 400) {
     return applySensitiveResponseHeaders(
-      apiError(status, extractErrorMessage(payload, "Permintaan tidak berhasil."), {
-        code: extractErrorCode(payload, status),
-        details: extractErrorDetails(payload),
-      })
+      NextResponse.json(
+        createApiErrorBody(
+          status,
+          extractErrorMessage(payload, "Permintaan tidak berhasil."),
+          {
+            code: getApiErrorCodeFromPayload(payload, status),
+            details: getApiErrorDetails(payload),
+          }
+        ),
+        { status }
+      )
     );
   }
 
   if (isRecord(payload)) {
     if (payload.success === true && "data" in payload) {
       return applySensitiveResponseHeaders(
-        apiSuccess(payload.data, {
-          status,
-          meta: payload.meta,
-        })
+        NextResponse.json(
+          createApiSuccessBody(payload.data, {
+            meta: payload.meta,
+          }),
+          { status }
+        )
       );
     }
 
     if ("data" in payload || "meta" in payload) {
       return applySensitiveResponseHeaders(
-        apiSuccess(payload.data ?? {}, {
-          status,
-          meta: payload.meta,
-        })
+        NextResponse.json(
+          createApiSuccessBody(payload.data ?? {}, {
+            meta: payload.meta,
+          }),
+          { status }
+        )
       );
     }
 
     if (payload.success === true) {
       const { success: _success, ...data } = payload;
-      return applySensitiveResponseHeaders(apiSuccess(data, { status }));
+      return applySensitiveResponseHeaders(
+        NextResponse.json(createApiSuccessBody(data), { status })
+      );
     }
   }
 
-  return applySensitiveResponseHeaders(apiSuccess(payload, { status }));
+  return applySensitiveResponseHeaders(
+    NextResponse.json(createApiSuccessBody(payload), { status })
+  );
 }
 
 export function createJsonErrorResponse(
@@ -112,10 +88,13 @@ export function createJsonErrorResponse(
   code?: string
 ) {
   return applySensitiveResponseHeaders(
-    apiError(status, message, {
-      code,
-      details: normalizeErrorDetails(details),
-    })
+    NextResponse.json(
+      createApiErrorBody(status, message, {
+        code,
+        details: normalizeErrorDetails(details),
+      }),
+      { status }
+    )
   );
 }
 

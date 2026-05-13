@@ -21,6 +21,7 @@ const rusunColumns: Column<RusunData>[] = [
     key: "name",
     label: "Nama Rusun",
     sortable: true,
+    sortField: "name",
     render: (item) => (
       <div className="max-w-[250px]">
         <p className="font-medium text-foreground break-words">{item.name}</p>
@@ -34,17 +35,20 @@ const rusunColumns: Column<RusunData>[] = [
     key: "kabupaten",
     label: "Kabupaten/Kota",
     sortable: true,
+    sortField: "region_id",
   },
   {
     key: "tower",
     label: "Tower",
     sortable: true,
+    sortField: "tower",
     className: "text-center",
   },
   {
     key: "units",
     label: "Unit",
     sortable: true,
+    sortField: "unit_count",
     render: (item) => <span className="font-semibold">{item.units} unit</span>,
     className: "text-right",
   },
@@ -52,12 +56,14 @@ const rusunColumns: Column<RusunData>[] = [
     key: "floors",
     label: "Lantai",
     sortable: true,
+    sortField: "floor",
     className: "text-center",
   },
   {
     key: "yearGiven",
     label: "Tahun",
     sortable: true,
+    sortField: "year_given",
     className: "text-center",
   },
   {
@@ -91,6 +97,11 @@ export default function AdminRusunPage() {
     handleDelete,
     handleFormOpenChange,
     setCurrentPage,
+    searchKeyword,
+    sortBy,
+    sortDirection,
+    handleSearchChange,
+    handleSortChange,
   } = useAdminRusunPage();
 
   if (!canManage) {
@@ -112,12 +123,16 @@ export default function AdminRusunPage() {
       <AdminStatsGrid
         items={[
           { label: "Total Rusun", value: stats.totalRusun },
+          {
+            label: "Unit Halaman Ini",
+            value: stats.pageUnits.toLocaleString("id-ID"),
+          },
         ]}
         columnsClassName="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
       />
 
       {rusunQuery.error ? (
-        <AdminErrorAlert message={`Gagal memuat data: ${rusunQuery.error.message}`} />
+        <AdminErrorAlert message={`Gagal mengambil data: ${rusunQuery.error.message}`} />
       ) : null}
 
       <AdminDataTable<RusunData>
@@ -127,6 +142,7 @@ export default function AdminRusunPage() {
         searchPlaceholder="Cari rusun..."
         actions={[editAction(openEditDialog), deleteAction(handleDelete)]}
         isLoading={rusunQuery.isLoading}
+        isRefreshing={rusunQuery.isFetching && !rusunQuery.isLoading}
         emptyMessage="Belum ada data rusun."
         pagination={{
           currentPage: rusunMeta?.page ?? 1,
@@ -134,6 +150,13 @@ export default function AdminRusunPage() {
           totalItems: rusunMeta?.totalRecords ?? rusunList.length,
           pageSize: rusunMeta?.limit ?? 10,
           onPageChange: setCurrentPage,
+          searchValue: searchKeyword,
+          onSearchChange: handleSearchChange,
+          searchMode: "local",
+          sortKey: sortBy,
+          sortDirection,
+          onSortChange: handleSortChange,
+          sortMode: "local",
         }}
       />
 

@@ -11,8 +11,6 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Sosialisasi Klinik PKP - Klinik PKP",
-  description:
-    "Informasi sosialisasi dan edukasi bidang perumahan dan kawasan permukiman, termasuk jadwal, peta lokasi, dan berita kegiatan.",
 };
 
 export default function Page() {

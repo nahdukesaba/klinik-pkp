@@ -14,6 +14,8 @@ import {
   buildSafePopup,
   cleanupMapContainer,
   destroyMap,
+  getOffsetMapCoordinate,
+  isValidMapCoordinate,
   loadLeaflet,
 } from "@/lib/map-utils";
 import { escapeAttr, escapeHtml } from "@/lib/security";
@@ -28,12 +30,12 @@ import type * as L from "leaflet";
 interface UsePenerimaanMapReturn {
   mapRef: React.RefObject<HTMLDivElement | null>;
   isMapReady: boolean;
-  selectedDesaId: number | null;
+  selectedDesaId: string | null;
   focusDesa: (desa: BspsData) => void;
 }
 
 function createDesaMarkerSvg(
-  desaId: number,
+  desaId: string,
   alokasiUnit: number,
   fillColor: string
 ): string {
@@ -54,7 +56,7 @@ function createDesaMarkerSvg(
   `;
 }
 
-function createRecipientMarkerSvg(desaId: number): string {
+function createRecipientMarkerSvg(desaId: string): string {
   return `
     <svg width="34" height="42" viewBox="0 0 28 35" xmlns="http://www.w3.org/2000/svg">
       <defs>
@@ -111,10 +113,10 @@ export function usePenerimaanMap(
   const mapInstanceRef = useRef<L.Map | null>(null);
   const desaLayerRef = useRef<L.LayerGroup | null>(null);
   const recipientLayerRef = useRef<L.LayerGroup | null>(null);
-  const centerMarkersRef = useRef<Map<number, L.Marker>>(new Map());
+  const centerMarkersRef = useRef<Map<string, L.Marker>>(new Map());
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const [isMapReady, setIsMapReady] = useState(false);
-  const [selectedDesaId, setSelectedDesaId] = useState<number | null>(null);
+  const [selectedDesaId, setSelectedDesaId] = useState<string | null>(null);
   const effectiveSelectedDesaId = useMemo(() => {
     if (selectedDesaId === null) {
       return null;
@@ -144,7 +146,9 @@ export function usePenerimaanMap(
 
     const L = await loadLeaflet();
 
-    desa.penerimaList.forEach((penerima) => {
+    desa.penerimaList
+      .filter((penerima) => isValidMapCoordinate(penerima.coordinates))
+      .forEach((penerima) => {
       const recipientIcon = L.divIcon({
         html: createRecipientMarkerSvg(desa.id),
         className: "custom-marker",
@@ -164,13 +168,17 @@ export function usePenerimaanMap(
       );
 
       recipientLayer.addLayer(recipientMarker);
-    });
+      });
   }, []);
 
   const focusDesa = useCallback((desa: BspsData) => {
     const map = mapInstanceRef.current;
 
     if (!map) {
+      return;
+    }
+
+    if (!isValidMapCoordinate(desa.coordinates)) {
       return;
     }
 
@@ -274,8 +282,18 @@ export function usePenerimaanMap(
       clearRecipientMarkers();
       centerMarkersRef.current.clear();
 
-      filteredDesa.forEach((desa) => {
+      const displayedDesa = filteredDesa.filter((desa) =>
+        isValidMapCoordinate(desa.coordinates)
+      );
+
+      displayedDesa.forEach((desa, index) => {
         const colors = bspsStatusColors[desa.status];
+        const displayCoordinate = getOffsetMapCoordinate(
+          displayedDesa,
+          index,
+          (item) => item.coordinates,
+          { offsetStep: 0.0007 }
+        );
         const centerIcon = L.divIcon({
           html: createDesaMarkerSvg(desa.id, desa.alokasiUnit, colors.fill),
           className: "custom-marker",
@@ -283,11 +301,11 @@ export function usePenerimaanMap(
           iconAnchor: [26, 64],
           popupAnchor: [0, -64],
         });
-        const centerMarker = L.marker(desa.coordinates, { icon: centerIcon });
+        const centerMarker = L.marker(displayCoordinate, { icon: centerIcon });
         const handleDesaSelection = () => {
           setSelectedDesaId(desa.id);
           map.stop();
-          map.flyTo(desa.coordinates, 16, {
+          map.flyTo(displayCoordinate, 16, {
             animate: true,
             duration: 1.1,
             easeLinearity: 0.12,
@@ -296,7 +314,7 @@ export function usePenerimaanMap(
           void renderRecipientMarkers(desa);
         };
 
-        const circle = L.circle(desa.coordinates, {
+        const circle = L.circle(displayCoordinate, {
           radius: 800,
           color: colors.stroke,
           fillColor: colors.fill,
@@ -320,9 +338,9 @@ export function usePenerimaanMap(
 
         try {
           map.invalidateSize();
-          if (filteredDesa.length > 0) {
+          if (displayedDesa.length > 0) {
             const bounds = L.latLngBounds(
-              filteredDesa.map((desa) => desa.coordinates)
+              displayedDesa.map((desa) => desa.coordinates)
             );
             map.fitBounds(bounds, {
               padding: [50, 50],

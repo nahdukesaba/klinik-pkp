@@ -1,3 +1,4 @@
+import { adminFetch } from "@/lib/admin-client";
 import {
   ApiError,
   buildApiEndpoint,
@@ -214,21 +215,22 @@ async function fetchAdminFaqListPage(
   params: FaqListParams,
   errorMessage: string
 ) {
-  const response = await fetch(
-    buildApiEndpoint("/api/admin/resources/faq", buildFaqQuery(params)),
-    {
-      method: "GET",
-      credentials: "include",
-      cache: "no-store",
-      headers: { Accept: "application/json" },
+  const payload = await adminFetch<ApiResponse<unknown>>(
+    buildApiEndpoint("/api/admin/resources/faq", buildFaqQuery(params))
+  ).catch((error) => {
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      typeof error.status === "number"
+    ) {
+      const message = error instanceof Error ? error.message : errorMessage;
+      throw new ApiError(error.status, message, { message });
     }
-  );
 
-  if (!response.ok) {
-    throw new ApiError(response.status, response.statusText);
-  }
+    throw error;
+  });
 
-  const payload = await response.json();
   return normalizeFaqListResponse(payload, errorMessage);
 }
 

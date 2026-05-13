@@ -31,6 +31,13 @@ import {
   getDateKey,
   getMonthKey,
 } from "@/lib/date";
+import {
+  ADMIN_RESOURCE_NAMES,
+  createAdminResource,
+  deleteAdminResource,
+  updateAdminResource,
+} from "@/services/admin-resource.service";
+import type { ApiListQueryControls } from "@/types/api";
 
 // --- Tipe API ---
 
@@ -58,7 +65,7 @@ export type SosialisasiStatus = "selesai" | "mendatang" | "pending";
 
 /** Data lokasi sosialisasi untuk peta dan jadwal */
 export interface SosialisasiLocation {
-  id: number;
+  id: string;
   villageId: string;
   districtId: string;
   regionId: string;
@@ -80,7 +87,7 @@ export interface SosialisasiLocation {
 
 /** Data berita sosialisasi (hanya item selesai + punya deskripsi + gambar) */
 export interface BeritaSosialisasi {
-  id: number;
+  id: string;
   title: string;
   image: string;
   date: string; // format tampilan Indonesia
@@ -135,7 +142,7 @@ export function transformToLocation(item: SosialisasiApiItem): SosialisasiLocati
   );
 
   return {
-    id: Number(item.id),
+    id: item.id,
     villageId: item.village_id,
     districtId: item.district_id,
     regionId: item.region_id,
@@ -165,7 +172,7 @@ export function transformToBerita(item: SosialisasiApiItem): BeritaSosialisasi {
   const images = (item.image_urls ?? []).map(buildSosialisasiImageUrl);
 
   return {
-    id: Number(item.id),
+    id: item.id,
     title: item.title,
     image: images[0] ?? "",
     date: formatDateId(item.scheduled_at_start),
@@ -230,9 +237,7 @@ export interface SosialisasiPageResult extends SosialisasiResult {
   meta: ApiPaginationMeta;
 }
 
-export interface SosialisasiListParams {
-  page?: number;
-  perPage?: number;
+export interface SosialisasiListParams extends ApiListQueryControls {
   regionId?: string;
   districtId?: string;
   villageId?: string;
@@ -307,6 +312,7 @@ export async function fetchSosialisasiList(
     query: {
       page: params.page,
       limit,
+      title: params.keyword,
       region_id: params.regionId,
       district_id: params.districtId,
       village_id: params.villageId,
@@ -327,6 +333,7 @@ export async function fetchSosialisasiPage(
       query: {
         page: params.page,
         limit: params.perPage,
+        title: params.keyword,
         region_id: params.regionId,
         district_id: params.districtId,
         village_id: params.villageId,
@@ -339,4 +346,19 @@ export async function fetchSosialisasiPage(
     ...buildSosialisasiResult(pageResult.items),
     meta: pageResult.meta,
   };
+}
+
+export async function createAdminSosialisasi(payload: FormData) {
+  return createAdminResource(ADMIN_RESOURCE_NAMES.sosialisasi, payload);
+}
+
+export async function updateAdminSosialisasi(
+  id: string | number,
+  payload: FormData
+) {
+  return updateAdminResource(ADMIN_RESOURCE_NAMES.sosialisasi, id, payload);
+}
+
+export async function deleteAdminSosialisasi(id: string | number) {
+  return deleteAdminResource(ADMIN_RESOURCE_NAMES.sosialisasi, id);
 }

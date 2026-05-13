@@ -39,6 +39,7 @@ const userColumns: Column<AdminDirectoryUser>[] = [
     key: "name",
     label: "Pengguna",
     sortable: true,
+    sortField: "name",
     render: (item) => (
       <div className="max-w-[260px]">
         <p className="font-medium text-foreground break-words">{item.name}</p>
@@ -62,6 +63,7 @@ const userColumns: Column<AdminDirectoryUser>[] = [
     key: "role",
     label: "Role",
     sortable: true,
+    sortField: "role",
     render: (item) => <RoleBadge role={item.role} />,
     className: "text-center",
   },
@@ -69,6 +71,7 @@ const userColumns: Column<AdminDirectoryUser>[] = [
     key: "isActive",
     label: "Status",
     sortable: true,
+    sortField: "is_active",
     render: (item) => (
       <StatusBadge status={item.isActive ? "active" : "inactive"} />
     ),
@@ -77,6 +80,7 @@ const userColumns: Column<AdminDirectoryUser>[] = [
     key: "updatedAt",
     label: "Diperbarui",
     sortable: true,
+    sortField: "updated_at",
     render: (item) => (
       <span className="text-xs text-muted-foreground">
         {formatTimestamp(item.updatedAt ?? item.createdAt)}
@@ -210,6 +214,8 @@ function FilterBar({
 export default function AdminUsersPage() {
   const {
     canManage,
+    currentUserId,
+    searchKeyword,
     roleFilter,
     setRoleFilter,
     statusFilter,
@@ -218,7 +224,6 @@ export default function AdminUsersPage() {
     editingUser,
     formErrors,
     isSaving,
-    isHydratingUser,
     usersQuery,
     usersMeta,
     filteredUsers,
@@ -233,6 +238,7 @@ export default function AdminUsersPage() {
     handleDelete,
     handleFormOpenChange,
     handlePageChange,
+    handleSearchChange,
   } = useAdminUsersPage();
 
   if (!canManage) {
@@ -279,13 +285,7 @@ export default function AdminUsersPage() {
       />
 
       {usersQuery.error ? (
-        <AdminErrorAlert message={`Gagal memuat data: ${usersQuery.error.message}`} />
-      ) : null}
-
-      {isHydratingUser ? (
-        <div className="rounded-2xl border border-border bg-card px-4 py-3 text-sm text-muted-foreground shadow-sm">
-          Memuat detail user...
-        </div>
+        <AdminErrorAlert message={`Gagal mengambil data: ${usersQuery.error.message}`} />
       ) : null}
 
       <AdminDataTable<AdminDirectoryUser>
@@ -293,8 +293,17 @@ export default function AdminUsersPage() {
         data={filteredUsers}
         searchFields={["name", "email", "nip", "phone"]}
         searchPlaceholder="Cari user..."
-        actions={[editAction(openEditDialog), deleteAction(handleDelete)]}
+        actions={[
+          editAction(openEditDialog, {
+            isVisible: (item) =>
+              item.id === currentUserId && item.isEditable !== false,
+          }),
+          deleteAction(handleDelete, {
+            isVisible: (item) => item.canDelete !== false,
+          }),
+        ]}
         isLoading={usersQuery.isLoading}
+        isRefreshing={usersQuery.isFetching && !usersQuery.isLoading}
         emptyMessage="Belum ada data pengguna."
         pagination={{
           currentPage: usersMeta.page,
@@ -302,6 +311,10 @@ export default function AdminUsersPage() {
           totalItems: usersMeta.totalRecords,
           pageSize: usersMeta.limit,
           onPageChange: handlePageChange,
+          searchValue: searchKeyword,
+          onSearchChange: handleSearchChange,
+          searchMode: "local",
+          sortMode: "local",
         }}
       />
 
@@ -313,7 +326,7 @@ export default function AdminUsersPage() {
         title={editingUser ? "Edit User" : "Tambah User"}
         description={
           editingUser
-            ? "Perbarui identitas, role, dan status akun pengguna. Password tidak dapat diubah dari halaman ini."
+            ? "Perbarui nama dan nomor telepon pengguna. Email, NIP, role, status, dan password tidak dikirim saat update."
             : "Lengkapi identitas, role, status akun, dan password pengguna."
         }
         fields={formFields}

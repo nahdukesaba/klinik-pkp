@@ -6,6 +6,7 @@ import {
   type ApiPaginatedResult,
 } from "@/lib/api-client";
 import { buildImageUrl } from "@/lib/constants";
+import type { ApiListQueryControls } from "@/types/api";
 
 // --- Tipe API ---
 
@@ -26,7 +27,7 @@ export interface BankDesainApiItem {
 
 /** Data bank desain untuk UI (camelCase) */
 export interface BankDesainData {
-  id: number;
+  id: string;
   /** Kode desain (dari ID API) */
   code: string;
   title: string;
@@ -63,10 +64,8 @@ export interface FilterCategories {
   teras: FilterCategory[];
 }
 
-export interface BankDesainListParams {
+export interface BankDesainListParams extends ApiListQueryControls {
   type?: string;
-  page?: number;
-  perPage?: number;
 }
 
 // --- Mapping tipe ---
@@ -99,7 +98,7 @@ export function transformBankDesainItem(item: BankDesainApiItem): BankDesainData
   const fileUrls = item.file_urls?.map(buildImageUrl) ?? [];
 
   return {
-    id: parseInt(item.id, 10) || 0,
+    id: item.id,
     code: item.id.padStart(3, "0"),
     title: item.name,
     type: TYPE_MAP[item.type] ?? item.type,
@@ -162,6 +161,7 @@ export async function fetchBankDesainList(
       type: normalizeBankDesainTypeParam(params.type),
       page: params.page,
       limit: params.perPage,
+      name: params.keyword,
     },
     transform: transformBankDesainItem,
     errorMessage: "Gagal mengambil data bank desain dari server",
@@ -181,6 +181,7 @@ export async function fetchBankDesainPage(
         type: normalizeBankDesainTypeParam(params.type),
         page: params.page,
         limit: params.perPage,
+        name: params.keyword,
       },
       transform: transformBankDesainItem,
       errorMessage: "Gagal mengambil data bank desain dari server",

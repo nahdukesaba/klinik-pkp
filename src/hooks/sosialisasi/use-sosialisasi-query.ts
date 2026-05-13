@@ -14,7 +14,7 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import { useCurrentTime } from "@/hooks/use-current-time";
-import { QUERY_CONFIG } from "@/lib/constants";
+import { QUERY_CONFIG, QUERY_KEYS } from "@/lib/constants";
 import {
   buildSosialisasiResultFromLocations,
   fetchSosialisasiList,
@@ -65,7 +65,7 @@ const EMPTY_RESULT: SosialisasiResult = {
 export function useSosialisasiQuery(): SosialisasiRawData {
   const currentTime = useCurrentTime();
   const query = useQuery<SosialisasiResult>({
-    queryKey: ["sosialisasi"],
+    queryKey: [QUERY_KEYS.publicSosialisasi],
     queryFn: () => fetchSosialisasiList(),
     ...QUERY_CONFIG,
   });

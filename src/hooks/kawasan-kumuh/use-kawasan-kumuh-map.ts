@@ -9,7 +9,15 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import "leaflet/dist/leaflet.css";
 
-import { loadLeaflet, cleanupMapContainer, destroyMap, bindMarkerInteraction, buildSafePopup } from "@/lib/map-utils";
+import {
+  bindMarkerInteraction,
+  buildSafePopup,
+  cleanupMapContainer,
+  destroyMap,
+  getOffsetMapCoordinate,
+  isValidMapCoordinate,
+  loadLeaflet,
+} from "@/lib/map-utils";
 import { escapeAttr } from "@/lib/security";
 import {
   kawasanStatusColors,
@@ -113,18 +121,22 @@ export function useKawasanKumuhMap(
         }
       });
 
-      const displayedKawasan = filteredKawasan;
+      const displayedKawasan = filteredKawasan.filter((kawasan) =>
+        isValidMapCoordinate([kawasan.lat, kawasan.lng])
+      );
 
-      displayedKawasan.forEach((kawasan) => {
+      displayedKawasan.forEach((kawasan, index) => {
         if (!mapInstanceRef.current) return;
 
         const statusColor = statusColors[kawasan.status];
+        const displayCoordinate = getOffsetMapCoordinate(
+          displayedKawasan,
+          index,
+          (item) => [item.lat, item.lng],
+          { offsetStep: 0.00065 }
+        );
 
-        const jitterAmount = 0.0001;
-        const jitteredLat = kawasan.lat + (Math.random() - 0.5) * jitterAmount;
-        const jitteredLng = kawasan.lng + (Math.random() - 0.5) * jitterAmount;
-
-        L.circle([jitteredLat, jitteredLng], {
+        L.circle(displayCoordinate, {
           color: statusColor.fill,
           fillColor: statusColor.fill,
           fillOpacity: 0.5,
@@ -147,7 +159,7 @@ export function useKawasanKumuhMap(
           iconAnchor: [18, 18],
         });
 
-        const marker = L.marker([jitteredLat, jitteredLng], { icon })
+        const marker = L.marker(displayCoordinate, { icon })
           .addTo(mapInstanceRef.current!)
           .bindPopup(
             buildSafePopup({
@@ -193,6 +205,10 @@ export function useKawasanKumuhMap(
   }, [filteredKawasan, isMapReady, onKawasanSelect, isEnabled]);
 
   const flyTo = useCallback((lat: number, lng: number, zoom = 15) => {
+    if (!isValidMapCoordinate([lat, lng])) {
+      return;
+    }
+
     if (mapInstanceRef.current) {
       mapInstanceRef.current.flyTo([lat, lng], zoom, {
         animate: true,

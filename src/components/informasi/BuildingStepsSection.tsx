@@ -3,11 +3,10 @@
 import { useState } from "react";
 
 import { SectionHeader } from "@/components/shared";
+import { ProgressIndicator } from "@/components/shared/ProgressIndicator";
+import { StepArrow } from "@/components/shared/StepArrow";
 import { buildingStepsData } from "@/content/building-steps.content";
 import { useScrollAnimation } from "@/hooks/use-scroll-animation";
-
-import { ProgressIndicator } from "./ProgressIndicator";
-import { StepArrow } from "./StepArrow";
 
 import type { LucideIcon } from "lucide-react";
 

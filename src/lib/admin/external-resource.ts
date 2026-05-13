@@ -16,9 +16,16 @@ export type ExternalAdminResource =
 
 type ResourceMode = "json" | "form-data";
 
+interface RequiredUploadField {
+  formField: string;
+  existingField: string;
+  responseField: "image_urls" | "file_urls";
+}
+
 interface ExternalResourceConfig {
   upstreamPath: string;
   bodyMode: ResourceMode;
+  requiredUploadFields?: RequiredUploadField[];
 }
 
 interface ExternalAdminProxyResult {
@@ -48,10 +55,29 @@ const EXTERNAL_RESOURCE_CONFIG: Record<
   rusun: {
     upstreamPath: "rusun",
     bodyMode: "form-data",
+    requiredUploadFields: [
+      {
+        formField: "images",
+        existingField: "existing_images",
+        responseField: "image_urls",
+      },
+    ],
   },
   "bank-desain": {
     upstreamPath: "bank-desain",
     bodyMode: "form-data",
+    requiredUploadFields: [
+      {
+        formField: "images",
+        existingField: "existing_images",
+        responseField: "image_urls",
+      },
+      {
+        formField: "files",
+        existingField: "existing_files",
+        responseField: "file_urls",
+      },
+    ],
   },
   sosialisasi: {
     upstreamPath: "sosialisasi",
@@ -92,6 +118,191 @@ function createProxyTransportError(status: number, message: string) {
     status,
     payload: { error: message },
   } satisfies ExternalAdminProxyResult;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function hasUploadedFile(formData: FormData, field: string) {
+  return formData
+    .getAll(field)
+    .some((value) => value instanceof Blob && value.size > 0);
+}
+
+function normalizeUploadPath(value: string) {
+  try {
+    const url = new URL(value, "http://localhost");
+    const pathname = url.pathname;
+
+    if (pathname.startsWith("/api/ext/")) {
+      return pathname.slice("/api/ext/".length);
+    }
+
+    if (pathname.startsWith("/api/v1/")) {
+      return pathname.slice("/api/v1/".length);
+    }
+
+    return pathname.replace(/^\/+/, "");
+  } catch {
+    return value.replace(/^\/+/, "");
+  }
+}
+
+function getFilenameFromPath(path: string, fallback: string) {
+  const filename = path.split("/").filter(Boolean).pop();
+  return filename ? decodeURIComponent(filename) : fallback;
+}
+
+function getExistingUploadPaths(formData: FormData, field: string) {
+  const rawValue = formData.get(field);
+  if (typeof rawValue !== "string") {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(rawValue) as unknown;
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed
+      .map((item) => (isRecord(item) && typeof item.url === "string" ? item.url : ""))
+      .filter(Boolean)
+      .map(normalizeUploadPath);
+  } catch {
+    return [];
+  }
+}
+
+async function fetchCurrentResourceData(
+  resource: ExternalAdminResource,
+  id: string,
+  accessToken?: string
+) {
+  try {
+    const url = buildBackendApiUrl(buildExternalResourcePath(resource, id));
+    const headers = createBackendHeaders();
+    if (accessToken) {
+      headers.set("Authorization", `Bearer ${accessToken}`);
+    }
+
+    const response = await fetch(url, {
+      headers,
+      signal: AbortSignal.timeout(45_000),
+      cache: "no-store",
+    });
+    const payload = await response.json().catch(() => null);
+
+    if (!response.ok || !isRecord(payload) || !isRecord(payload.data)) {
+      return null;
+    }
+
+    return payload.data;
+  } catch {
+    return null;
+  }
+}
+
+function getCurrentUploadPaths(
+  data: Record<string, unknown> | null,
+  responseField: RequiredUploadField["responseField"]
+) {
+  const value = data?.[responseField];
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string")
+    : [];
+}
+
+async function appendBackendUploadFile(
+  formData: FormData,
+  field: string,
+  path: string,
+  index: number
+) {
+  try {
+    const uploadPath = normalizeUploadPath(path);
+    const response = await fetch(buildBackendApiUrl(uploadPath), {
+      signal: AbortSignal.timeout(45_000),
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      return false;
+    }
+
+    const blob = await response.blob();
+    if (blob.size === 0) {
+      return false;
+    }
+
+    formData.append(
+      field,
+      blob,
+      getFilenameFromPath(uploadPath, `${field}-${index + 1}`)
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function hydrateRequiredUploadFields(params: {
+  resource: ExternalAdminResource;
+  id?: string;
+  method: "GET" | "POST" | "PUT" | "DELETE";
+  body?: ExternalAdminRequestBody;
+  accessToken?: string;
+}) {
+  const config = EXTERNAL_RESOURCE_CONFIG[params.resource];
+
+  if (
+    params.method !== "PUT" ||
+    !params.id ||
+    !(params.body instanceof FormData) ||
+    !config.requiredUploadFields?.length
+  ) {
+    return params.body;
+  }
+
+  let currentData: Record<string, unknown> | null | undefined;
+
+  for (const uploadField of config.requiredUploadFields) {
+    if (hasUploadedFile(params.body, uploadField.formField)) {
+      params.body.delete(uploadField.existingField);
+      continue;
+    }
+
+    const requestedExistingPaths = getExistingUploadPaths(
+      params.body,
+      uploadField.existingField
+    );
+    params.body.delete(uploadField.existingField);
+
+    const pathsToUse =
+      requestedExistingPaths !== null
+        ? requestedExistingPaths
+        : getCurrentUploadPaths(
+            currentData ??
+              (currentData = await fetchCurrentResourceData(
+                params.resource,
+                params.id,
+                params.accessToken
+              )),
+            uploadField.responseField
+          );
+
+    for (const [index, path] of pathsToUse.entries()) {
+      await appendBackendUploadFile(
+        params.body,
+        uploadField.formField,
+        path,
+        index
+      );
+    }
+  }
+
+  return params.body;
 }
 
 async function parseProxyResponsePayload(response: Response) {
@@ -152,15 +363,16 @@ export async function proxyExternalAdminResource(params: {
     headers.set("Authorization", `Bearer ${params.accessToken}`);
   }
 
+  const preparedBody = await hydrateRequiredUploadFields(params);
   let body: BodyInit | undefined;
 
   if (params.method === "GET") {
     body = undefined;
-  } else if (params.body instanceof FormData) {
-    body = params.body;
-  } else if (params.body != null && params.method !== "DELETE") {
+  } else if (preparedBody instanceof FormData) {
+    body = preparedBody;
+  } else if (preparedBody != null && params.method !== "DELETE") {
     headers.set("Content-Type", "application/json");
-    body = JSON.stringify(params.body);
+    body = JSON.stringify(preparedBody);
   }
 
   let response: Response;

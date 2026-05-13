@@ -6,7 +6,7 @@
  * Komponen utama di-lazy-load melalui route client reusable.
  */
 
-import { KawasanKumuhRouteClient } from "@/components/shared/AppRouteClients";
+import { KawasanKumuhRouteClient } from "@/components/route-clients/AppRouteClients";
 
 import type { Metadata } from "next";
 

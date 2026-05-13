@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+/* eslint-disable @next/next/no-img-element */
 
-import Image from "next/image";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
   ChevronLeft,
@@ -21,6 +21,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -162,7 +163,15 @@ export function ImageZoomDialog({
                 </span>
               )}
             </DialogTitle>
+            <DialogDescription className="sr-only">
+              Pratinjau gambar. Gunakan tombol panah untuk berpindah gambar dan tombol zoom untuk memperbesar atau memperkecil.
+            </DialogDescription>
           </DialogHeader>
+        )}
+        {!title && (
+          <DialogDescription className="sr-only">
+            Pratinjau gambar. Gunakan tombol panah untuk berpindah gambar dan tombol zoom untuk memperbesar atau memperkecil.
+          </DialogDescription>
         )}
 
         <div className="relative bg-secondary/50">
@@ -188,17 +197,14 @@ export function ImageZoomDialog({
               }}
             >
               <div className="relative w-full" style={{ height: imageHeight }}>
-                <Image
+                <img
                   src={currentImage}
                   alt={
                     title
                       ? `${title} - Gambar ${currentImageIndex + 1}`
                       : `Gambar ${currentImageIndex + 1}`
                   }
-                  fill
-                  className="select-none object-contain"
-                  sizes="(max-width: 1024px) 100vw, 1024px"
-                  priority
+                  className="h-full w-full select-none object-contain"
                   draggable={false}
                 />
               </div>
@@ -248,12 +254,10 @@ export function ImageZoomDialog({
                   }`}
                   aria-label={`Lihat gambar ${index + 1}`}
                 >
-                  <Image
+                  <img
                     src={image}
                     alt={`Thumbnail ${index + 1}`}
-                    fill
-                    className="object-cover"
-                    sizes="64px"
+                    className="h-full w-full object-cover"
                   />
                 </button>
               ))}

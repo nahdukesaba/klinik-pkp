@@ -18,7 +18,11 @@ import { useCascadingFilter } from "@/hooks/use-cascading-filter";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useLazyMount } from "@/hooks/use-lazy-mount";
 import { usePagination } from "@/hooks/use-pagination";
-import { QUERY_CONFIG } from "@/lib/constants";
+import {
+  DEFAULT_DEBOUNCE_DELAY_MS,
+  QUERY_CONFIG,
+  QUERY_KEYS,
+} from "@/lib/constants";
 import { sanitizeInput } from "@/lib/security";
 import { fetchRusunList, type RusunData } from "@/services/rusun.service";
 
@@ -28,7 +32,7 @@ const EMPTY_RUSUN: RusunData[] = [];
 export function useSebaranRusun() {
   const router = useRouter();
   const query = useQuery({
-    queryKey: ["rusun"] as const,
+    queryKey: [QUERY_KEYS.publicRusun],
     queryFn: () => fetchRusunList(),
     ...QUERY_CONFIG,
   });
@@ -36,7 +40,7 @@ export function useSebaranRusun() {
 
   // Filter
   const [searchQuery, setSearchQuery] = useState("");
-  const debouncedSearch = useDebounce(searchQuery, 300);
+  const debouncedSearch = useDebounce(searchQuery, DEFAULT_DEBOUNCE_DELAY_MS);
   const cascading = useCascadingFilter(data);
 
   // State UI

@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
 import { type AdminFormValues, type FormFieldDef } from "@/components/admin";
 import {
@@ -12,7 +12,13 @@ import {
   getFileFormValue,
   getStringFormValue,
 } from "@/lib/admin/form";
-import { QUERY_CONFIG } from "@/lib/constants";
+import {
+  ADMIN_TABLE_PAGE_SIZE,
+  QUERY_CONFIG,
+  QUERY_KEYS,
+  UPLOAD_CONSTRAINTS,
+} from "@/lib/constants";
+import { ADMIN_RESOURCE_NAMES } from "@/services/admin-resource.service";
 import {
   fetchBankDesainPage,
   type BankDesainData,
@@ -20,22 +26,14 @@ import {
 
 import { useAdminCrud } from "./use-admin-crud";
 
-const BANK_DESAIN_PAGE_LIMIT = 10;
 const EMPTY_BANK_DESAIN_ITEMS: BankDesainData[] = [];
-
-const typeOptions = [
-  { value: "Tipe 36", label: "Tipe 36" },
-];
-
-const frontendTypeToApiType = {
-  T36: "Tipe 36",
-} as const;
+const BANK_DESAIN_TYPE = "Tipe 36";
 
 function buildBankDesainFormData(values: AdminFormValues) {
   const formData = new FormData();
 
   formData.set("name", getStringFormValue(values, "name"));
-  formData.set("type", getStringFormValue(values, "type"));
+  formData.set("type", BANK_DESAIN_TYPE);
   formData.set("bedroom_count", getStringFormValue(values, "bedroomCount"));
   formData.set("bathroom_count", getStringFormValue(values, "bathroomCount"));
   formData.set("total_area", getStringFormValue(values, "totalArea"));
@@ -45,7 +43,8 @@ function buildBankDesainFormData(values: AdminFormValues) {
     formData.append("images", image);
   }
 
-  for (const file of getFileFormValue(values, "files")) {
+  const rabFiles = getFileFormValue(values, "files");
+  for (const file of rabFiles) {
     formData.append("files", file);
   }
 
@@ -55,7 +54,7 @@ function buildBankDesainFormData(values: AdminFormValues) {
   }
 
   const existingFiles = getExistingFileFormValue(values, "files");
-  if (existingFiles) {
+  if (existingFiles && rabFiles.length === 0) {
     formData.set("existing_files", existingFiles);
   }
 
@@ -64,10 +63,6 @@ function buildBankDesainFormData(values: AdminFormValues) {
 function desainToFormValues(item: BankDesainData): AdminFormValues {
   return {
     name: item.title,
-    type:
-      frontendTypeToApiType[
-        item.type as keyof typeof frontendTypeToApiType
-      ] ?? item.type,
     bedroomCount: String(item.bedrooms),
     bathroomCount: String(item.bathrooms),
     totalArea: String(item.area),
@@ -79,23 +74,32 @@ function desainToFormValues(item: BankDesainData): AdminFormValues {
 
 export function useAdminBankDesainPage() {
   const crud = useAdminCrud<BankDesainData>({
-    queryKey: "admin-bank-desain",
-    resourcePath: "/api/admin/resources/bank-desain",
+    queryKey: QUERY_KEYS.adminBankDesain,
+    resource: ADMIN_RESOURCE_NAMES.bankDesain,
     label: "desain",
     buildPayload: buildBankDesainFormData,
     getDeleteLabel: (item) => item.title,
   });
 
   const desainQuery = useQuery({
-    queryKey: ["admin-bank-desain", crud.currentPage],
+    queryKey: [
+      QUERY_KEYS.adminBankDesain,
+      crud.currentPage,
+      crud.searchKeyword,
+      crud.sortBy,
+      crud.sortDirection,
+    ],
     queryFn: () =>
       fetchBankDesainPage({
         page: crud.currentPage,
-        perPage: BANK_DESAIN_PAGE_LIMIT,
+        perPage: ADMIN_TABLE_PAGE_SIZE,
+        keyword: crud.searchKeyword,
+        sortBy: crud.sortBy,
+        sortDirection: crud.sortDirection,
       }),
     staleTime: QUERY_CONFIG.staleTime,
     gcTime: QUERY_CONFIG.gcTime,
-    placeholderData: (previousData) => previousData,
+    placeholderData: keepPreviousData,
     enabled: crud.canManage,
   });
 
@@ -106,13 +110,6 @@ export function useAdminBankDesainPage() {
         label: "Nama Desain",
         type: "text",
         required: true,
-      },
-      {
-        name: "type",
-        label: "Tipe",
-        type: "select",
-        required: true,
-        options: typeOptions,
       },
       {
         name: "bedroomCount",
@@ -146,8 +143,11 @@ export function useAdminBankDesainPage() {
         name: "images",
         label: "Gambar Desain",
         type: "file",
-        accept: "image/*",
+        accept: UPLOAD_CONSTRAINTS.designImages.accept,
         multiple: true,
+        maxFiles: UPLOAD_CONSTRAINTS.designImages.maxFiles,
+        maxSizeMb: UPLOAD_CONSTRAINTS.designImages.maxSizeMb,
+        maxTotalSizeMb: UPLOAD_CONSTRAINTS.designImages.maxTotalSizeMb,
         required: !crud.editingItem,
         existingFiles: crud.editingItem
           ? buildExistingUploadFiles(crud.editingItem.previewImages, "Gambar")
@@ -155,18 +155,20 @@ export function useAdminBankDesainPage() {
         helperText: buildUploadFieldHelperText({
           subject: "1 sampai 4 gambar desain",
           mode: crud.editingItem ? "edit" : "create",
-          requiresReuploadOnEdit: true,
+          optional: Boolean(crud.editingItem),
           validationLabel: "format gambar",
-          maxSizeMb: 2,
-          totalUploadMb: 4,
+          maxSizeMb: UPLOAD_CONSTRAINTS.designImages.maxSizeMb,
+          totalUploadMb: UPLOAD_CONSTRAINTS.designImages.maxTotalSizeMb,
         }),
       },
       {
         name: "files",
-        label: "File Dokumen",
+        label: "File RAB (PDF)",
         type: "file",
-        accept: ".pdf,application/pdf",
+        accept: UPLOAD_CONSTRAINTS.rabPdf.accept,
         multiple: false,
+        maxFiles: UPLOAD_CONSTRAINTS.rabPdf.maxFiles,
+        maxSizeMb: UPLOAD_CONSTRAINTS.rabPdf.maxSizeMb,
         required: !crud.editingItem,
         existingFiles: crud.editingItem
           ? buildExistingUploadFiles([crud.editingItem.rabPdfUrl], "Dokumen")
@@ -174,9 +176,9 @@ export function useAdminBankDesainPage() {
         helperText: buildUploadFieldHelperText({
           subject: "1 dokumen PDF desain",
           mode: crud.editingItem ? "edit" : "create",
-          requiresReuploadOnEdit: true,
+          optional: Boolean(crud.editingItem),
           validationLabel: "format PDF",
-          maxSizeMb: 10,
+          maxSizeMb: UPLOAD_CONSTRAINTS.rabPdf.maxSizeMb,
         }),
       },
     ],
@@ -215,5 +217,10 @@ export function useAdminBankDesainPage() {
     handleDelete: crud.handleDelete,
     handleFormOpenChange: crud.handleFormOpenChange,
     setCurrentPage: crud.setCurrentPage,
+    searchKeyword: crud.searchKeyword,
+    sortBy: crud.sortBy,
+    sortDirection: crud.sortDirection,
+    handleSearchChange: crud.handleSearchChange,
+    handleSortChange: crud.handleSortChange,
   };
 }

@@ -13,7 +13,15 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useCascadingFilter } from "@/hooks/use-cascading-filter";
 import { useDebounce } from "@/hooks/use-debounce";
 import { usePagination } from "@/hooks/use-pagination";
-import { CURRENT_YEAR, CURRENT_YEAR_NUM, QUERY_CONFIG } from "@/lib/constants";
+import {
+  CURRENT_YEAR,
+  CURRENT_YEAR_NUM,
+  DEFAULT_DEBOUNCE_DELAY_MS,
+  LONG_LIVED_QUERY_STALE_TIME_MS,
+  QUERY_CONFIG,
+  QUERY_KEY_PARTS,
+  QUERY_KEYS,
+} from "@/lib/constants";
 import { getSortedUniqueYears } from "@/lib/date";
 import { sanitizeInput } from "@/lib/security";
 import {
@@ -27,9 +35,10 @@ export function useKawasanKumuh() {
   const [yearFilter, setYearFilter] = useState<string>(CURRENT_YEAR);
 
   const yearsQuery = useQuery({
-    queryKey: ["kawasan-kumuh-years"],
+    queryKey: [QUERY_KEYS.publicKawasanKumuhYears],
     queryFn: fetchKumuhAvailableYears,
     ...QUERY_CONFIG,
+    staleTime: LONG_LIVED_QUERY_STALE_TIME_MS,
   });
   const yearParam =
     yearFilter === "all"
@@ -37,7 +46,10 @@ export function useKawasanKumuh() {
       : parseInt(yearFilter, 10) || CURRENT_YEAR_NUM;
 
   const query = useQuery({
-    queryKey: ["kawasan-kumuh", yearParam ?? "all"],
+    queryKey: [
+      QUERY_KEYS.publicKawasanKumuh,
+      yearParam ?? QUERY_KEY_PARTS.all,
+    ],
     queryFn: () => fetchKumuhList(yearParam),
     placeholderData: keepPreviousData,
     ...QUERY_CONFIG,
@@ -53,7 +65,7 @@ export function useKawasanKumuh() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const debouncedSearch = useDebounce(searchQuery, 300);
+  const debouncedSearch = useDebounce(searchQuery, DEFAULT_DEBOUNCE_DELAY_MS);
 
   const cascading = useCascadingFilter(data);
 

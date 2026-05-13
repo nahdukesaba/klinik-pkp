@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import {
   LokasiKlinikPageSkeleton,
   MapLazySectionSkeleton,
-} from "./LoadingSkeletons";
+} from "@/components/shared/LoadingSkeletons";
 
 export const KawasanKumuhRouteClient = dynamic(
   () => import("@/components/kawasan-kumuh/KawasanKumuhPage"),

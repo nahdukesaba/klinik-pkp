@@ -14,7 +14,7 @@ import {
   MobileSidebarToggle,
 } from "@/components/kawasan-kumuh/KawasanKumuhComponents";
 import { Navbar } from "@/components/layout";
-import { ApiLoadingState, ApiErrorState } from "@/components/shared";
+import { ApiErrorState } from "@/components/shared";
 import { MapSkeleton } from "@/components/ui/skeleton";
 import { useKawasanKumuhPage } from "@/hooks/kawasan-kumuh/use-kawasan-kumuh-page";
 
@@ -56,18 +56,12 @@ export default function KawasanKumuhPage() {
     mapRef,
     mapLazy,
     pagination,
-    isLoading,
     isError,
     error,
     refetch,
   } = useKawasanKumuhPage();
   const mapLazyRef = mapLazy.ref;
   const isMapMounted = mapLazy.isMounted;
-
-  // Tampilkan loading state saat data sedang dimuat dari API
-  if (isLoading) {
-    return <ApiLoadingState message="Memuat data kawasan kumuh..." />;
-  }
 
   // Tampilkan error state jika gagal mengambil data
   if (isError) {

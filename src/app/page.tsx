@@ -1,10 +1,3 @@
-/**
- * Route: /
- *
- * Landing page Klinik PKP.
- * Homepage difokuskan ke hero dan layanan utama.
- */
-
 import HeroSection from "@/components/landing/HeroSection";
 import InstagramSection from "@/components/landing/InstagramSection";
 import ServicesSection from "@/components/landing/ServicesSection";

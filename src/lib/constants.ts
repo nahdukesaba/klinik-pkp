@@ -29,6 +29,65 @@ export const QUERY_CONFIG = {
   refetchOnWindowFocus: false,
 } as const;
 
+export const LONG_LIVED_QUERY_STALE_TIME_MS = 5 * 60 * 1000;
+export const DEFAULT_DEBOUNCE_DELAY_MS = 400;
+export const ADMIN_TABLE_PAGE_SIZE = 10;
+
+export const QUERY_KEYS = {
+  adminUsers: "admin-users",
+  adminAudit: "admin-audit",
+  adminBankDesain: "admin-bank-desain",
+  adminKawasanKumuh: "admin-kawasan-kumuh",
+  adminKawasanKumuhStats: "admin-kawasan-kumuh-stats",
+  adminRusun: "admin-rusun",
+  adminBsps: "admin-bsps",
+  adminBspsStats: "admin-bsps-stats",
+  adminSosialisasi: "admin-sosialisasi",
+  adminFaq: "admin-faq",
+  publicFaq: "faq-public",
+  adminLocationRegions: "admin-location-regions",
+  adminLocationDistricts: "admin-location-districts",
+  adminLocationVillages: "admin-location-villages",
+  publicSosialisasi: "sosialisasi",
+  publicRusun: "rusun",
+  publicBsps: "bsps",
+  publicBspsYears: "bsps-years",
+  publicKawasanKumuh: "kawasan-kumuh",
+  publicKawasanKumuhYears: "kawasan-kumuh-years",
+  publicBankDesain: "bank-desain",
+} as const;
+
+export const QUERY_KEY_PARTS = {
+  all: "all",
+  none: "none",
+  users: "users",
+} as const;
+
+export const UPLOAD_CONSTRAINTS = {
+  designImages: {
+    accept: "image/jpeg,image/jpg,image/png,image/gif,image/webp,.jpeg,.jpg,.png,.gif,.webp",
+    maxFiles: 4,
+    maxSizeMb: 2,
+    maxTotalSizeMb: 2,
+  },
+  singleImage: {
+    accept: "image/jpeg,image/jpg,image/png,image/gif,image/webp,.jpeg,.jpg,.png,.gif,.webp",
+    maxFiles: 1,
+    maxSizeMb: 2,
+  },
+  sosialisasiImages: {
+    accept: "image/jpeg,image/jpg,image/png,image/gif,image/webp,.jpeg,.jpg,.png,.gif,.webp",
+    maxFiles: 4,
+    maxSizeMb: 2,
+    maxTotalSizeMb: 4,
+  },
+  rabPdf: {
+    accept: ".pdf,application/pdf",
+    maxFiles: 1,
+    maxSizeMb: 2,
+  },
+} as const;
+
 /**
  * Base URL untuk API request dari client-side.
  * Request melewati route handler /api/ext -> backend (same-origin, no CORS).

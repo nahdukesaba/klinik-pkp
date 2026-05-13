@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useDebounce } from "@/hooks/use-debounce";
+import { DEFAULT_DEBOUNCE_DELAY_MS } from "@/lib/constants";
 
 import { AdminDataTableDesktop } from "./data-table/AdminDataTableDesktop";
 import { AdminDataTableMobileCards } from "./data-table/AdminDataTableMobileCards";
@@ -36,24 +37,82 @@ export function AdminDataTable<T extends object>({
   showSearch = true,
   emptyMessage = "Tidak ada data ditemukan",
   isLoading = false,
+  isRefreshing = false,
   headerActions,
   pagination,
 }: AdminDataTableProps<T>) {
-  const [search, setSearch] = useState("");
-  const [sortKey, setSortKey] = useState<string | null>(null);
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [search, setSearch] = useState(pagination?.searchValue ?? "");
+  const [sortKey, setSortKey] = useState<string | null>(
+    pagination?.sortKey ?? null
+  );
+  const [sortDir, setSortDir] = useState<"asc" | "desc">(
+    pagination?.sortDirection ?? "asc"
+  );
   const [currentPage, setCurrentPage] = useState(1);
 
-  const debouncedSearch = useDebounce(search, 300);
+  const debouncedSearch = useDebounce(search, DEFAULT_DEBOUNCE_DELAY_MS);
   const usesBackendPagination = Boolean(pagination);
+  const onPageChange = pagination?.onPageChange;
+  const onBackendSearchChange = pagination?.onSearchChange;
+  const onBackendSortChange = pagination?.onSortChange;
+  const usesBackendFiltering = Boolean(
+    usesBackendPagination &&
+      onBackendSearchChange &&
+      pagination?.searchMode !== "local"
+  );
+  const usesBackendSorting = Boolean(
+    usesBackendPagination &&
+      onBackendSortChange &&
+      pagination?.sortMode !== "local"
+  );
+  const usesLocalPaginatedFiltering = Boolean(
+    usesBackendPagination && pagination?.searchMode === "local"
+  );
+  const usesLocalPaginatedSorting = Boolean(
+    usesBackendPagination && pagination?.sortMode === "local"
+  );
+  const previousDebouncedSearchRef = useRef(debouncedSearch);
+
+  useEffect(() => {
+    if (
+      !usesBackendPagination ||
+      previousDebouncedSearchRef.current === debouncedSearch
+    ) {
+      return;
+    }
+
+    previousDebouncedSearchRef.current = debouncedSearch;
+
+    if (usesBackendFiltering && onBackendSearchChange) {
+      onBackendSearchChange(debouncedSearch.trim());
+      return;
+    }
+
+    if (usesLocalPaginatedFiltering && onPageChange) {
+      onPageChange(1);
+    }
+  }, [
+    debouncedSearch,
+    onBackendSearchChange,
+    onPageChange,
+    usesBackendFiltering,
+    usesBackendPagination,
+    usesLocalPaginatedFiltering,
+  ]);
 
   const filteredData = useMemo(
-    () => filterTableData(data, debouncedSearch, searchFields),
-    [data, debouncedSearch, searchFields]
+    () =>
+      usesBackendFiltering
+        ? data
+        : filterTableData(data, debouncedSearch, searchFields),
+    [data, debouncedSearch, searchFields, usesBackendFiltering]
   );
   const sortedData = useMemo(
-    () => sortTableData(filteredData, sortKey, sortDir),
-    [filteredData, sortDir, sortKey]
+    () =>
+      usesBackendSorting
+        ? filteredData
+        : sortTableData(filteredData, sortKey, sortDir),
+    [filteredData, sortDir, sortKey, usesBackendSorting]
   );
 
   const totalPages = usesBackendPagination
@@ -83,15 +142,31 @@ export function AdminDataTable<T extends object>({
 
   const handleSort = useCallback(
     (key: string) => {
-      if (sortKey === key) {
-        setSortDir((current) => (current === "asc" ? "desc" : "asc"));
+      const nextSortDir = sortKey === key && sortDir === "asc" ? "desc" : "asc";
+
+      setSortKey(key);
+      setSortDir(nextSortDir);
+
+      if (usesBackendSorting && onBackendSortChange) {
+        onBackendSortChange({
+          sortKey: key,
+          sortDirection: nextSortDir,
+        });
         return;
       }
 
-      setSortKey(key);
-      setSortDir("asc");
+      if (usesLocalPaginatedSorting && onPageChange) {
+        onPageChange(1);
+      }
     },
-    [sortKey]
+    [
+      onBackendSortChange,
+      onPageChange,
+      sortDir,
+      sortKey,
+      usesBackendSorting,
+      usesLocalPaginatedSorting,
+    ]
   );
 
   const handleSearchChange = useCallback(
@@ -142,6 +217,10 @@ export function AdminDataTable<T extends object>({
 
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-card">
+      {isRefreshing ? (
+        null
+      ) : null}
+
       <AdminDataTableToolbar
         showSearch={showSearch}
         searchPlaceholder={searchPlaceholder}
@@ -169,6 +248,7 @@ export function AdminDataTable<T extends object>({
         emptyMessage={emptyMessage}
         sortKey={sortKey}
         sortDir={sortDir}
+        useSortField={usesBackendSorting}
         onSort={handleSort}
         renderCellValue={renderCellValue}
       />

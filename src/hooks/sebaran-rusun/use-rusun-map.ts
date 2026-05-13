@@ -11,6 +11,8 @@ import {
   buildSafePopup,
   cleanupMapContainer,
   destroyMap,
+  getOffsetMapCoordinate,
+  isValidMapCoordinate,
   loadLeaflet,
 } from "@/lib/map-utils";
 import type { RusunData } from "@/services/rusun.service";
@@ -166,10 +168,20 @@ export function useRusunMap(
 
       markersLayerRef.current.clearLayers();
 
-      filteredRusun.forEach((rusun) => {
-        if (!mapInstanceRef.current) return;
+      const displayedRusun = filteredRusun.filter((rusun) =>
+        isValidMapCoordinate([rusun.lat, rusun.lng])
+      );
 
-        const marker = L.marker([rusun.lat, rusun.lng], {
+      displayedRusun.forEach((rusun, index) => {
+        if (!mapInstanceRef.current) return;
+        const displayCoordinate = getOffsetMapCoordinate(
+          displayedRusun,
+          index,
+          (item) => [item.lat, item.lng],
+          { offsetStep: 0.0007 }
+        );
+
+        const marker = L.marker(displayCoordinate, {
           icon: L.divIcon({
             html: MARKER_ICON_SVG,
             className: "custom-marker",
@@ -185,12 +197,12 @@ export function useRusunMap(
       });
 
       // Sesuaikan view setelah marker ditempatkan
-      if (filteredRusun.length > 0) {
+      if (displayedRusun.length > 0) {
         mapInstanceRef.current.invalidateSize();
         setTimeout(() => {
           if (!mapInstanceRef.current) return;
 
-          const bounds = L.latLngBounds(filteredRusun.map((r) => [r.lat, r.lng]));
+          const bounds = L.latLngBounds(displayedRusun.map((r) => [r.lat, r.lng]));
           mapInstanceRef.current.fitBounds(bounds, {
             padding: [50, 50],
             animate: true,
@@ -203,6 +215,10 @@ export function useRusunMap(
   }, [filteredRusun, mapReady, onRusunClick, isEnabled]);
 
   const flyToLocation = useCallback((lat: number, lng: number, zoom = 14) => {
+    if (!isValidMapCoordinate([lat, lng])) {
+      return;
+    }
+
     mapInstanceRef.current?.stop();
     mapInstanceRef.current?.flyTo([lat, lng], zoom, {
       animate: true,

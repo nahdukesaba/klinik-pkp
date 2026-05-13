@@ -14,7 +14,11 @@ import { useQuery } from "@tanstack/react-query";
 
 import { useDebounce } from "@/hooks/use-debounce";
 import { usePagination } from "@/hooks/use-pagination";
-import { QUERY_CONFIG } from "@/lib/constants";
+import {
+  DEFAULT_DEBOUNCE_DELAY_MS,
+  QUERY_CONFIG,
+  QUERY_KEYS,
+} from "@/lib/constants";
 import { sanitizeInput } from "@/lib/security";
 import {
   deriveFilterCategories,
@@ -37,7 +41,7 @@ function getDesignDownloadUrl(design: BankDesainData): string {
 // --- Implementasi Hook ---
 export function useBankDesain() {
   const query = useQuery({
-    queryKey: ["bank-desain"] as const,
+    queryKey: [QUERY_KEYS.publicBankDesain],
     queryFn: () => fetchBankDesainList(),
     ...QUERY_CONFIG,
   });
@@ -51,7 +55,7 @@ export function useBankDesain() {
   const [searchQuery, setSearchQuery] = useState("");
 
   // Debounce search untuk performa
-  const debouncedSearch = useDebounce(searchQuery, 300);
+  const debouncedSearch = useDebounce(searchQuery, DEFAULT_DEBOUNCE_DELAY_MS);
 
   // Cek apakah ada filter yang aktif
   const hasActiveFilters = useMemo(() => {

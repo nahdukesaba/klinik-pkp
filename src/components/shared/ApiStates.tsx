@@ -4,7 +4,6 @@
 
 import {
   AlertTriangle,
-  Loader2,
   RefreshCw,
   ServerOff,
   ShieldOff,
@@ -31,22 +30,18 @@ interface ApiLoadingStateProps {
  * Menampilkan spinner animasi dengan pesan informatif.
  */
 export function ApiLoadingState({
-  message = "Memuat data...",
+  message,
   className = "",
   fullPage = true,
 }: ApiLoadingStateProps) {
   const content = (
     <div className={`flex flex-col items-center justify-center gap-4 py-16 ${className}`}>
-      <div className="relative">
-        <div className="w-16 h-16 rounded-full border-4 border-primary/20" />
-        <Loader2 className="w-16 h-16 text-primary animate-spin absolute inset-0" />
-      </div>
-      <div className="text-center">
-        <p className="text-muted-foreground text-sm font-medium">{message}</p>
-        <p className="text-muted-foreground/60 text-xs mt-1">
-          Mohon tunggu sebentar
+      <div className="h-16 w-16 animate-pulse rounded-full bg-primary/20" />
+      {message ? (
+        <p className="text-center text-sm font-medium text-muted-foreground">
+          {message}
         </p>
-      </div>
+      ) : null}
     </div>
   );
 
@@ -132,7 +127,7 @@ function getErrorDisplay(error?: unknown): ErrorDisplay {
     // Client error lainnya (400, 401, 404, dll.)
     return {
       icon: <AlertTriangle className="w-8 h-8 text-orange-500" />,
-      title: "Gagal Memuat Data",
+      title: "Data Tidak Tersedia",
       description: error.userMessage,
       bgColor: "bg-orange-500/10",
     };
@@ -148,7 +143,7 @@ function getErrorDisplay(error?: unknown): ErrorDisplay {
 
   return {
     icon: <ServerOff className="w-8 h-8 text-destructive" />,
-    title: "Gagal Memuat Data",
+    title: "Data Tidak Tersedia",
     description: genericMessage,
     bgColor: "bg-destructive/10",
   };

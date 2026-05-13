@@ -87,7 +87,6 @@ interface UploadFieldHelperOptions {
   subject: string;
   mode?: "create" | "edit";
   optional?: boolean;
-  requiresReuploadOnEdit?: boolean;
   validationLabel?: string;
   maxSizeMb?: number;
   totalUploadMb?: number;
@@ -125,9 +124,7 @@ export function buildUploadFieldHelperText(options: UploadFieldHelperOptions) {
   const mode = options.mode ?? "create";
   let intro = `Upload ${options.subject}.`;
 
-  if (mode === "edit" && options.requiresReuploadOnEdit) {
-    intro = "File lama tetap dipakai. Upload baru hanya jika ingin mengganti.";
-  } else if (mode === "edit" && options.optional) {
+  if (mode === "edit" && options.optional) {
     intro = "File lama tetap dipakai. Upload baru bila diperlukan.";
   } else if (options.optional) {
     intro = `Upload ${options.subject} bila diperlukan.`;

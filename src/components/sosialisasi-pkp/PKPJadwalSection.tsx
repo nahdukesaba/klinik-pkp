@@ -51,6 +51,7 @@ interface PKPJadwalSectionProps {
   hasActiveFilters: boolean;
   onCardClick?: (coordinates: [number, number]) => void;
   compact?: boolean;
+  isLoading?: boolean;
 }
 
 // --- JadwalCard — Kartu jadwal individual ---
@@ -91,7 +92,7 @@ function JadwalCard({
           {/* Tags */}
           <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
             <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-[10px] font-semibold text-yellow-800">
-              Sosialisasi
+              Kegiatan
             </span>
             <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-800">
               {jadwal.kabupaten}
@@ -152,6 +153,7 @@ export function PKPJadwalSection({
   hasActiveFilters,
   onCardClick,
   compact = false,
+  isLoading = false,
 }: PKPJadwalSectionProps) {
   /** Opsi kabupaten untuk SearchableSelect */
   const kabupatenOptions = stringsToOptions(kabupatenList);
@@ -243,7 +245,16 @@ export function PKPJadwalSection({
         </div>
 
         {/* Jadwal List */}
-        {filteredJadwal.length > 0 ? (
+        {isLoading ? (
+          <div className="space-y-3">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div
+                key={index}
+                className="h-28 animate-pulse rounded-xl border border-border bg-card/80"
+              />
+            ))}
+          </div>
+        ) : filteredJadwal.length > 0 ? (
           <div className="space-y-3 max-h-[500px] lg:max-h-[600px] xl:max-h-[700px] 2xl:max-h-[800px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent hover:scrollbar-thumb-primary/40">
             {filteredJadwal.map((jadwal, index) => (
               <JadwalCard

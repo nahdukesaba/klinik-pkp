@@ -1,5 +1,9 @@
 /** API Client — terpusat untuk fetch data dari backend via proxy Next.js. */
 
+import {
+  normalizeApiError,
+  type ApiErrorDetails,
+} from "@/lib/api-response";
 import { getApiUrl } from "@/lib/constants";
 import type {
   ApiResponse,
@@ -14,37 +18,33 @@ export type { ApiResponse, CoordinateApi, DistrictApi, RegionApi, VillageApi };
 
 // --- Error Class ---
 
-/** Pesan error ramah pengguna berdasarkan HTTP status code */
-const STATUS_MESSAGES: Record<number, string> = {
-  400: "Permintaan tidak valid. Silakan coba lagi.",
-  401: "Sesi Anda telah berakhir. Silakan login ulang.",
-  403: "Akses ditolak. Anda tidak memiliki izin untuk mengakses data ini.",
-  404: "Data yang diminta tidak ditemukan di server.",
-  408: "Waktu permintaan habis. Server terlalu lama merespons.",
-  429: "Terlalu banyak permintaan. Silakan tunggu sebentar.",
-  500: "Terjadi kesalahan pada server. Tim teknis telah dinotifikasi.",
-  502: "Server sedang tidak dapat dijangkau. Silakan coba beberapa saat lagi.",
-  503: "Server sedang dalam pemeliharaan. Silakan coba beberapa saat lagi.",
-  504: "Waktu respons server habis. Silakan coba lagi.",
-};
-
 /** Custom error class untuk API errors dengan HTTP status code. */
 export class ApiError extends Error {
   readonly status: number;
   readonly statusText: string;
   readonly userMessage: string;
+  readonly code: string;
+  readonly details?: ApiErrorDetails;
 
-  constructor(status: number, statusText: string) {
-    const userMessage = STATUS_MESSAGES[status]
-      ?? (status >= 500
-        ? "Terjadi kesalahan pada server. Silakan coba lagi."
-        : "Terjadi kesalahan saat mengambil data.");
+  constructor(
+    status: number,
+    statusText: string,
+    options: {
+      message?: string;
+      code?: string;
+      details?: ApiErrorDetails;
+    } = {}
+  ) {
+    const fallbackError = normalizeApiError(status, null, options.message);
+    const userMessage = options.message ?? fallbackError.message;
 
-    super(`API Error: ${status} ${statusText}`);
+    super(userMessage);
     this.name = "ApiError";
     this.status = status;
     this.statusText = statusText;
     this.userMessage = userMessage;
+    this.code = options.code ?? fallbackError.code;
+    this.details = options.details;
   }
 
   get isServerError(): boolean {
@@ -269,7 +269,7 @@ async function apiFetch<T>(
   const {
     retry = DEFAULT_RETRY_COUNT,
     retryDelayMs = DEFAULT_RETRY_DELAY_MS,
-    suppressErrorLog = false,
+    suppressErrorLog: _suppressErrorLog = false,
     ...fetchOptions
   } =
     options ?? {};
@@ -301,7 +301,18 @@ async function apiFetch<T>(
           await sleep(delayMs);
           continue;
         }
-        throw new ApiError(response.status, response.statusText);
+        const payload = await response.json().catch(() => null);
+        const normalizedError = normalizeApiError(
+          response.status,
+          payload,
+          response.statusText
+        );
+
+        throw new ApiError(response.status, response.statusText, {
+          message: normalizedError.message,
+          code: normalizedError.code,
+          details: normalizedError.details,
+        });
       }
 
       return await response.json();
@@ -313,7 +324,11 @@ async function apiFetch<T>(
           await sleep(delayMs);
           continue;
         }
-        throw new ApiError(408, "Request Timeout");
+        const normalizedError = normalizeApiError(408, null, "Request Timeout");
+        throw new ApiError(408, "Request Timeout", {
+          message: normalizedError.message,
+          code: normalizedError.code,
+        });
       }
 
       if (error instanceof ApiError) {
@@ -321,11 +336,6 @@ async function apiFetch<T>(
           const delayMs = getRetryDelayMs(null, retryDelayMs, attempt);
           await sleep(delayMs);
           continue;
-        }
-        if (process.env.NODE_ENV === "development" && !suppressErrorLog) {
-          // API errors are rendered by page-level UI; console.error opens the
-          // Next.js dev overlay and can block normal admin interactions.
-          console.warn(`[API ${error.status}] ${endpoint}: ${error.message}`);
         }
         throw error;
       }
@@ -336,14 +346,25 @@ async function apiFetch<T>(
         continue;
       }
 
-      // Network error (server mati, tidak ada internet, dll.)
-      throw new ApiError(0, (error as Error).message || "Network Error");
+      const normalizedError = normalizeApiError(
+        0,
+        null,
+        error instanceof Error ? error.message : "Network Error"
+      );
+      throw new ApiError(0, "Network Error", {
+        message: normalizedError.message,
+        code: normalizedError.code,
+      });
     } finally {
       clearTimeout(timeoutId);
     }
   }
 
-  throw new ApiError(0, "Network Error");
+  const normalizedError = normalizeApiError(0, null, "Network Error");
+  throw new ApiError(0, "Network Error", {
+    message: normalizedError.message,
+    code: normalizedError.code,
+  });
 }
 
 // --- Public API Client ---

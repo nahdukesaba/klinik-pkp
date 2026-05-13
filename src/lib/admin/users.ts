@@ -12,6 +12,7 @@ import type {
   AdminPaginationMeta,
   UserRole,
 } from "@/types/admin";
+import type { SortDirection } from "@/types/api";
 
 import { BackendApiError, fetchBackendJson } from "./backend-api";
 import { normalizeDisplayName } from "./service";
@@ -24,6 +25,9 @@ interface BackendUserRecord {
   phone?: string | null;
   role: string;
   is_active: boolean;
+  is_editable?: boolean | null;
+  can_edit?: boolean | null;
+  can_delete?: boolean | null;
   created_at?: string | null;
   updated_at?: string | null;
 }
@@ -38,7 +42,20 @@ export interface AdminUserMutationInput {
   isActive: boolean;
 }
 
+export interface AdminUserUpdateInput {
+  name: string;
+  phone?: string;
+}
+
 export const ADMIN_USERS_PAGE_LIMIT = 10;
+const USER_SORT_FIELDS = new Set([
+  "name",
+  "email",
+  "role",
+  "is_active",
+  "created_at",
+  "updated_at",
+]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -71,7 +88,38 @@ function normalizeUsersLimit(limit?: number) {
   );
 }
 
+function normalizeUsersKeyword(keyword?: string) {
+  const normalizedKeyword = sanitizeInput(keyword ?? "").trim();
+  return normalizedKeyword.length > 0 ? normalizedKeyword : undefined;
+}
+
+function normalizeUsersSortField(sortBy?: string | null) {
+  const normalizedSortField = sanitizeInput(sortBy ?? "").trim();
+  return USER_SORT_FIELDS.has(normalizedSortField)
+    ? normalizedSortField
+    : undefined;
+}
+
+function normalizeUsersSortDirection(
+  sortDirection?: SortDirection
+): SortDirection | undefined {
+  if (sortDirection === "desc" || sortDirection === "asc") {
+    return sortDirection;
+  }
+
+  return undefined;
+}
+
 function toDirectoryUser(user: BackendUserRecord): AdminDirectoryUser {
+  const isEditable =
+    typeof user.is_editable === "boolean"
+      ? user.is_editable
+      : typeof user.can_edit === "boolean"
+        ? user.can_edit
+        : undefined;
+  const canDelete =
+    typeof user.can_delete === "boolean" ? user.can_delete : undefined;
+
   return {
     id: user.id,
     name: normalizeDisplayName(user.name),
@@ -80,6 +128,8 @@ function toDirectoryUser(user: BackendUserRecord): AdminDirectoryUser {
     phone: normalizePhone(user.phone),
     role: normalizeDirectoryRole(user.role),
     isActive: Boolean(user.is_active),
+    isEditable,
+    canDelete,
     createdAt: typeof user.created_at === "string" ? user.created_at : undefined,
     updatedAt: typeof user.updated_at === "string" ? user.updated_at : undefined,
   };
@@ -104,13 +154,36 @@ function buildUsersPaginationMeta(
   };
 }
 
-function buildUsersEndpoint(page?: number, limit?: number) {
+function buildUsersEndpoint(options?: {
+  page?: number;
+  limit?: number;
+  keyword?: string;
+  sortBy?: string | null;
+  sortDirection?: SortDirection;
+}) {
   const params = new URLSearchParams();
-  const normalizedPage = normalizeUsersPage(page);
-  const normalizedLimit = normalizeUsersLimit(limit);
+  const normalizedPage = normalizeUsersPage(options?.page);
+  const normalizedLimit = normalizeUsersLimit(options?.limit);
+  const normalizedKeyword = normalizeUsersKeyword(options?.keyword);
+  const normalizedSortBy = normalizeUsersSortField(options?.sortBy);
+  const normalizedSortDirection = normalizeUsersSortDirection(
+    options?.sortDirection
+  );
 
   params.set("page", String(normalizedPage));
   params.set("limit", String(normalizedLimit));
+
+  if (normalizedKeyword) {
+    params.set("keyword", normalizedKeyword);
+  }
+
+  if (normalizedSortBy) {
+    params.set("sort_by", normalizedSortBy);
+
+    if (normalizedSortDirection) {
+      params.set("sort_order", normalizedSortDirection);
+    }
+  }
 
   return `users?${params.toString()}`;
 }
@@ -138,12 +211,15 @@ export async function listUsersPage(
   options?: {
     page?: number;
     limit?: number;
+    keyword?: string;
+    sortBy?: string | null;
+    sortDirection?: SortDirection;
   }
 ): Promise<AdminPaginatedUsers> {
   const accessToken = requireBackendAccessToken(backendAccessToken);
 
   const payload = await fetchBackendJson<ApiResponse<unknown>>(
-    buildUsersEndpoint(options?.page, options?.limit),
+    buildUsersEndpoint(options),
     {
       headers: createAuthorizedHeaders(accessToken),
       timeoutMs: 20_000,
@@ -204,6 +280,13 @@ function buildUserMutationPayload(input: AdminUserMutationInput) {
   return payload;
 }
 
+function buildUserProfileUpdatePayload(input: AdminUserUpdateInput) {
+  return {
+    name: normalizeDisplayName(input.name),
+    phone: normalizePhone(input.phone),
+  };
+}
+
 export async function createUser(
   input: AdminUserMutationInput,
   backendAccessToken?: string
@@ -222,7 +305,7 @@ export async function createUser(
 
 export async function updateUser(
   id: string,
-  input: AdminUserMutationInput,
+  input: AdminUserUpdateInput,
   backendAccessToken?: string
 ) {
   const accessToken = requireBackendAccessToken(backendAccessToken);
@@ -232,7 +315,7 @@ export async function updateUser(
     headers: createAuthorizedHeaders(accessToken, {
       "Content-Type": "application/json",
     }),
-    body: JSON.stringify(buildUserMutationPayload(input)),
+    body: JSON.stringify(buildUserProfileUpdatePayload(input)),
     timeoutMs: 20_000,
   });
 }

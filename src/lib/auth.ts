@@ -16,7 +16,7 @@ function getJwtSecret(): Uint8Array {
   if (secret.length < 32) {
     throw new Error(
       "JWT_SECRET terlalu pendek. Minimal 32 karakter untuk keamanan yang memadai. " +
-        "Gunakan: node -e \"console.log(require('crypto').randomBytes(64).toString('hex'))\""
+        "Gunakan: node -p \"require('crypto').randomBytes(64).toString('hex')\""
     );
   }
   return new TextEncoder().encode(secret);

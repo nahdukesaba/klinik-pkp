@@ -1,3 +1,5 @@
+import type { FormEvent } from "react";
+
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -30,6 +32,19 @@ export function AdminDataTablePagination({
   if (totalPages <= 1) {
     return null;
   }
+
+  const handlePageJump = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const formData = new FormData(event.currentTarget);
+    const targetPage = Number(formData.get("page"));
+
+    if (!Number.isFinite(targetPage)) {
+      return;
+    }
+
+    onPageChange(Math.min(totalPages, Math.max(1, Math.trunc(targetPage))));
+  };
 
   return (
     <div className="flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
@@ -77,6 +92,33 @@ export function AdminDataTablePagination({
         >
           <ChevronRight className="h-4 w-4" />
         </button>
+
+        {totalPages > 7 ? (
+          <form
+            className="ml-2 flex items-center gap-2 pl-2 text-xs text-muted-foreground"
+            onSubmit={handlePageJump}
+          >
+            <span className="whitespace-nowrap">
+              Ke halaman
+            </span>
+            <input
+              key={activePage}
+              name="page"
+              type="number"
+              min={1}
+              max={totalPages}
+              defaultValue={activePage}
+              aria-label="Nomor halaman tujuan"
+              className="h-8 w-16 rounded-lg border border-border bg-background px-2 text-center text-xs text-foreground outline-none transition-colors focus:border-primary"
+            />
+            <button
+              type="submit"
+              className="h-8 rounded-lg border border-border px-3 text-xs font-medium text-foreground transition-colors hover:bg-muted"
+            >
+              Buka
+            </button>
+          </form>
+        ) : null}
       </div>
     </div>
   );

@@ -23,6 +23,7 @@ const desainColumns: Column<BankDesainData>[] = [
     key: "title",
     label: "Nama Desain",
     sortable: true,
+    sortField: "name",
     render: (item) => (
       <div className="flex items-center gap-3">
         {item.thumbnail ? (
@@ -48,19 +49,10 @@ const desainColumns: Column<BankDesainData>[] = [
     ),
   },
   {
-    key: "type",
-    label: "Tipe",
-    sortable: true,
-    render: (item) => (
-      <span className="inline-flex rounded-md bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-        {item.type}
-      </span>
-    ),
-  },
-  {
     key: "bedrooms",
     label: "Kamar",
     sortable: true,
+    sortField: "bedroom_count",
     render: (item) => (
       <span className="text-foreground">
         {item.bedrooms} KT / {item.bathrooms} KM
@@ -71,6 +63,7 @@ const desainColumns: Column<BankDesainData>[] = [
     key: "area",
     label: "Luas (m2)",
     sortable: true,
+    sortField: "total_area",
     render: (item) => (
       <span className="font-semibold text-foreground">{item.area} m2</span>
     ),
@@ -112,6 +105,11 @@ export default function AdminBankDesainPage() {
     handleDelete,
     handleFormOpenChange,
     setCurrentPage,
+    searchKeyword,
+    sortBy,
+    sortDirection,
+    handleSearchChange,
+    handleSortChange,
   } = useAdminBankDesainPage();
 
   if (!canManage) {
@@ -138,16 +136,17 @@ export default function AdminBankDesainPage() {
       />
 
       {desainQuery.error ? (
-        <AdminErrorAlert message={`Gagal memuat data: ${desainQuery.error.message}`} />
+        <AdminErrorAlert message={`Gagal mengambil data: ${desainQuery.error.message}`} />
       ) : null}
 
       <AdminDataTable<BankDesainData>
         columns={desainColumns}
         data={desainList}
-        searchFields={["title", "type", "code"]}
+        searchFields={["title", "code"]}
         searchPlaceholder="Cari desain..."
         actions={[editAction(openEditDialog), deleteAction(handleDelete)]}
         isLoading={desainQuery.isLoading}
+        isRefreshing={desainQuery.isFetching && !desainQuery.isLoading}
         emptyMessage="Belum ada data bank desain."
         pagination={{
           currentPage: desainMeta?.page ?? 1,
@@ -155,6 +154,12 @@ export default function AdminBankDesainPage() {
           totalItems: desainMeta?.totalRecords ?? desainList.length,
           pageSize: desainMeta?.limit ?? 10,
           onPageChange: setCurrentPage,
+          searchValue: searchKeyword,
+          onSearchChange: handleSearchChange,
+          sortKey: sortBy,
+          sortDirection,
+          onSortChange: handleSortChange,
+          sortMode: "local",
         }}
       />
 

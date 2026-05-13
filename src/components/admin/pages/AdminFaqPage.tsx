@@ -9,16 +9,11 @@ import {
   AdminFormDialog,
   AdminPageHeader,
   AdminStatsGrid,
-  StatusBadge,
   deleteAction,
   editAction,
   type Column,
 } from "@/components/admin";
-import { Button } from "@/components/ui/button";
-import {
-  type FaqStatusFilter,
-  useAdminFaqPage,
-} from "@/hooks/admin/use-admin-faq-page";
+import { useAdminFaqPage } from "@/hooks/admin/use-admin-faq-page";
 import { formatDateId } from "@/lib/date";
 import type { FaqItem } from "@/services/faq.service";
 
@@ -55,46 +50,7 @@ const faqColumns: Column<FaqItem>[] = [
       </p>
     ),
   },
-  {
-    key: "isActive",
-    label: "Status",
-    sortable: true,
-    render: (item) => (
-      <StatusBadge status={item.isActive ? "active" : "inactive"} />
-    ),
-  },
 ];
-
-const statusFilterOptions: { label: string; value: FaqStatusFilter }[] = [
-  { label: "Semua", value: "all" },
-  { label: "Aktif", value: "active" },
-  { label: "Nonaktif", value: "inactive" },
-];
-
-function FaqStatusFilterBar({
-  value,
-  onChange,
-}: {
-  value: FaqStatusFilter;
-  onChange: (value: FaqStatusFilter) => void;
-}) {
-  return (
-    <div className="flex w-full gap-2 sm:w-auto" aria-label="Filter status FAQ">
-      {statusFilterOptions.map((option) => (
-        <Button
-          key={option.value}
-          type="button"
-          size="sm"
-          variant={value === option.value ? "default" : "outline"}
-          className="min-h-10 flex-1 sm:flex-none"
-          onClick={() => onChange(option.value)}
-        >
-          {option.label}
-        </Button>
-      ))}
-    </div>
-  );
-}
 
 export default function AdminFaqPage() {
   const {
@@ -108,8 +64,6 @@ export default function AdminFaqPage() {
     stats,
     formFields,
     initialValues,
-    statusFilter,
-    setStatusFilter,
     openCreateDialog,
     openEditDialog,
     handleSubmit,
@@ -136,13 +90,11 @@ export default function AdminFaqPage() {
       <AdminStatsGrid
         items={[
           { label: "Total FAQ", value: stats.total },
-          { label: "Aktif", value: stats.active },
-          { label: "Nonaktif", value: stats.inactive },
         ]}
       />
 
       {faqQuery.error ? (
-        <AdminErrorAlert message={`Gagal memuat data: ${faqQuery.error.message}`} />
+        <AdminErrorAlert message={`Gagal mengambil data: ${faqQuery.error.message}`} />
       ) : null}
 
       <AdminDataTable<FaqItem>
@@ -150,19 +102,9 @@ export default function AdminFaqPage() {
         data={faqList}
         searchFields={["question", "answer"]}
         searchPlaceholder="Cari pertanyaan atau jawaban FAQ..."
-        headerActions={
-          <FaqStatusFilterBar
-            value={statusFilter}
-            onChange={setStatusFilter}
-          />
-        }
         actions={[editAction(openEditDialog), deleteAction(handleDelete)]}
         isLoading={faqQuery.isLoading}
-        emptyMessage={
-          statusFilter === "all"
-            ? "Belum ada FAQ."
-            : "Tidak ada FAQ pada status ini."
-        }
+        emptyMessage="Belum ada FAQ."
       />
 
       <AdminFormDialog

@@ -18,8 +18,7 @@ interface AdminDataTableDesktopProps<T extends object> {
   emptyMessage: string;
   sortKey: string | null;
   sortDir: "asc" | "desc";
-  useSortField: boolean;
-  onSort: (key: string) => void;
+  onSort?: (key: string) => void;
   renderCellValue: (item: T, column: Column<T>) => React.ReactNode;
 }
 
@@ -32,7 +31,6 @@ export function AdminDataTableDesktop<T extends object>({
   emptyMessage,
   sortKey,
   sortDir,
-  useSortField,
   onSort,
   renderCellValue,
 }: AdminDataTableDesktopProps<T>) {
@@ -45,24 +43,24 @@ export function AdminDataTableDesktop<T extends object>({
           <tr className="border-b border-border bg-muted/30">
             {columns.map((column) => {
               const sortField = column.sortField ?? column.key;
-              const activeSortKey = useSortField ? sortField : column.key;
+              const isSortable = Boolean(column.sortable && onSort);
 
               return (
                 <th
                   key={column.key}
                   className={cn(
                     "px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground",
-                    column.sortable &&
+                    isSortable &&
                       "cursor-pointer select-none transition-colors hover:text-foreground",
                     column.className
                   )}
-                  onClick={() => column.sortable && onSort(activeSortKey)}
+                  onClick={() => isSortable && onSort?.(sortField)}
                 >
                   <div className="flex items-center gap-1.5">
                     {column.label}
-                    {column.sortable && (
+                    {isSortable && (
                       <span className="flex flex-col">
-                        {sortKey === activeSortKey ? (
+                        {sortKey === sortField ? (
                           sortDir === "asc" ? (
                             <ChevronUp className="h-3.5 w-3.5" />
                           ) : (

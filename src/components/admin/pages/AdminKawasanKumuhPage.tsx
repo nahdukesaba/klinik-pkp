@@ -9,6 +9,7 @@ import {
   AdminFormDialog,
   AdminPageHeader,
   AdminStatsGrid,
+  AdminTableFilters,
   deleteAction,
   editAction,
   type Column,
@@ -118,7 +119,7 @@ export default function AdminKawasanKumuhPage() {
     isSaving,
     kumuhQuery,
     kumuhList,
-    kumuhMeta,
+    pagination,
     stats,
     formFields,
     initialValues,
@@ -128,12 +129,9 @@ export default function AdminKawasanKumuhPage() {
     handleSubmit,
     handleDelete,
     handleFormOpenChange,
-    setCurrentPage,
     searchKeyword,
-    sortBy,
-    sortDirection,
     handleSearchChange,
-    handleSortChange,
+    resetFilters,
   } = useAdminKawasanKumuhPage();
 
   if (!canManage) {
@@ -173,28 +171,20 @@ export default function AdminKawasanKumuhPage() {
         <AdminErrorAlert message={`Gagal mengambil data: ${kumuhQuery.error.message}`} />
       ) : null}
 
+      <AdminTableFilters
+        searchValue={searchKeyword}
+        searchPlaceholder="Cari kawasan..."
+        onSearchChange={handleSearchChange}
+        onReset={resetFilters}
+      />
+
       <AdminDataTable<KawasanKumuhData>
         columns={kumuhColumns}
         data={kumuhList}
-        searchFields={["name", "kabupaten", "kecamatan", "kelurahan"]}
-        searchPlaceholder="Cari kawasan..."
         actions={[editAction(openEditDialog), deleteAction(handleDelete)]}
         isLoading={kumuhQuery.isLoading}
-        isRefreshing={kumuhQuery.isFetching && !kumuhQuery.isLoading}
         emptyMessage="Belum ada data kawasan kumuh."
-        pagination={{
-          currentPage: kumuhMeta?.page ?? 1,
-          totalPages: kumuhMeta?.totalPages ?? 1,
-          totalItems: kumuhMeta?.totalRecords ?? kumuhList.length,
-          pageSize: kumuhMeta?.limit ?? 10,
-          onPageChange: setCurrentPage,
-          searchValue: searchKeyword,
-          onSearchChange: handleSearchChange,
-          sortKey: sortBy,
-          sortDirection,
-          onSortChange: handleSortChange,
-          sortMode: "local",
-        }}
+        pagination={pagination}
       />
 
       <AdminFormDialog

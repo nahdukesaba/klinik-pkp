@@ -18,7 +18,6 @@ import {
   updateAdminResource,
   type AdminResourceName,
 } from "@/services/admin-resource.service";
-import type { SortDirection } from "@/types/api";
 
 import { useAdminCreateIntent } from "./use-admin-create-intent";
 
@@ -44,10 +43,6 @@ export function useAdminCrud<TItem extends { id: string | number }>(
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [draftValues, setDraftValues] = useState<AdminFormValues>({});
   const [isSaving, setIsSaving] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [searchKeyword, setSearchKeyword] = useState("");
-  const [sortBy, setSortBy] = useState<string | null>(null);
-  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
   const canManage = canManageContent(user.role);
 
@@ -171,20 +166,6 @@ export function useAdminCrud<TItem extends { id: string | number }>(
     }
   }, []);
 
-  const handleSearchChange = useCallback((keyword: string) => {
-    setSearchKeyword(keyword);
-    setCurrentPage(1);
-  }, []);
-
-  const handleSortChange = useCallback(
-    (state: { sortKey: string; sortDirection: SortDirection }) => {
-      setSortBy(state.sortKey);
-      setSortDirection(state.sortDirection);
-      setCurrentPage(1);
-    },
-    []
-  );
-
   return {
     canManage,
     formOpen,
@@ -192,14 +173,7 @@ export function useAdminCrud<TItem extends { id: string | number }>(
     formErrors,
     draftValues,
     isSaving,
-    currentPage,
-    searchKeyword,
-    sortBy,
-    sortDirection,
     setDraftValues,
-    setCurrentPage,
-    handleSearchChange,
-    handleSortChange,
     openCreateDialog,
     openEditDialog,
     handleSubmit,

@@ -43,7 +43,7 @@ const STATUS_ERROR_MESSAGES: Record<number, string> = {
   404: "Data yang diminta tidak ditemukan.",
   409: "Data tidak dapat disimpan karena konflik dengan data yang sudah ada.",
   422: "Data yang dikirim belum valid.",
-  429: "Terlalu banyak permintaan. Tunggu sebentar lalu coba lagi.",
+  429: "Terlalu banyak permintaan. Tusnggu sebentar lalu coba lagi.",
   500: "Terjadi kesalahan pada server. Silakan coba beberapa saat lagi.",
   502: "Layanan backend sedang tidak dapat dijangkau.",
   503: "Layanan sedang tidak tersedia. Silakan coba beberapa saat lagi.",

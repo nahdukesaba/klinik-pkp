@@ -3,56 +3,63 @@
 /**
  * Hook: usePenerimaanBsps
  * Mengelola state filter dan data BSPS.
- * Tahun dikirim ke API (server-side filter). Region filter dihapus.
+ * Data publik diambil sesuai tahun aktif agar peta tidak memuat semua tahun.
  */
 
 import { useCallback, useMemo, useState } from "react";
 
-import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
 import { useCascadingFilter } from "@/hooks/use-cascading-filter";
 import { useDebounce } from "@/hooks/use-debounce";
 import {
-  CURRENT_YEAR,
-  CURRENT_YEAR_NUM,
   DEFAULT_DEBOUNCE_DELAY_MS,
   LONG_LIVED_QUERY_STALE_TIME_MS,
+  PUBLIC_DEFAULT_YEAR,
+  PUBLIC_YEAR_FILTER_OPTIONS,
   QUERY_CONFIG,
   QUERY_KEY_PARTS,
   QUERY_KEYS,
 } from "@/lib/constants";
 import { sanitizeInput } from "@/lib/security";
-import { fetchBspsList, type BspsData } from "@/services/bsps.service";
+import {
+  fetchBspsAvailableYears,
+  fetchBspsList,
+  type BspsData,
+} from "@/services/bsps.service";
 
 const EMPTY_BSPS_LIST: BspsData[] = [];
-const DEFAULT_AVAILABLE_YEARS = [CURRENT_YEAR_NUM];
 
 export function usePenerimaanBsps() {
-  const [yearFilter, setYearFilter] = useState<string>(CURRENT_YEAR);
-  const yearParam = yearFilter === "all" ? undefined : (parseInt(yearFilter, 10) || CURRENT_YEAR_NUM);
+  const [yearFilter, setYearFilter] = useState("");
+  const yearsQuery = useQuery({
+    queryKey: [QUERY_KEYS.publicBsps, "years"],
+    queryFn: fetchBspsAvailableYears,
+    ...QUERY_CONFIG,
+    retry: false,
+    staleTime: LONG_LIVED_QUERY_STALE_TIME_MS,
+    gcTime: LONG_LIVED_QUERY_STALE_TIME_MS,
+  });
+  const availableYears = yearsQuery.data?.length
+    ? yearsQuery.data
+    : [...PUBLIC_YEAR_FILTER_OPTIONS];
+  const selectedYear = yearFilter || String(availableYears[0] ?? PUBLIC_DEFAULT_YEAR);
+  const parsedYear = parseInt(selectedYear, 10);
+  const yearParam = Number.isFinite(parsedYear)
+    ? parsedYear
+    : PUBLIC_DEFAULT_YEAR;
 
   const dataQuery = useQuery({
-    queryKey: [QUERY_KEYS.publicBsps, yearParam ?? QUERY_KEY_PARTS.all],
+    queryKey: [QUERY_KEYS.publicBsps, yearParam],
     queryFn: () => fetchBspsList(yearParam),
+    enabled: !yearsQuery.isLoading,
     placeholderData: keepPreviousData,
     ...QUERY_CONFIG,
-  });
-  const yearsQuery = useQuery({
-    queryKey: [QUERY_KEYS.publicBspsYears],
-    queryFn: () => fetchBspsList(),
-    ...QUERY_CONFIG,
+    retry: false,
     staleTime: LONG_LIVED_QUERY_STALE_TIME_MS,
-    select: (data) => {
-      const years = [...new Set(data.map((item) => item.yearGiven))];
-      if (!years.includes(CURRENT_YEAR_NUM)) {
-        years.push(CURRENT_YEAR_NUM);
-      }
-
-      return years.sort((left, right) => right - left);
-    },
+    gcTime: LONG_LIVED_QUERY_STALE_TIME_MS,
   });
   const rawData = dataQuery.data ?? EMPTY_BSPS_LIST;
-  const availableYears = yearsQuery.data ?? DEFAULT_AVAILABLE_YEARS;
 
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -66,20 +73,18 @@ export function usePenerimaanBsps() {
 
   const cascading = useCascadingFilter(desaWithKelurahan);
 
-  // Filter: year (client-side safety net) + cascading + search + status
+  // Filter: year safety net + cascading + search + status
   const filteredDesa = useMemo(() => {
     const q = sanitizeInput(debouncedSearch).toLowerCase();
 
     return cascading.filteredItems.filter((p) => {
-      // Client-side year filter — safety net jika API tidak filter
-      const matchesYear =
-        yearFilter === "all" || p.yearGiven === yearParam;
+      const matchesYear = p.yearGiven === yearParam;
 
       const matchesSearch = !debouncedSearch || p.nama.toLowerCase().includes(q);
       const matchesStatus = statusFilter === "all" || p.status === statusFilter;
       return matchesYear && matchesSearch && matchesStatus;
     });
-  }, [yearFilter, yearParam, debouncedSearch, statusFilter, cascading.filteredItems]);
+  }, [yearParam, debouncedSearch, statusFilter, cascading.filteredItems]);
 
   const activeFilterCount = useMemo(() => {
     let count = 0;
@@ -94,8 +99,14 @@ export function usePenerimaanBsps() {
     cascading.filterActions.resetFilters();
     setStatusFilter("all");
     setSearchQuery("");
-    setYearFilter(CURRENT_YEAR);
+    setYearFilter("");
   }, [cascading.filterActions]);
+
+  const handleYearFilterChange = useCallback((value: string) => {
+    setYearFilter(
+      value === QUERY_KEY_PARTS.all ? "" : value
+    );
+  }, []);
 
   return {
     isLoading: dataQuery.isLoading,
@@ -118,8 +129,8 @@ export function usePenerimaanBsps() {
     setKelurahanFilter: cascading.filterActions.setKelurahanFilter,
     setStatusFilter,
     resetFilters,
-    yearFilter,
-    setYearFilter,
+    yearFilter: selectedYear,
+    setYearFilter: handleYearFilterChange,
     availableYears,
   };
 }

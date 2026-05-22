@@ -28,7 +28,7 @@ const SECOND_ROW_REVERSED = [...SECOND_ROW].reverse();
 
 export function usePenerimaanBspsPage() {
   const ref = useScrollAnimation();
-  const mapLazy = useLazyMount();
+  const mapLazy = useLazyMount({ initiallyMounted: true });
   const filterLogic = usePenerimaanBsps();
   const { mapRef, isMapReady, selectedDesaId, focusDesa } = usePenerimaanMap(
     filterLogic.filteredDesa,

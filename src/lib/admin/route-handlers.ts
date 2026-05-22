@@ -371,12 +371,22 @@ export async function handleListUsers(request: NextRequest) {
     const keyword = request.nextUrl.searchParams.get("keyword") ?? undefined;
     const sortBy = request.nextUrl.searchParams.get("sort_by");
     const sortOrder = request.nextUrl.searchParams.get("sort_order");
+    const roleParam = request.nextUrl.searchParams.get("role");
+    const isActiveParam = request.nextUrl.searchParams.get("is_active");
     const sortDirection =
       sortOrder === "desc"
         ? "desc"
         : sortOrder === "asc"
           ? "asc"
           : undefined;
+    const role = roleParam === "admin" || roleParam === "user"
+      ? roleParam
+      : undefined;
+    const isActive = isActiveParam === "true"
+      ? "active"
+      : isActiveParam === "false"
+        ? "inactive"
+        : undefined;
     const users = await listUsersPage(
       auth.user.backendAccessToken,
       {
@@ -385,6 +395,8 @@ export async function handleListUsers(request: NextRequest) {
         keyword,
         sortBy,
         sortDirection,
+        role,
+        isActive,
       }
     );
 

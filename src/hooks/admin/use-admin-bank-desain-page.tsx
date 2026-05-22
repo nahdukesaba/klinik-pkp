@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
@@ -13,7 +13,6 @@ import {
   getStringFormValue,
 } from "@/lib/admin/form";
 import {
-  ADMIN_TABLE_PAGE_SIZE,
   QUERY_CONFIG,
   QUERY_KEYS,
   UPLOAD_CONSTRAINTS,
@@ -25,9 +24,16 @@ import {
 } from "@/services/bank-desain.service";
 
 import { useAdminCrud } from "./use-admin-crud";
+import { useAdminListQuery } from "./use-admin-list-query";
 
 const EMPTY_BANK_DESAIN_ITEMS: BankDesainData[] = [];
 const BANK_DESAIN_TYPE = "Tipe 36";
+
+type BankDesainAdminFilters = {
+  bedroomCount?: number;
+  bathroomCount?: number;
+  hasGarage?: boolean;
+};
 
 function buildBankDesainFormData(values: AdminFormValues) {
   const formData = new FormData();
@@ -73,8 +79,11 @@ function desainToFormValues(item: BankDesainData): AdminFormValues {
 }
 
 export function useAdminBankDesainPage() {
+  const listQuery = useAdminListQuery<BankDesainAdminFilters>();
+  const { filters, setFilter } = listQuery;
   const crud = useAdminCrud<BankDesainData>({
     queryKey: QUERY_KEYS.adminBankDesain,
+    relatedQueryKeys: [QUERY_KEYS.publicBankDesain],
     resource: ADMIN_RESOURCE_NAMES.bankDesain,
     label: "desain",
     buildPayload: buildBankDesainFormData,
@@ -84,19 +93,10 @@ export function useAdminBankDesainPage() {
   const desainQuery = useQuery({
     queryKey: [
       QUERY_KEYS.adminBankDesain,
-      crud.currentPage,
-      crud.searchKeyword,
-      crud.sortBy,
-      crud.sortDirection,
+      listQuery.queryParams,
     ],
-    queryFn: () =>
-      fetchBankDesainPage({
-        page: crud.currentPage,
-        perPage: ADMIN_TABLE_PAGE_SIZE,
-        keyword: crud.searchKeyword,
-        sortBy: crud.sortBy,
-        sortDirection: crud.sortDirection,
-      }),
+    queryFn: ({ signal }) =>
+      fetchBankDesainPage(listQuery.queryParams, { signal }),
     staleTime: QUERY_CONFIG.staleTime,
     gcTime: QUERY_CONFIG.gcTime,
     placeholderData: keepPreviousData,
@@ -191,6 +191,42 @@ export function useAdminBankDesainPage() {
 
   const desainList = desainQuery.data?.items ?? EMPTY_BANK_DESAIN_ITEMS;
   const desainMeta = desainQuery.data?.meta;
+  const pagination = {
+    ...listQuery.tableState,
+    currentPage: desainMeta?.page ?? listQuery.tableState.currentPage,
+    totalPages: desainMeta?.totalPages ?? 1,
+    totalItems: desainMeta?.totalRecords ?? desainList.length,
+    pageSize: desainMeta?.limit ?? listQuery.tableState.pageSize,
+  };
+  const handleBedroomFilterChange = useCallback(
+    (value: string) => {
+      const bedroomCount = Number(value);
+      setFilter(
+        "bedroomCount",
+        Number.isFinite(bedroomCount) ? bedroomCount : undefined
+      );
+    },
+    [setFilter]
+  );
+  const handleBathroomFilterChange = useCallback(
+    (value: string) => {
+      const bathroomCount = Number(value);
+      setFilter(
+        "bathroomCount",
+        Number.isFinite(bathroomCount) ? bathroomCount : undefined
+      );
+    },
+    [setFilter]
+  );
+  const handleGarageFilterChange = useCallback(
+    (value: string) => {
+      setFilter(
+        "hasGarage",
+        value === "true" ? true : value === "false" ? false : undefined
+      );
+    },
+    [setFilter]
+  );
   const stats = useMemo(
     () => ({
       totalDesain: desainMeta?.totalRecords ?? desainList.length,
@@ -216,11 +252,13 @@ export function useAdminBankDesainPage() {
     handleSubmit: crud.handleSubmit,
     handleDelete: crud.handleDelete,
     handleFormOpenChange: crud.handleFormOpenChange,
-    setCurrentPage: crud.setCurrentPage,
-    searchKeyword: crud.searchKeyword,
-    sortBy: crud.sortBy,
-    sortDirection: crud.sortDirection,
-    handleSearchChange: crud.handleSearchChange,
-    handleSortChange: crud.handleSortChange,
+    pagination,
+    searchKeyword: listQuery.searchInput,
+    handleSearchChange: listQuery.setSearch,
+    filters,
+    handleBedroomFilterChange,
+    handleBathroomFilterChange,
+    handleGarageFilterChange,
+    resetFilters: listQuery.resetFilters,
   };
 }

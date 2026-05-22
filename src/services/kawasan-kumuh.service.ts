@@ -1,14 +1,27 @@
 /** Service API untuk data Kawasan Kumuh. */
 
 import {
+  apiClient,
   fetchApiList,
   fetchApiListWithMeta,
+  type ApiRequestOptions,
   type ApiPaginatedResult,
+  type ApiResponse,
   type CoordinateApi,
   type DistrictApi,
   type RegionApi,
 } from "@/lib/api-client";
-import type { ApiListQueryControls } from "@/types/api";
+import {
+  clampApiPageLimit,
+  PUBLIC_LIST_FETCH_LIMIT,
+  PUBLIC_YEAR_FILTER_OPTIONS,
+} from "@/lib/constants";
+import type {
+  ApiListQueryControls,
+  KawasanKumuhFilterParams,
+} from "@/types/api";
+
+const KUMUH_BACKEND_PAGE_LIMIT = 100;
 
 export interface KumuhApiItem {
   id: string;
@@ -47,11 +60,15 @@ export interface KawasanKumuhData {
   yearInspected: number;
 }
 
-export interface KumuhListParams extends ApiListQueryControls {
-  year?: number;
-  regionId?: string;
-  districtId?: string;
+export interface KumuhListParams
+  extends ApiListQueryControls,
+    KawasanKumuhFilterParams {
+  yearInspected?: number;
   collectAllPages?: boolean;
+}
+
+interface YearOptionsResponse {
+  years?: number[];
 }
 
 export const kawasanStatusColors: Record<string, { fill: string; label: string }> = {
@@ -104,55 +121,77 @@ export async function fetchKumuhList(
   input?: number | KumuhListParams
 ): Promise<KawasanKumuhData[]> {
   const params = typeof input === "number" ? { year: input } : input ?? {};
-  const limit = params.perPage ?? 1000;
+  const collectAllPages = params.collectAllPages ?? true;
+  const limit = Math.min(
+    clampApiPageLimit(params.perPage, PUBLIC_LIST_FETCH_LIMIT),
+    KUMUH_BACKEND_PAGE_LIMIT
+  );
 
   return fetchApiList<KumuhApiItem, KawasanKumuhData>("/kumuh", {
     query: {
-      year_inspected: params.year,
+      year_inspected: params.yearInspected ?? params.year,
       page: params.page,
       limit,
-      area_name: params.keyword,
+      area_name: params.areaName ?? params.keyword,
+      sort_by: params.sortBy,
+      sort_order: params.sortBy ? params.sortDirection : undefined,
       region_id: params.regionId,
       district_id: params.districtId,
+      village_id: params.villageId,
+      all: collectAllPages ? true : undefined,
     },
     transform: transformKumuhItem,
     errorMessage: "Gagal mengambil data kawasan kumuh dari server",
-    collectAllPages: params.collectAllPages ?? false,
+    requestOptions: { retry: 0 },
+    collectAllPages: false,
+    backendPageLimit: KUMUH_BACKEND_PAGE_LIMIT,
+    allowPartialResults: true,
   });
 }
 
 export async function fetchKumuhAvailableYears(): Promise<number[]> {
-  const items = await fetchApiList<KumuhApiItem, KawasanKumuhData>("/kumuh", {
-    query: {
-      page: 1,
-      limit: 1000,
-    },
-    transform: transformKumuhItem,
-    errorMessage: "Gagal mengambil daftar tahun kawasan kumuh dari server",
-    collectAllPages: true,
-  });
+  try {
+    const response = await apiClient.get<ApiResponse<YearOptionsResponse>>(
+      "/kumuh/years",
+      { retry: 0 }
+    );
 
-  return [...new Set(items.map((item) => item.yearInspected))]
-    .filter((year) => Number.isFinite(year))
-    .sort((left, right) => right - left);
+    if (!response.success || !Array.isArray(response.data?.years)) {
+      return [...PUBLIC_YEAR_FILTER_OPTIONS];
+    }
+
+    const years = [...new Set(response.data.years)]
+      .filter((year) => Number.isFinite(year))
+      .sort((left, right) => right - left);
+
+    return years.length > 0 ? years : [...PUBLIC_YEAR_FILTER_OPTIONS];
+  } catch {
+    return [...PUBLIC_YEAR_FILTER_OPTIONS];
+  }
 }
 
 export async function fetchKumuhPage(
-  input?: number | KumuhListParams
+  input?: number | KumuhListParams,
+  requestOptions?: ApiRequestOptions
 ): Promise<ApiPaginatedResult<KawasanKumuhData>> {
   const params = typeof input === "number" ? { year: input } : input ?? {};
 
   return fetchApiListWithMeta<KumuhApiItem, KawasanKumuhData>("/kumuh", {
     query: {
-      year_inspected: params.year,
+      year_inspected: params.yearInspected ?? params.year,
       page: params.page,
-      limit: params.perPage,
-      area_name: params.keyword,
+      limit: clampApiPageLimit(params.perPage, KUMUH_BACKEND_PAGE_LIMIT),
+      area_name: params.areaName ?? params.keyword,
+      sort_by: params.sortBy,
+      sort_order: params.sortBy ? params.sortDirection : undefined,
       region_id: params.regionId,
       district_id: params.districtId,
+      village_id: params.villageId,
     },
     transform: transformKumuhItem,
     errorMessage: "Gagal mengambil data kawasan kumuh dari server",
-    requestOptions: { retry: 0 },
+    requestOptions,
+    backendPageLimit: KUMUH_BACKEND_PAGE_LIMIT,
+    allowPartialResults: true,
   });
 }

@@ -7,6 +7,35 @@ import {
 
 /** Tipe detail error dari backend */
 type BackendErrorDetails = Record<string, string | string[]>;
+const BACKEND_JSON_RETRY_COUNT = 2;
+const BACKEND_JSON_RETRY_DELAY_MS = 350;
+const TRANSIENT_BACKEND_ERROR_PATTERN =
+  /prepared statement|SQLSTATE\s+(42P05|26000)/i;
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function getPayloadText(payload: unknown) {
+  if (typeof payload === "string") {
+    return payload;
+  }
+
+  try {
+    return JSON.stringify(payload);
+  } catch {
+    return "";
+  }
+}
+
+function isTransientBackendPayload(payload: unknown) {
+  return TRANSIENT_BACKEND_ERROR_PATTERN.test(getPayloadText(payload));
+}
+
+function getRetryDelayMs(attempt: number, baseDelayMs: number) {
+  const jitterMs = Math.floor(Math.random() * 100);
+  return baseDelayMs * (attempt + 1) + jitterMs;
+}
 
 function isBackendErrorDetails(value: unknown): value is BackendErrorDetails {
   if (!value || typeof value !== "object") {
@@ -90,9 +119,19 @@ export function createBackendHeaders(headers?: HeadersInit) {
 /** Fetch JSON dari backend dengan timeout dan error handling. */
 export async function fetchBackendJson<T>(
   pathname: string,
-  init: RequestInit & { timeoutMs?: number } = {}
+  init: RequestInit & {
+    timeoutMs?: number;
+    retry?: number;
+    retryDelayMs?: number;
+  } = {}
 ) {
-  const { timeoutMs = 20_000, headers, ...requestInit } = init;
+  const {
+    timeoutMs = 20_000,
+    retry = BACKEND_JSON_RETRY_COUNT,
+    retryDelayMs = BACKEND_JSON_RETRY_DELAY_MS,
+    headers,
+    ...requestInit
+  } = init;
 
   let targetUrl: string;
 
@@ -105,32 +144,50 @@ export async function fetchBackendJson<T>(
     );
   }
 
-  let response: Response;
+  const method = requestInit.method?.toUpperCase() ?? "GET";
+  const canRetry = method === "GET" || method === "HEAD";
 
-  try {
-    response = await fetch(targetUrl, {
-      ...requestInit,
-      headers: createBackendHeaders(headers),
-      signal: AbortSignal.timeout(timeoutMs),
-      cache: requestInit.cache ?? "no-store",
-    });
-  } catch (error) {
-    if (error instanceof DOMException && error.name === "AbortError") {
-      throw new BackendApiError("Waktu tunggu ke backend habis.", 504);
+  for (let attempt = 0; attempt <= retry; attempt += 1) {
+    let response: Response;
+
+    try {
+      response = await fetch(targetUrl, {
+        ...requestInit,
+        headers: createBackendHeaders(headers),
+        signal: AbortSignal.timeout(timeoutMs),
+        cache: requestInit.cache ?? "no-store",
+      });
+    } catch (error) {
+      if (canRetry && attempt < retry) {
+        await sleep(getRetryDelayMs(attempt, retryDelayMs));
+        continue;
+      }
+
+      if (error instanceof DOMException && error.name === "AbortError") {
+        throw new BackendApiError("Waktu tunggu ke backend habis.", 504);
+      }
+
+      throw new BackendApiError("Layanan backend sedang tidak tersedia.", 502);
     }
 
-    throw new BackendApiError("Layanan backend sedang tidak tersedia.", 502);
+    const payload = await response.json().catch(() => null);
+    const isTransientPayload = isTransientBackendPayload(payload);
+
+    if (canRetry && isTransientPayload && attempt < retry) {
+      await sleep(getRetryDelayMs(attempt, retryDelayMs));
+      continue;
+    }
+
+    if (!response.ok) {
+      throw new BackendApiError(
+        extractBackendMessage(payload, response.status),
+        response.status,
+        extractBackendDetails(payload)
+      );
+    }
+
+    return payload as T;
   }
 
-  const payload = await response.json().catch(() => null);
-
-  if (!response.ok) {
-    throw new BackendApiError(
-      extractBackendMessage(payload, response.status),
-      response.status,
-      extractBackendDetails(payload)
-    );
-  }
-
-  return payload as T;
+  throw new BackendApiError("Layanan backend sedang tidak tersedia.", 502);
 }

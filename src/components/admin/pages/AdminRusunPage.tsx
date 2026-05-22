@@ -86,7 +86,7 @@ export default function AdminRusunPage() {
     isSaving,
     rusunQuery,
     rusunList,
-    rusunMeta,
+    pagination,
     stats,
     formFields,
     initialValues,
@@ -96,12 +96,6 @@ export default function AdminRusunPage() {
     handleSubmit,
     handleDelete,
     handleFormOpenChange,
-    setCurrentPage,
-    searchKeyword,
-    sortBy,
-    sortDirection,
-    handleSearchChange,
-    handleSortChange,
   } = useAdminRusunPage();
 
   if (!canManage) {
@@ -138,26 +132,10 @@ export default function AdminRusunPage() {
       <AdminDataTable<RusunData>
         columns={rusunColumns}
         data={rusunList}
-        searchFields={["name", "kabupaten", "kecamatan", "address"]}
-        searchPlaceholder="Cari rusun..."
         actions={[editAction(openEditDialog), deleteAction(handleDelete)]}
         isLoading={rusunQuery.isLoading}
-        isRefreshing={rusunQuery.isFetching && !rusunQuery.isLoading}
         emptyMessage="Belum ada data rusun."
-        pagination={{
-          currentPage: rusunMeta?.page ?? 1,
-          totalPages: rusunMeta?.totalPages ?? 1,
-          totalItems: rusunMeta?.totalRecords ?? rusunList.length,
-          pageSize: rusunMeta?.limit ?? 10,
-          onPageChange: setCurrentPage,
-          searchValue: searchKeyword,
-          onSearchChange: handleSearchChange,
-          searchMode: "local",
-          sortKey: sortBy,
-          sortDirection,
-          onSortChange: handleSortChange,
-          sortMode: "local",
-        }}
+        pagination={pagination}
       />
 
       <AdminFormDialog

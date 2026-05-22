@@ -12,9 +12,6 @@ interface AdminDataTablePaginationProps {
   totalItems: number;
   pageStart: number;
   pageEnd: number;
-  hasSearchQuery: boolean;
-  usesBackendPagination: boolean;
-  currentPageItemCount: number;
   onPageChange: (page: number) => void;
 }
 
@@ -24,9 +21,6 @@ export function AdminDataTablePagination({
   totalItems,
   pageStart,
   pageEnd,
-  hasSearchQuery,
-  usesBackendPagination,
-  currentPageItemCount,
   onPageChange,
 }: AdminDataTablePaginationProps) {
   if (totalPages <= 1) {
@@ -49,9 +43,7 @@ export function AdminDataTablePagination({
   return (
     <div className="flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
       <p className="text-xs leading-5 text-muted-foreground">
-        {usesBackendPagination && hasSearchQuery
-          ? `Menampilkan ${currentPageItemCount} hasil filter pada halaman ${activePage} dari ${totalItems} data`
-          : `Menampilkan ${pageStart}-${pageEnd} dari ${totalItems} data`}
+        {`Menampilkan ${pageStart}-${pageEnd} dari ${totalItems} data`}
       </p>
 
       <div className="flex flex-wrap items-center gap-1">

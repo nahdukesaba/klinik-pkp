@@ -5,6 +5,7 @@ import {
   extractApiPaginationMeta,
   type ApiResponse,
 } from "@/lib/api-client";
+import { getDateKey, getTodayDateKey } from "@/lib/date";
 
 import { fetchBackendJson, getBackendApiBaseUrl } from "./backend-api";
 import { ADMIN_STATE_TAGS, createAdminReader } from "./cache";
@@ -81,6 +82,9 @@ type ExternalStatsResource = (typeof EXTERNAL_STATS_RESOURCES)[number];
 export type ExternalStatsKey = ExternalStatsResource["key"];
 
 type ResourceItem = Record<string, unknown>;
+interface ExternalStatsReadOptions {
+  backendAccessToken?: string;
+}
 
 const EMPTY_TOTALS = {
   totalFaqs: 0,
@@ -178,10 +182,10 @@ function deriveSlumLabel(item: ResourceItem) {
 }
 
 function deriveSosialisasiStatus(item: ResourceItem) {
-  const endTime = Date.parse(getString(item.scheduled_at_end));
+  const endDate = getDateKey(getString(item.scheduled_at_end));
   const hasImages = hasFiles(item.image_urls);
 
-  if (!Number.isFinite(endTime) || endTime > Date.now()) {
+  if (!endDate || endDate > getTodayDateKey()) {
     return "Mendatang";
   }
 
@@ -264,9 +268,17 @@ function deriveWarning(resource: ExternalStatsResource, items: ResourceItem[]) {
   return undefined;
 }
 
-async function fetchExternalCollectionSnapshot(resource: ExternalStatsResource) {
+async function fetchExternalCollectionSnapshot(
+  resource: ExternalStatsResource,
+  options: ExternalStatsReadOptions = {}
+) {
   const payload = await fetchBackendJson<ApiResponse<unknown>>(
-    `${resource.path}?page=1&limit=10`
+    `${resource.path}?page=1&limit=10`,
+    {
+      headers: options.backendAccessToken
+        ? { Authorization: `Bearer ${options.backendAccessToken}` }
+        : undefined,
+    }
   );
   const items = extractApiCollectionItems<ResourceItem>(payload.data);
   const dataMeta = extractApiPaginationMeta(payload.data);
@@ -302,7 +314,9 @@ function createModuleSummary(
   };
 }
 
-async function readExternalDashboardStats(): Promise<ExternalStatsSummary> {
+async function readExternalDashboardStats(
+  options: ExternalStatsReadOptions = {}
+): Promise<ExternalStatsSummary> {
   const totals: Record<ExternalStatsKey, number> = { ...EMPTY_TOTALS };
   const modules: ExternalStatsModuleSummary[] = [];
   const failedResources: string[] = [];
@@ -323,7 +337,7 @@ async function readExternalDashboardStats(): Promise<ExternalStatsSummary> {
 
   const results = await Promise.allSettled(
     EXTERNAL_STATS_RESOURCES.map(async (resource) => {
-      const snapshot = await fetchExternalCollectionSnapshot(resource);
+      const snapshot = await fetchExternalCollectionSnapshot(resource, options);
 
       return createModuleSummary(
         resource,
@@ -365,6 +379,8 @@ const readExternalDashboardStatsFresh = createAdminReader(
   }
 );
 
-export async function getExternalDashboardStats(): Promise<ExternalStatsSummary> {
-  return readExternalDashboardStatsFresh();
+export async function getExternalDashboardStats(
+  options: ExternalStatsReadOptions = {}
+): Promise<ExternalStatsSummary> {
+  return readExternalDashboardStatsFresh(options);
 }

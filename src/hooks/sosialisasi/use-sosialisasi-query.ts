@@ -13,8 +13,11 @@ import { useMemo } from "react";
 
 import { useQuery } from "@tanstack/react-query";
 
-import { useCurrentTime } from "@/hooks/use-current-time";
-import { QUERY_CONFIG, QUERY_KEYS } from "@/lib/constants";
+import {
+  LONG_LIVED_QUERY_STALE_TIME_MS,
+  QUERY_CONFIG,
+  QUERY_KEYS,
+} from "@/lib/constants";
 import {
   buildSosialisasiResultFromLocations,
   fetchSosialisasiList,
@@ -63,11 +66,12 @@ const EMPTY_RESULT: SosialisasiResult = {
 };
 
 export function useSosialisasiQuery(): SosialisasiRawData {
-  const currentTime = useCurrentTime();
   const query = useQuery<SosialisasiResult>({
     queryKey: [QUERY_KEYS.publicSosialisasi],
     queryFn: () => fetchSosialisasiList(),
     ...QUERY_CONFIG,
+    staleTime: LONG_LIVED_QUERY_STALE_TIME_MS,
+    gcTime: LONG_LIVED_QUERY_STALE_TIME_MS,
   });
 
   const result = useMemo(() => {
@@ -75,11 +79,8 @@ export function useSosialisasiQuery(): SosialisasiRawData {
       return EMPTY_RESULT;
     }
 
-    return buildSosialisasiResultFromLocations(
-      query.data.locations,
-      currentTime
-    );
-  }, [currentTime, query.data]);
+    return buildSosialisasiResultFromLocations(query.data.locations);
+  }, [query.data]);
   const publicKabupatenList = useMemo(
     () => [
       "Semua Lokasi",

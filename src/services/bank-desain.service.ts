@@ -3,10 +3,18 @@
 import {
   fetchApiList,
   fetchApiListWithMeta,
+  type ApiRequestOptions,
   type ApiPaginatedResult,
 } from "@/lib/api-client";
-import { buildImageUrl } from "@/lib/constants";
-import type { ApiListQueryControls } from "@/types/api";
+import {
+  buildImageUrl,
+  clampApiPageLimit,
+  PUBLIC_LIST_FETCH_LIMIT,
+} from "@/lib/constants";
+import type {
+  ApiListQueryControls,
+  BankDesainFilterParams,
+} from "@/types/api";
 
 // --- Tipe API ---
 
@@ -64,12 +72,16 @@ export interface FilterCategories {
   teras: FilterCategory[];
 }
 
-export interface BankDesainListParams extends ApiListQueryControls {
-  type?: string;
+export interface BankDesainListParams
+  extends ApiListQueryControls,
+    Omit<BankDesainFilterParams, "hasGarage"> {
+  hasGarage?: BankDesainFilterParams["hasGarage"] | "true" | "false";
+  collectAllPages?: boolean;
 }
 
 // --- Mapping tipe ---
 
+const BANK_DESAIN_FALLBACK_IMAGE = "/service-bank-desain.jpg";
 const BANK_DESAIN_API_TYPE = "Tipe 36";
 const BANK_DESAIN_FRONTEND_TYPE = "T36";
 
@@ -82,20 +94,63 @@ const TYPE_LABELS: Record<string, string> = {
   [BANK_DESAIN_FRONTEND_TYPE]: "Tipe 36 (36 m²)",
 };
 
-function normalizeBankDesainTypeParam(_type?: string) {
-  return BANK_DESAIN_API_TYPE;
+function normalizeBankDesainTypeParam(type?: string) {
+  if (!type || type === "all") {
+    return undefined;
+  }
+
+  return type === BANK_DESAIN_FRONTEND_TYPE ? BANK_DESAIN_API_TYPE : type;
 }
 
-function filterType36Designs(items: BankDesainData[]) {
-  return items.filter((item) => item.type === BANK_DESAIN_FRONTEND_TYPE);
+function normalizeBooleanFilterParam(value: BankDesainListParams["hasGarage"]) {
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  if (value === "true") {
+    return true;
+  }
+
+  if (value === "false") {
+    return false;
+  }
+
+  return undefined;
+}
+
+function buildBankDesainAssetUrl(path: string) {
+  const cleanPath = path.trim();
+  if (!cleanPath) {
+    return "";
+  }
+
+  if (
+    cleanPath.startsWith("http://") ||
+    cleanPath.startsWith("https://") ||
+    cleanPath.startsWith("/api/ext/")
+  ) {
+    return cleanPath;
+  }
+
+  if (cleanPath.startsWith("/api/v1/")) {
+    return cleanPath.replace("/api/v1/", "/api/ext/");
+  }
+
+  if (cleanPath.startsWith("api/v1/")) {
+    return `/${cleanPath}`.replace("/api/v1/", "/api/ext/");
+  }
+
+  return buildImageUrl(cleanPath);
 }
 
 // --- Transformasi ---
 
 /** Transform data API → format frontend */
 export function transformBankDesainItem(item: BankDesainApiItem): BankDesainData {
-  const imageUrls = item.image_urls?.map(buildImageUrl) ?? [];
-  const fileUrls = item.file_urls?.map(buildImageUrl) ?? [];
+  const imageUrls =
+    item.image_urls?.map(buildBankDesainAssetUrl).filter(Boolean) ?? [];
+  const fileUrls =
+    item.file_urls?.map(buildBankDesainAssetUrl).filter(Boolean) ?? [];
 
   return {
     id: item.id,
@@ -103,7 +158,7 @@ export function transformBankDesainItem(item: BankDesainApiItem): BankDesainData
     title: item.name,
     type: TYPE_MAP[item.type] ?? item.type,
     terasFeature: item.has_garage ? "dengan-teras" : "tanpa-teras",
-    thumbnail: imageUrls[0] ?? "",
+    thumbnail: imageUrls[0] ?? BANK_DESAIN_FALLBACK_IMAGE,
     bedrooms: item.bedroom_count,
     bathrooms: item.bathroom_count,
     area: item.total_area,
@@ -156,23 +211,33 @@ export function deriveFilterCategories(items: BankDesainData[]): FilterCategorie
 export async function fetchBankDesainList(
   params: BankDesainListParams = {}
 ): Promise<BankDesainData[]> {
-  const items = await fetchApiList<BankDesainApiItem, BankDesainData>("/bank-desain", {
-    query: {
-      type: normalizeBankDesainTypeParam(params.type),
-      page: params.page,
-      limit: params.perPage,
-      name: params.keyword,
-    },
-    transform: transformBankDesainItem,
-    errorMessage: "Gagal mengambil data bank desain dari server",
-    collectAllPages: false,
-  });
+  const items = await fetchApiList<BankDesainApiItem, BankDesainData>(
+    "/bank-desain",
+    {
+      query: {
+        type: normalizeBankDesainTypeParam(params.type),
+        page: params.page,
+        limit: clampApiPageLimit(params.perPage, PUBLIC_LIST_FETCH_LIMIT),
+        name: params.name ?? params.keyword,
+        bedroom_count: params.bedroomCount,
+        bathroom_count: params.bathroomCount,
+        has_garage: normalizeBooleanFilterParam(params.hasGarage),
+        all: params.collectAllPages ?? true,
+      },
+      transform: transformBankDesainItem,
+      errorMessage: "Gagal mengambil data bank desain dari server",
+      collectAllPages: false,
+      backendPageLimit: PUBLIC_LIST_FETCH_LIMIT,
+      allowPartialResults: true,
+    }
+  );
 
-  return filterType36Designs(items);
+  return items;
 }
 
 export async function fetchBankDesainPage(
-  params: BankDesainListParams = {}
+  params: BankDesainListParams = {},
+  requestOptions?: ApiRequestOptions
 ): Promise<ApiPaginatedResult<BankDesainData>> {
   const result = await fetchApiListWithMeta<BankDesainApiItem, BankDesainData>(
     "/bank-desain",
@@ -180,16 +245,19 @@ export async function fetchBankDesainPage(
       query: {
         type: normalizeBankDesainTypeParam(params.type),
         page: params.page,
-        limit: params.perPage,
-        name: params.keyword,
+        limit: clampApiPageLimit(params.perPage, PUBLIC_LIST_FETCH_LIMIT),
+        name: params.name ?? params.keyword,
+        bedroom_count: params.bedroomCount,
+        bathroom_count: params.bathroomCount,
+        has_garage: normalizeBooleanFilterParam(params.hasGarage),
       },
       transform: transformBankDesainItem,
       errorMessage: "Gagal mengambil data bank desain dari server",
+      requestOptions,
+      backendPageLimit: PUBLIC_LIST_FETCH_LIMIT,
+      allowPartialResults: true,
     }
   );
 
-  return {
-    ...result,
-    items: filterType36Designs(result.items),
-  };
+  return result;
 }

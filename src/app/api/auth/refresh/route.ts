@@ -131,12 +131,13 @@ export async function POST(request: NextRequest) {
       );
     }
   } else if (backendAccessToken) {
-    return clearSessionCookies(
-      createJsonErrorResponse(
-        "Sesi backend tidak dapat diperpanjang. Silakan login ulang.",
-        401
-      )
-    );
+    authenticatedUser = {
+      id: refreshPayload.userId,
+      name: refreshPayload.name,
+      email: refreshPayload.email,
+      nip: refreshPayload.nip,
+      role: refreshPayload.role,
+    };
   } else {
     authenticatedUser = {
       id: refreshPayload.userId,
@@ -207,6 +208,24 @@ export async function POST(request: NextRequest) {
         priority: backendRefreshCookieOptions.priority,
       }
     );
+  } else if (backendAccessToken) {
+    response.cookies.set(backendAccessCookieOptions.name, backendAccessToken, {
+      httpOnly: backendAccessCookieOptions.httpOnly,
+      secure: backendAccessCookieOptions.secure,
+      sameSite: backendAccessCookieOptions.sameSite,
+      path: backendAccessCookieOptions.path,
+      maxAge: backendAccessCookieOptions.maxAge,
+      priority: backendAccessCookieOptions.priority,
+    });
+
+    response.cookies.set(backendRefreshCookieOptions.name, "", {
+      httpOnly: backendRefreshCookieOptions.httpOnly,
+      secure: backendRefreshCookieOptions.secure,
+      sameSite: backendRefreshCookieOptions.sameSite,
+      path: backendRefreshCookieOptions.path,
+      maxAge: 0,
+      priority: backendRefreshCookieOptions.priority,
+    });
   } else {
     response.cookies.set(backendAccessCookieOptions.name, "", {
       httpOnly: backendAccessCookieOptions.httpOnly,

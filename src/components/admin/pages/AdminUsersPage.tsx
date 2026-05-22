@@ -9,6 +9,7 @@ import {
   AdminFormDialog,
   AdminPageHeader,
   AdminStatsGrid,
+  AdminTableFilters,
   RoleBadge,
   StatusBadge,
   deleteAction,
@@ -18,7 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useAdminUsersPage } from "@/hooks/admin/use-admin-users-page";
 import { formatDateId } from "@/lib/date";
-import type { AdminDirectoryUser, AuditEntry, UserRole } from "@/types/admin";
+import type { AdminDirectoryUser, AuditEntry } from "@/types/admin";
 
 function formatTimestamp(value?: string) {
   if (!value) {
@@ -135,82 +136,6 @@ function AuditEntryList({ entries }: { entries: AuditEntry[] }) {
   );
 }
 
-function FilterBar({
-  roleFilter,
-  setRoleFilter,
-  statusFilter,
-  setStatusFilter,
-}: {
-  roleFilter: "all" | UserRole;
-  setRoleFilter: (value: "all" | UserRole) => void;
-  statusFilter: "all" | "active" | "inactive";
-  setStatusFilter: (value: "all" | "active" | "inactive") => void;
-}) {
-  return (
-    <section className="rounded-3xl border border-border bg-card p-5 shadow-sm">
-      <div className="grid gap-4 lg:grid-cols-2">
-        <div className="space-y-3">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            Filter Role
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              type="button"
-              variant={roleFilter === "all" ? "default" : "outline"}
-              onClick={() => setRoleFilter("all")}
-            >
-              Semua
-            </Button>
-            <Button
-              type="button"
-              variant={roleFilter === "admin" ? "default" : "outline"}
-              onClick={() => setRoleFilter("admin")}
-            >
-              Admin
-            </Button>
-            <Button
-              type="button"
-              variant={roleFilter === "user" ? "default" : "outline"}
-              onClick={() => setRoleFilter("user")}
-            >
-              User
-            </Button>
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            Filter Status
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              type="button"
-              variant={statusFilter === "all" ? "default" : "outline"}
-              onClick={() => setStatusFilter("all")}
-            >
-              Semua
-            </Button>
-            <Button
-              type="button"
-              variant={statusFilter === "active" ? "default" : "outline"}
-              onClick={() => setStatusFilter("active")}
-            >
-              Aktif
-            </Button>
-            <Button
-              type="button"
-              variant={statusFilter === "inactive" ? "default" : "outline"}
-              onClick={() => setStatusFilter("inactive")}
-            >
-              Nonaktif
-            </Button>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 export default function AdminUsersPage() {
   const {
     canManage,
@@ -220,12 +145,12 @@ export default function AdminUsersPage() {
     setRoleFilter,
     statusFilter,
     setStatusFilter,
+    pagination,
     formOpen,
     editingUser,
     formErrors,
     isSaving,
     usersQuery,
-    usersMeta,
     filteredUsers,
     stats,
     auditEntries,
@@ -237,8 +162,8 @@ export default function AdminUsersPage() {
     handleSubmit,
     handleDelete,
     handleFormOpenChange,
-    handlePageChange,
     handleSearchChange,
+    resetFilters,
   } = useAdminUsersPage();
 
   if (!canManage) {
@@ -277,11 +202,39 @@ export default function AdminUsersPage() {
         columnsClassName="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
       />
 
-      <FilterBar
-        roleFilter={roleFilter}
-        setRoleFilter={setRoleFilter}
-        statusFilter={statusFilter}
-        setStatusFilter={setStatusFilter}
+      <AdminTableFilters
+        searchValue={searchKeyword}
+        searchPlaceholder="Cari user..."
+        onSearchChange={handleSearchChange}
+        onReset={resetFilters}
+        selects={[
+          {
+            key: "role",
+            label: "Role",
+            value: roleFilter,
+            options: [
+              { value: "all", label: "Semua Role" },
+              { value: "admin", label: "Admin" },
+              { value: "user", label: "User" },
+            ],
+            onChange: (value) =>
+              setRoleFilter(value === "admin" || value === "user" ? value : "all"),
+          },
+          {
+            key: "status",
+            label: "Status",
+            value: statusFilter,
+            options: [
+              { value: "all", label: "Semua Status" },
+              { value: "active", label: "Aktif" },
+              { value: "inactive", label: "Nonaktif" },
+            ],
+            onChange: (value) =>
+              setStatusFilter(
+                value === "active" || value === "inactive" ? value : "all"
+              ),
+          },
+        ]}
       />
 
       {usersQuery.error ? (
@@ -291,8 +244,6 @@ export default function AdminUsersPage() {
       <AdminDataTable<AdminDirectoryUser>
         columns={userColumns}
         data={filteredUsers}
-        searchFields={["name", "email", "nip", "phone"]}
-        searchPlaceholder="Cari user..."
         actions={[
           editAction(openEditDialog, {
             isVisible: (item) =>
@@ -303,19 +254,8 @@ export default function AdminUsersPage() {
           }),
         ]}
         isLoading={usersQuery.isLoading}
-        isRefreshing={usersQuery.isFetching && !usersQuery.isLoading}
         emptyMessage="Belum ada data pengguna."
-        pagination={{
-          currentPage: usersMeta.page,
-          totalPages: usersMeta.totalPages,
-          totalItems: usersMeta.totalRecords,
-          pageSize: usersMeta.limit,
-          onPageChange: handlePageChange,
-          searchValue: searchKeyword,
-          onSearchChange: handleSearchChange,
-          searchMode: "local",
-          sortMode: "local",
-        }}
+        pagination={pagination}
       />
 
       <AuditEntryList entries={auditEntries} />

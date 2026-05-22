@@ -72,6 +72,22 @@ Buat `.env.local` dari `.env.example`.
 
 Jangan commit `.env.local`.
 
+### Mengganti Server Backend
+
+Backend aktif hanya dikontrol dari `API_URL`.
+
+```env
+API_URL=https://domain-backend-aktif.com/api/v1
+```
+
+Jika server lama expired atau pindah ke Cloudflare Tunnel/domain lain:
+
+1. Pastikan server baru punya struktur endpoint yang sama, misalnya `/api/v1/faqs`, `/api/v1/kumuh`, `/api/v1/bsps`.
+2. Ganti nilai `API_URL` di `.env.local` atau environment hosting production.
+3. Restart `npm run dev` untuk lokal, atau redeploy/restart service production.
+
+Frontend tidak perlu mengubah service satu per satu selama prefix endpoint backend tetap sama.
+
 ## Alur Rendering
 
 ```text
@@ -125,6 +141,82 @@ Kegunaan:
 - `admin-client.ts` mengambil CSRF sebelum mutasi.
 - Route handler `/api/admin/*` memverifikasi session dan meneruskan request ke backend.
 - Backend tetap menentukan otorisasi final.
+
+## Data Fetching, Pagination, dan Sort
+
+Aturan yang dipakai sekarang:
+
+- Halaman admin memakai `ADMIN_TABLE_PAGE_SIZE = 10` dari `src/lib/constants.ts`.
+- Control Users juga dibatasi 10 data per halaman dari `ADMIN_USERS_PAGE_LIMIT`.
+- Filter dropdown lokasi/tahun tidak dipakai di tabel admin; halaman yang membutuhkan pencarian tetap memakai search debounced.
+- Sort table dikirim sebagai `sort_by` dan `sort_order` hanya dari kolom yang mendefinisikan `sortField`.
+- Query admin memakai `placeholderData: keepPreviousData` agar tabel tidak melompat kosong saat pindah halaman/sort.
+- Query function menerima `AbortSignal` dari TanStack Query supaya request lama bisa dibatalkan saat query key berubah cepat.
+- Proxy `/api/ext/*` hanya melakukan retry otomatis untuk request `GET`/`HEAD` yang aman diulang, terutama error backend transient seperti prepared statement SQLSTATE `42P05` atau `26000`. Mutasi `POST`/`PUT`/`PATCH`/`DELETE` tidak di-retry otomatis agar tidak membuat data dobel.
+- Proxy `/api/ext/*` memvalidasi `page`, `limit`, dan parameter tahun. Query invalid dikembalikan sebagai 400, dan `limit` selalu di-clamp maksimal `API_MAX_PAGE_LIMIT = 100`.
+- Untuk halaman publik yang butuh seluruh data peta, service mengirim `all=true`; proxy lalu mengumpulkan page backend di sisi server dan mengembalikan satu response ke browser.
+- Query peta publik memakai cache beberapa menit per tahun aktif, sehingga perpindahan tahun yang sudah pernah dibuka tidak selalu memukul backend lagi.
+
+Catatan backend pagination:
+
+Tabel admin tetap 10 data per halaman. Untuk halaman publik yang membutuhkan dataset lengkap, browser cukup memanggil satu endpoint dengan `all=true`; pagination backend dikumpulkan oleh proxy agar log browser tidak penuh request `page=2`, `page=3`, dan seterusnya. Jika backend mengembalikan 500 pada halaman list umum seperti BSPS, kawasan kumuh, rusun, sosialisasi, atau bank desain, proxy mengembalikan response kosong yang aman dengan metadata pagination, bukan 500 mentah ke browser.
+
+## Response API
+
+Response yang diharapkan dari backend/BFF:
+
+```json
+{
+  "success": true,
+  "message": "success",
+  "data": {
+    "items": [],
+    "total_records": 0,
+    "page": 1,
+    "limit": 10
+  },
+  "meta": {}
+}
+```
+
+Error yang diharapkan:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "BAD_GATEWAY",
+    "message": "Layanan sedang tidak tersedia.",
+    "details": {}
+  }
+}
+```
+
+Frontend menormalisasi variasi response di `src/lib/api-client.ts` dan `src/lib/api-response.ts`, jadi service fitur cukup fokus pada endpoint, query param, dan transform snake_case ke camelCase.
+
+## Data Peta Publik
+
+Halaman publik yang memakai peta mengambil dataset lengkap untuk tahun aktif:
+
+- Dropdown tahun tidak menyediakan opsi semua tahun karena dataset lintas tahun terlalu berat untuk backend dan frontend.
+- Daftar tahun dibaca dari endpoint metadata `/api/ext/bsps/years` dan `/api/ext/kumuh/years`, yang tetap ditangani route proxy existing `/api/ext/[...path]`. Proxy mengumpulkan distinct year dari data backend, mengurutkan DESC, dan menyimpan cache server-side 10 menit. Jika endpoint metadata gagal, UI memakai fallback `PUBLIC_YEAR_FILTER_OPTIONS`.
+- Tahun spesifik: hook publik mengirim parameter tahun ke service, lalu service mengumpulkan seluruh page untuk tahun tersebut saat backend sehat.
+- Sidebar/list dan marker peta memakai data tahun aktif yang sama, sehingga ketika user memilih 2024, sidebar dan peta ikut menampilkan data 2024.
+- Sidebar/list boleh dipaginasi di client untuk kenyamanan baca, tetapi marker peta memakai seluruh data hasil filter, bukan hanya 10/20 item pertama.
+
+## Lazy Loading
+
+Kebijakan lazy loading:
+
+- Konten/peta yang muncul di viewport awal tidak di-lazy-mount. Data awal harus segera diminta dan UI utama langsung disiapkan.
+- Komponen berat yang berada di bawah viewport boleh memakai `useLazyMount`, contohnya map kontak atau section sekunder.
+- Library browser-heavy seperti Leaflet tetap boleh diinisialisasi di client component, tetapi mount-nya tidak boleh menunda pengalaman utama halaman peta.
+- Dialog/preview yang jarang dibuka boleh memakai `React.lazy` atau dynamic import.
+
+Referensi resmi:
+
+- TanStack Query: [paginated queries](https://github.com/tanstack/query/blob/main/docs/framework/react/guides/paginated-queries.md) dengan `placeholderData: keepPreviousData` dan [query cancellation](https://github.com/tanstack/query/blob/main/docs/framework/react/guides/query-cancellation.md) via `AbortSignal`.
+- Next.js: [lazy loading client component](https://github.com/vercel/next.js/blob/v16.2.2/docs/01-app/02-guides/lazy-loading.mdx) dan [Route Handler sebagai Backend For Frontend/proxy](https://github.com/vercel/next.js/blob/v16.2.2/docs/01-app/02-guides/backend-for-frontend.mdx).
 
 ## Alur Auth
 

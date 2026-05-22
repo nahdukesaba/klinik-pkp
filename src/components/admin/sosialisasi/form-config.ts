@@ -6,8 +6,8 @@ import {
   getFileFormValue,
   getNumberFormValue,
   getStringFormValue,
-  toDateTimeLocalValue,
-  toIsoStringFromDateTimeLocal,
+  toBackendDateValue,
+  toDateValue,
 } from "@/lib/admin/form";
 import { UPLOAD_CONSTRAINTS } from "@/lib/constants";
 import type { SosialisasiLocation } from "@/services/sosialisasi.service";
@@ -28,8 +28,8 @@ export function buildSosialisasiDraftValues(
     title: item.name,
     location: item.alamat,
     description: item.description,
-    scheduledAtStart: toDateTimeLocalValue(item.scheduledAtStart),
-    scheduledAtEnd: toDateTimeLocalValue(item.scheduledAtEnd),
+    scheduledAtStart: toDateValue(item.scheduledAtStart),
+    scheduledAtEnd: toDateValue(item.scheduledAtEnd),
     latitude: String(item.coordinates[0]),
     longitude: String(item.coordinates[1]),
     images: [],
@@ -127,14 +127,14 @@ export function buildSosialisasiFormFields(params: {
     },
     {
       name: "scheduledAtStart",
-      label: "Mulai Kegiatan",
-      type: "datetime-local",
+      label: "Tanggal Mulai",
+      type: "date",
       required: true,
     },
     {
       name: "scheduledAtEnd",
-      label: "Selesai Kegiatan",
-      type: "datetime-local",
+      label: "Tanggal Selesai",
+      type: "date",
       required: true,
     },
     {
@@ -191,8 +191,14 @@ export function buildSosialisasiFormData(
     formData.set("title", existingItem.name);
     formData.set("location", existingItem.alamat);
     formData.set("description", existingItem.description);
-    formData.set("scheduled_at_start", existingItem.scheduledAtStart);
-    formData.set("scheduled_at_end", existingItem.scheduledAtEnd);
+    formData.set(
+      "scheduled_at_start",
+      toBackendDateValue(toDateValue(existingItem.scheduledAtStart))
+    );
+    formData.set(
+      "scheduled_at_end",
+      toBackendDateValue(toDateValue(existingItem.scheduledAtEnd))
+    );
     formData.set(
       "coordinate",
       JSON.stringify({
@@ -221,11 +227,11 @@ export function buildSosialisasiFormData(
   formData.set("description", getStringFormValue(values, "description"));
   formData.set(
     "scheduled_at_start",
-    toIsoStringFromDateTimeLocal(getStringFormValue(values, "scheduledAtStart"))
+    toBackendDateValue(getStringFormValue(values, "scheduledAtStart"))
   );
   formData.set(
     "scheduled_at_end",
-    toIsoStringFromDateTimeLocal(getStringFormValue(values, "scheduledAtEnd"))
+    toBackendDateValue(getStringFormValue(values, "scheduledAtEnd"))
   );
   formData.set(
     "coordinate",

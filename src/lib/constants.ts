@@ -31,7 +31,41 @@ export const QUERY_CONFIG = {
 
 export const LONG_LIVED_QUERY_STALE_TIME_MS = 5 * 60 * 1000;
 export const DEFAULT_DEBOUNCE_DELAY_MS = 400;
-export const ADMIN_TABLE_PAGE_SIZE = 10;
+
+/**
+ * Single source of truth for server-side pagination size in admin tables.
+ * Admin hooks pass this as perPage/limit to the backend, and admin pages must
+ * use it as the fallback for meta.limit instead of hardcoded numeric values.
+ */
+export const ADMIN_TABLE_PAGE_SIZE = 50;
+
+/**
+ * Maximum page size accepted by the public API proxy.
+ * Requests above this value are clamped before they reach the backend.
+ */
+export const API_MAX_PAGE_LIMIT = 100;
+
+/**
+ * Per-request batch size for public services that collect every backend page.
+ * This differs from ADMIN_TABLE_PAGE_SIZE because public pages need full
+ * datasets while admin tables intentionally render one server-paginated page.
+ */
+export const PUBLIC_LIST_FETCH_LIMIT = API_MAX_PAGE_LIMIT;
+export const PUBLIC_YEAR_FILTER_OPTIONS = [2025, 2024, 2023] as const;
+export const PUBLIC_DEFAULT_YEAR = PUBLIC_YEAR_FILTER_OPTIONS[0];
+
+export function clampApiPageLimit(
+  value: number | null | undefined,
+  fallback = API_MAX_PAGE_LIMIT
+) {
+  const limit = value ?? fallback;
+
+  if (!Number.isFinite(limit) || limit < 1) {
+    return fallback;
+  }
+
+  return Math.min(Math.trunc(limit), API_MAX_PAGE_LIMIT);
+}
 
 export const QUERY_KEYS = {
   adminUsers: "admin-users",
@@ -51,9 +85,7 @@ export const QUERY_KEYS = {
   publicSosialisasi: "sosialisasi",
   publicRusun: "rusun",
   publicBsps: "bsps",
-  publicBspsYears: "bsps-years",
   publicKawasanKumuh: "kawasan-kumuh",
-  publicKawasanKumuhYears: "kawasan-kumuh-years",
   publicBankDesain: "bank-desain",
 } as const;
 

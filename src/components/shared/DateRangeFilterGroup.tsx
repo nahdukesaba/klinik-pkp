@@ -47,7 +47,7 @@ import { getSortedUniqueYears } from "@/lib/date";
 // --- Types ---
 
 interface DateRangeFilterGroupProps {
-  /** Tahun yang dipilih ("all" untuk semua) */
+  /** Tahun yang dipilih */
   year: string;
   /** Setter tahun */
   setYear: (v: string) => void;
@@ -113,13 +113,13 @@ export function DateRangeFilterGroup({
   /** Handler: pilih date → reset year/month */
   const handleStartDateChange = (v: string) => {
     setStartDate(v);
-    if (v) { setYear("all"); setMonth("all"); }
+    if (v) setMonth("all");
   };
 
   /** Handler: pilih end date → reset year/month */
   const handleEndDateChange = (v: string) => {
     setEndDate(v);
-    if (v) { setYear("all"); setMonth("all"); }
+    if (v) setMonth("all");
   };
 
   const sizeClass = compact ? "h-9 text-xs" : "h-9 text-sm";
@@ -140,7 +140,6 @@ export function DateRangeFilterGroup({
               {normalizedYears.map((y) => (
                 <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
               ))}
-              <SelectItem value="all">Semua Tahun</SelectItem>
             </SelectContent>
           </Select>
 
@@ -209,7 +208,6 @@ export function DateRangeFilterGroup({
             {normalizedYears.map((y) => (
               <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
             ))}
-            <SelectItem value="all">Semua Tahun</SelectItem>
           </SelectContent>
         </Select>
 

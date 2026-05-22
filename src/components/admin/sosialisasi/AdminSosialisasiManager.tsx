@@ -7,6 +7,7 @@ import {
   AdminErrorAlert,
   AdminFormDialog,
   AdminStatsGrid,
+  AdminTableFilters,
 } from "@/components/admin";
 import { Button } from "@/components/ui/button";
 import { useAdminSosialisasiPage } from "@/hooks/admin/use-admin-sosialisasi-page";
@@ -24,20 +25,16 @@ export function AdminSosialisasiManager({
     editingItem,
     formErrors,
     isSaving,
-    currentPage,
     searchKeyword,
-    sortBy,
-    sortDirection,
     sosialisasiQuery,
     viewConfig,
-    sosialisasiMeta,
+    pagination,
     formFields,
     initialValues,
     actions,
     openCreateDialog,
-    handlePageChange,
     handleSearchChange,
-    handleSortChange,
+    resetFilters,
     handleSubmit,
     handleFormOpenChange,
     setDraftValues,
@@ -67,19 +64,6 @@ export function AdminSosialisasiManager({
             {viewConfig.title}
           </h1>
         </div>
-
-        <div className="flex items-center gap-3">
-          {view !== "berita" ? (
-            <Button
-              type="button"
-              onClick={openCreateDialog}
-              className="gap-2"
-            >
-              <PlusCircle className="h-4 w-4" />
-              {viewConfig.addLabel}
-            </Button>
-          ) : null}
-        </div>
       </div>
 
       <AdminStatsGrid
@@ -91,29 +75,28 @@ export function AdminSosialisasiManager({
         <AdminErrorAlert message={`Gagal mengambil data: ${sosialisasiQuery.error.message}`} />
       ) : null}
 
+      <AdminTableFilters
+        searchValue={searchKeyword}
+        searchPlaceholder="Cari judul..."
+        onSearchChange={handleSearchChange}
+        onReset={resetFilters}
+        actions={
+          view !== "berita" ? (
+            <Button type="button" onClick={openCreateDialog} className="gap-2">
+              <PlusCircle className="h-4 w-4" />
+              {viewConfig.addLabel}
+            </Button>
+          ) : null
+        }
+      />
+
       <AdminDataTable
         columns={viewConfig.columns}
         data={viewConfig.data}
-        searchFields={viewConfig.searchFields}
-        searchPlaceholder={viewConfig.searchPlaceholder}
         actions={actions}
         isLoading={sosialisasiQuery.isLoading}
-        isRefreshing={sosialisasiQuery.isFetching && !sosialisasiQuery.isLoading}
         emptyMessage={viewConfig.emptyMessage}
-        pagination={{
-          currentPage: sosialisasiMeta?.page ?? currentPage,
-          totalPages: sosialisasiMeta?.totalPages ?? 1,
-          totalItems: sosialisasiMeta?.totalRecords ?? viewConfig.data.length,
-          pageSize: sosialisasiMeta?.limit ?? 10,
-          onPageChange: handlePageChange,
-          searchValue: searchKeyword,
-          onSearchChange: handleSearchChange,
-          searchMode: "local",
-          sortKey: sortBy,
-          sortDirection,
-          onSortChange: handleSortChange,
-          sortMode: "local",
-        }}
+        pagination={pagination}
       />
 
       <AdminFormDialog

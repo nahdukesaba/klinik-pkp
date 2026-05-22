@@ -19,9 +19,7 @@ export interface SosialisasiViewConfig {
   title: string;
   addLabel: string;
   dialogTitle: string;
-  searchPlaceholder: string;
   emptyMessage: string;
-  searchFields: string[];
   columns: Column<SosialisasiLocation>[];
   data: SosialisasiLocation[];
   stats: ViewMetric[];

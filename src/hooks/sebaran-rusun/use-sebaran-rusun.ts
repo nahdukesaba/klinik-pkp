@@ -20,6 +20,7 @@ import { useLazyMount } from "@/hooks/use-lazy-mount";
 import { usePagination } from "@/hooks/use-pagination";
 import {
   DEFAULT_DEBOUNCE_DELAY_MS,
+  LONG_LIVED_QUERY_STALE_TIME_MS,
   QUERY_CONFIG,
   QUERY_KEYS,
 } from "@/lib/constants";
@@ -35,6 +36,9 @@ export function useSebaranRusun() {
     queryKey: [QUERY_KEYS.publicRusun],
     queryFn: () => fetchRusunList(),
     ...QUERY_CONFIG,
+    retry: false,
+    staleTime: LONG_LIVED_QUERY_STALE_TIME_MS,
+    gcTime: LONG_LIVED_QUERY_STALE_TIME_MS,
   });
   const data = query.data ?? EMPTY_RUSUN;
 
@@ -48,7 +52,7 @@ export function useSebaranRusun() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   // Peta (lazy-mount, aktif hanya saat data siap)
-  const mapLazy = useLazyMount();
+  const mapLazy = useLazyMount({ initiallyMounted: true });
   const enableMap = mapLazy.isMounted && !query.isLoading && !query.isError;
 
   // Turunan: daftar terfilter (cascading + pencarian, tanpa year filter)

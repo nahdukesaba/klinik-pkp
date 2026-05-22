@@ -2,27 +2,26 @@
 
 /**
  * Hook: useKawasanKumuh
- * Mengelola data dan filter. Tahun dikirim ke API, dan daftar tahunnya
- * diambil dari seluruh data backend agar opsi filter selalu akurat.
+ * Mengelola data dan filter. Data publik diambil sesuai tahun aktif agar
+ * peta dan sidebar tidak perlu memuat dataset semua tahun sekaligus.
  */
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { useCascadingFilter } from "@/hooks/use-cascading-filter";
 import { useDebounce } from "@/hooks/use-debounce";
 import { usePagination } from "@/hooks/use-pagination";
 import {
-  CURRENT_YEAR,
-  CURRENT_YEAR_NUM,
   DEFAULT_DEBOUNCE_DELAY_MS,
   LONG_LIVED_QUERY_STALE_TIME_MS,
+  PUBLIC_DEFAULT_YEAR,
+  PUBLIC_YEAR_FILTER_OPTIONS,
   QUERY_CONFIG,
   QUERY_KEY_PARTS,
   QUERY_KEYS,
 } from "@/lib/constants";
-import { getSortedUniqueYears } from "@/lib/date";
 import { sanitizeInput } from "@/lib/security";
 import {
   fetchKumuhAvailableYears,
@@ -32,36 +31,66 @@ import {
 const SIDEBAR_PER_PAGE = 12;
 
 export function useKawasanKumuh() {
-  const [yearFilter, setYearFilter] = useState<string>(CURRENT_YEAR);
-
+  const queryClient = useQueryClient();
+  const [yearFilter, setYearFilter] = useState("");
   const yearsQuery = useQuery({
-    queryKey: [QUERY_KEYS.publicKawasanKumuhYears],
+    queryKey: [QUERY_KEYS.publicKawasanKumuh, "years"],
     queryFn: fetchKumuhAvailableYears,
     ...QUERY_CONFIG,
+    retry: false,
     staleTime: LONG_LIVED_QUERY_STALE_TIME_MS,
+    gcTime: LONG_LIVED_QUERY_STALE_TIME_MS,
   });
-  const yearParam =
-    yearFilter === "all"
-      ? undefined
-      : parseInt(yearFilter, 10) || CURRENT_YEAR_NUM;
+  const availableYears = useMemo(
+    () =>
+      yearsQuery.data?.length
+        ? yearsQuery.data
+        : [...PUBLIC_YEAR_FILTER_OPTIONS],
+    [yearsQuery.data]
+  );
+  const selectedYear = yearFilter || String(availableYears[0] ?? PUBLIC_DEFAULT_YEAR);
+
+  const parsedYear = parseInt(selectedYear, 10);
+  const yearParam = Number.isFinite(parsedYear)
+    ? parsedYear
+    : PUBLIC_DEFAULT_YEAR;
 
   const query = useQuery({
-    queryKey: [
-      QUERY_KEYS.publicKawasanKumuh,
-      yearParam ?? QUERY_KEY_PARTS.all,
-    ],
+    queryKey: [QUERY_KEYS.publicKawasanKumuh, yearParam],
     queryFn: () => fetchKumuhList(yearParam),
     placeholderData: keepPreviousData,
     ...QUERY_CONFIG,
+    retry: false,
+    staleTime: LONG_LIVED_QUERY_STALE_TIME_MS,
+    gcTime: LONG_LIVED_QUERY_STALE_TIME_MS,
   });
   const data = useMemo(() => query.data ?? [], [query.data]);
-  const availableYears = useMemo(() => {
-    const sourceYears = yearsQuery.data?.length
-      ? yearsQuery.data
-      : data.map((item) => item.yearInspected);
 
-    return getSortedUniqueYears([CURRENT_YEAR_NUM, ...sourceYears]);
-  }, [data, yearsQuery.data]);
+  useEffect(() => {
+    if (query.isLoading || yearsQuery.isLoading) {
+      return;
+    }
+
+    for (const year of availableYears) {
+      if (year === yearParam) {
+        continue;
+      }
+
+      void queryClient.prefetchQuery({
+        queryKey: [QUERY_KEYS.publicKawasanKumuh, year],
+        queryFn: () => fetchKumuhList(year),
+        retry: false,
+        staleTime: LONG_LIVED_QUERY_STALE_TIME_MS,
+        gcTime: LONG_LIVED_QUERY_STALE_TIME_MS,
+      });
+    }
+  }, [
+    availableYears,
+    query.isLoading,
+    queryClient,
+    yearParam,
+    yearsQuery.isLoading,
+  ]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -73,8 +102,7 @@ export function useKawasanKumuh() {
     const q = sanitizeInput(debouncedSearch).toLowerCase();
 
     return cascading.filteredItems.filter((kawasan) => {
-      const matchesYear =
-        yearFilter === "all" || kawasan.yearInspected === yearParam;
+      const matchesYear = kawasan.yearInspected === yearParam;
       const matchesSearch =
         !debouncedSearch ||
         kawasan.name.toLowerCase().includes(q) ||
@@ -90,7 +118,6 @@ export function useKawasanKumuh() {
     cascading.filteredItems,
     debouncedSearch,
     statusFilter,
-    yearFilter,
     yearParam,
   ]);
 
@@ -99,7 +126,13 @@ export function useKawasanKumuh() {
   });
 
   const resetYear = useCallback(() => {
-    setYearFilter(CURRENT_YEAR);
+    setYearFilter("");
+  }, []);
+
+  const handleYearFilterChange = useCallback((value: string) => {
+    setYearFilter(
+      value === QUERY_KEY_PARTS.all ? "" : value
+    );
   }, []);
 
   return {
@@ -108,9 +141,9 @@ export function useKawasanKumuh() {
     kecamatanList: cascading.filterLists.kecamatanList,
     kelurahanList: cascading.filterLists.kelurahanList,
     searchQuery,
-    yearFilter,
+    yearFilter: selectedYear,
     availableYears,
-    setYearFilter,
+    setYearFilter: handleYearFilterChange,
     resetYear,
     kabupatenFilter: cascading.filterState.kabupatenFilter,
     kecamatanFilter: cascading.filterState.kecamatanFilter,

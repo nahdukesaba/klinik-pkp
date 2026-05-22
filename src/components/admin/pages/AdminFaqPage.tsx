@@ -9,6 +9,7 @@ import {
   AdminFormDialog,
   AdminPageHeader,
   AdminStatsGrid,
+  AdminTableFilters,
   deleteAction,
   editAction,
   type Column,
@@ -61,6 +62,7 @@ export default function AdminFaqPage() {
     isSaving,
     faqQuery,
     faqList,
+    pagination,
     stats,
     formFields,
     initialValues,
@@ -69,6 +71,9 @@ export default function AdminFaqPage() {
     handleSubmit,
     handleDelete,
     handleFormOpenChange,
+    searchKeyword,
+    handleSearchChange,
+    resetFilters,
   } = useAdminFaqPage();
 
   if (!canManage) {
@@ -97,14 +102,20 @@ export default function AdminFaqPage() {
         <AdminErrorAlert message={`Gagal mengambil data: ${faqQuery.error.message}`} />
       ) : null}
 
+      <AdminTableFilters
+        searchValue={searchKeyword}
+        searchPlaceholder="Cari pertanyaan atau jawaban FAQ..."
+        onSearchChange={handleSearchChange}
+        onReset={resetFilters}
+      />
+
       <AdminDataTable<FaqItem>
         columns={faqColumns}
         data={faqList}
-        searchFields={["question", "answer"]}
-        searchPlaceholder="Cari pertanyaan atau jawaban FAQ..."
         actions={[editAction(openEditDialog), deleteAction(handleDelete)]}
         isLoading={faqQuery.isLoading}
         emptyMessage="Belum ada FAQ."
+        pagination={pagination}
       />
 
       <AdminFormDialog

@@ -47,6 +47,44 @@ export interface ApiListQueryControls {
   sortDirection?: SortDirection;
 }
 
+export interface BspsFilterParams {
+  status?: "rencana" | "proses" | "selesai" | string;
+  regionId?: string;
+  districtId?: string;
+  villageId?: string;
+  year?: number;
+}
+
+export interface RusunFilterParams {
+  regionId?: string;
+  districtId?: string;
+  villageId?: string;
+}
+
+export interface KawasanKumuhFilterParams {
+  regionId?: string;
+  districtId?: string;
+  villageId?: string;
+  year?: number;
+  areaName?: string;
+}
+
+export interface BankDesainFilterParams {
+  type?: string;
+  bedroomCount?: number;
+  bathroomCount?: number;
+  hasGarage?: boolean;
+  name?: string;
+}
+
+export interface SosialisasiFilterParams {
+  regionId?: string;
+  districtId?: string;
+  villageId?: string;
+  title?: string;
+  location?: string;
+}
+
 // --- Response standar ---
 
 export interface ApiResponse<T> {

@@ -6,14 +6,21 @@ import {
   extractVillageName,
   extractDistrictName,
   extractRegionName,
+  type ApiRequestOptions,
   type ApiPaginatedResult,
   type CoordinateApi,
   type VillageApi,
   type DistrictApi,
   type RegionApi,
 } from "@/lib/api-client";
-import { buildImageUrl } from "@/lib/constants";
-import type { ApiListQueryControls } from "@/types/api";
+import {
+  buildImageUrl,
+  clampApiPageLimit,
+  PUBLIC_LIST_FETCH_LIMIT,
+} from "@/lib/constants";
+import type { ApiListQueryControls, RusunFilterParams } from "@/types/api";
+
+const RUSUN_BACKEND_PAGE_LIMIT = 100;
 
 // --- Tipe API ---
 
@@ -60,10 +67,10 @@ export interface RusunData {
   image?: string;
 }
 
-export interface RusunListParams extends ApiListQueryControls {
-  regionId?: string;
-  districtId?: string;
-  villageId?: string;
+export interface RusunListParams
+  extends Omit<ApiListQueryControls, "keyword">,
+    RusunFilterParams {
+  collectAllPages?: boolean;
 }
 
 // --- Transformasi ---
@@ -104,31 +111,40 @@ export function transformRusunItem(item: RusunApiItem): RusunData {
 export async function fetchRusunList(
   params: RusunListParams = {}
 ): Promise<RusunData[]> {
+  const collectAllPages = params.collectAllPages ?? true;
+  const limit = Math.min(
+    clampApiPageLimit(params.perPage, PUBLIC_LIST_FETCH_LIMIT),
+    RUSUN_BACKEND_PAGE_LIMIT
+  );
+
   return fetchApiList<RusunApiItem, RusunData>("/rusun", {
     query: {
       page: params.page,
-      limit: params.perPage,
-      keyword: params.keyword,
+      limit,
       sort_by: params.sortBy,
       sort_order: params.sortBy ? params.sortDirection : undefined,
       region_id: params.regionId,
       district_id: params.districtId,
       village_id: params.villageId,
+      all: collectAllPages ? true : undefined,
     },
     transform: transformRusunItem,
     errorMessage: "Gagal mengambil data rusun dari server",
+    requestOptions: { retry: 0 },
     collectAllPages: false,
+    backendPageLimit: RUSUN_BACKEND_PAGE_LIMIT,
+    allowPartialResults: true,
   });
 }
 
 export async function fetchRusunPage(
-  params: RusunListParams = {}
+  params: RusunListParams = {},
+  requestOptions?: ApiRequestOptions
 ): Promise<ApiPaginatedResult<RusunData>> {
   return fetchApiListWithMeta<RusunApiItem, RusunData>("/rusun", {
     query: {
       page: params.page,
-      limit: params.perPage,
-      keyword: params.keyword,
+      limit: clampApiPageLimit(params.perPage, RUSUN_BACKEND_PAGE_LIMIT),
       sort_by: params.sortBy,
       sort_order: params.sortBy ? params.sortDirection : undefined,
       region_id: params.regionId,
@@ -137,5 +153,8 @@ export async function fetchRusunPage(
     },
     transform: transformRusunItem,
     errorMessage: "Gagal mengambil data rusun dari server",
+    requestOptions,
+    backendPageLimit: RUSUN_BACKEND_PAGE_LIMIT,
+    allowPartialResults: true,
   });
 }

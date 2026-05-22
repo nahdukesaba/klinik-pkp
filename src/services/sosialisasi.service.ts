@@ -15,6 +15,7 @@
 import {
   fetchApiList,
   fetchApiListWithMeta,
+  type ApiRequestOptions,
   extractDistrictName,
   extractRegionName,
   extractVillageName,
@@ -24,12 +25,16 @@ import {
   type RegionApi,
   type VillageApi,
 } from "@/lib/api-client";
-import { buildImageUrl } from "@/lib/constants";
+import {
+  buildImageUrl,
+  clampApiPageLimit,
+  PUBLIC_LIST_FETCH_LIMIT,
+} from "@/lib/constants";
 import {
   formatDateId,
-  formatTimeRangeId,
   getDateKey,
   getMonthKey,
+  getTodayDateKey,
 } from "@/lib/date";
 import {
   ADMIN_RESOURCE_NAMES,
@@ -37,7 +42,7 @@ import {
   deleteAdminResource,
   updateAdminResource,
 } from "@/services/admin-resource.service";
-import type { ApiListQueryControls } from "@/types/api";
+import type { ApiListQueryControls, SosialisasiFilterParams } from "@/types/api";
 
 // --- Tipe API ---
 
@@ -52,8 +57,8 @@ export interface SosialisasiApiItem {
   description: string;
   image_urls: string[];
   coordinate: CoordinateApi;
-  scheduled_at_start: string; // RFC 3339
-  scheduled_at_end: string; // RFC 3339
+  scheduled_at_start: string;
+  scheduled_at_end: string;
   village?: VillageApi;
   district?: DistrictApi;
   region?: RegionApi;
@@ -75,7 +80,6 @@ export interface SosialisasiLocation {
   kelurahan?: string;
   coordinates: [number, number];
   date: string; // "YYYY-MM-DD"
-  time: string; // "HH:mm - HH:mm"
   peserta: number;
   alamat: string;
   description: string;
@@ -109,11 +113,11 @@ function hasSosialisasiImages(imageUrls: string[] | null | undefined) {
 export function resolveSosialisasiStatus(
   scheduledAtEnd: string,
   hasImages: boolean,
-  nowTimestamp: number = Date.now()
+  todayDateKey: string = getTodayDateKey()
 ): SosialisasiStatus {
-  const eventEndTimestamp = new Date(scheduledAtEnd).getTime();
+  const eventEndDateKey = getDateKey(scheduledAtEnd);
 
-  if (!Number.isFinite(eventEndTimestamp) || eventEndTimestamp > nowTimestamp) {
+  if (!eventEndDateKey || eventEndDateKey > todayDateKey) {
     return "mendatang";
   }
 
@@ -155,7 +159,6 @@ export function transformToLocation(item: SosialisasiApiItem): SosialisasiLocati
       item.coordinate?.longitude ?? 0,
     ],
     date: getDateKey(item.scheduled_at_start),
-    time: formatTimeRangeId(item.scheduled_at_start, item.scheduled_at_end),
     peserta: 0, // Tidak tersedia di API, default 0
     alamat: item.location,
     description: item.description,
@@ -237,15 +240,12 @@ export interface SosialisasiPageResult extends SosialisasiResult {
   meta: ApiPaginationMeta;
 }
 
-export interface SosialisasiListParams extends ApiListQueryControls {
-  regionId?: string;
-  districtId?: string;
-  villageId?: string;
-}
+export interface SosialisasiListParams
+  extends ApiListQueryControls,
+    SosialisasiFilterParams {}
 
 export function buildSosialisasiResultFromLocations(
-  baseLocations: SosialisasiLocation[],
-  nowTimestamp: number = Date.now()
+  baseLocations: SosialisasiLocation[]
 ): SosialisasiResult {
   const locations: SosialisasiLocation[] = [];
   const publicLocations: SosialisasiLocation[] = [];
@@ -260,8 +260,7 @@ export function buildSosialisasiResultFromLocations(
       ...item,
       status: resolveSosialisasiStatus(
         item.scheduledAtEnd,
-        item.images.length > 0,
-        nowTimestamp
+        item.images.length > 0
       ),
     };
     locations.push(location);
@@ -307,38 +306,51 @@ function buildSosialisasiResult(items: SosialisasiApiItem[]): SosialisasiResult 
 export async function fetchSosialisasiList(
   params: SosialisasiListParams = {}
 ): Promise<SosialisasiResult> {
-  const limit = params.perPage ?? 1000;
+  const limit = clampApiPageLimit(params.perPage, PUBLIC_LIST_FETCH_LIMIT);
   const items = await fetchApiList<SosialisasiApiItem>("/sosialisasi", {
     query: {
       page: params.page,
       limit,
-      title: params.keyword,
+      title: params.title ?? params.keyword,
+      location: params.location,
+      sort_by: params.sortBy,
+      sort_order: params.sortBy ? params.sortDirection : undefined,
       region_id: params.regionId,
       district_id: params.districtId,
       village_id: params.villageId,
+      all: true,
     },
     errorMessage: "Gagal mengambil data sosialisasi dari server",
-    collectAllPages: true,
+    collectAllPages: false,
+    backendPageLimit: PUBLIC_LIST_FETCH_LIMIT,
+    allowPartialResults: true,
   });
 
   return buildSosialisasiResult(items);
 }
 
 export async function fetchSosialisasiPage(
-  params: SosialisasiListParams = {}
+  params: SosialisasiListParams = {},
+  requestOptions?: ApiRequestOptions
 ): Promise<SosialisasiPageResult> {
   const pageResult = await fetchApiListWithMeta<SosialisasiApiItem>(
     "/sosialisasi",
     {
       query: {
         page: params.page,
-        limit: params.perPage,
-        title: params.keyword,
+        limit: clampApiPageLimit(params.perPage, PUBLIC_LIST_FETCH_LIMIT),
+        title: params.title ?? params.keyword,
+        location: params.location,
+        sort_by: params.sortBy,
+        sort_order: params.sortBy ? params.sortDirection : undefined,
         region_id: params.regionId,
         district_id: params.districtId,
         village_id: params.villageId,
       },
       errorMessage: "Gagal mengambil data sosialisasi dari server",
+      requestOptions,
+      backendPageLimit: PUBLIC_LIST_FETCH_LIMIT,
+      allowPartialResults: true,
     }
   );
 

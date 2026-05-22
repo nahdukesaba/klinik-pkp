@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -13,12 +13,7 @@ import {
   AdminApiError,
   normalizeAdminFieldErrors,
 } from "@/lib/admin-client";
-import {
-  ADMIN_TABLE_PAGE_SIZE,
-  QUERY_CONFIG,
-  QUERY_KEY_PARTS,
-  QUERY_KEYS,
-} from "@/lib/constants";
+import { QUERY_CONFIG, QUERY_KEY_PARTS, QUERY_KEYS } from "@/lib/constants";
 import { sanitizeNip } from "@/lib/security";
 import {
   createAdminUser,
@@ -35,9 +30,15 @@ import type {
   AdminPaginationMeta,
   UserRole,
 } from "@/types/admin";
-import type { SortDirection } from "@/types/api";
 
 import { useAdminCreateIntent } from "./use-admin-create-intent";
+import { useAdminListQuery } from "./use-admin-list-query";
+
+type UserStatusFilter = "active" | "inactive";
+type UserListFilters = {
+  role?: UserRole;
+  isActive?: UserStatusFilter;
+};
 
 function buildControlUsersPayload(
   values: AdminFormValues,
@@ -77,7 +78,7 @@ function createDefaultPaginationMeta(page: number): AdminPaginationMeta {
   return {
     totalRecords: 0,
     page,
-    limit: ADMIN_TABLE_PAGE_SIZE,
+    limit: 0,
     totalPages: 1,
     hasNextPage: false,
     hasPreviousPage: false,
@@ -89,15 +90,9 @@ export function useAdminUsersPage() {
   const { toast } = useToast();
   const confirm = useConfirmDialog();
   const queryClient = useQueryClient();
+  const listQuery = useAdminListQuery<UserListFilters>();
+  const { currentPage, setFilter, setPage } = listQuery;
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const [searchKeyword, setSearchKeyword] = useState("");
-  const [sortBy, setSortBy] = useState<string | null>(null);
-  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
-  const [roleFilter, setRoleFilter] = useState<"all" | UserRole>("all");
-  const [statusFilter, setStatusFilter] = useState<
-    "all" | "active" | "inactive"
-  >("all");
   const [formOpen, setFormOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<AdminDirectoryUser | null>(null);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -120,18 +115,17 @@ export function useAdminUsersPage() {
   const usersQuery = useQuery({
     queryKey: [
       QUERY_KEYS.adminUsers,
-      currentPage,
-      searchKeyword,
-      sortBy,
-      sortDirection,
+      listQuery.queryParams,
     ],
     queryFn: () =>
       fetchAdminUsersPage({
-        page: currentPage,
-        limit: ADMIN_TABLE_PAGE_SIZE,
-        keyword: searchKeyword,
-        sortBy,
-        sortDirection,
+        page: listQuery.queryParams.page,
+        limit: listQuery.queryParams.perPage,
+        keyword: listQuery.queryParams.keyword,
+        sortBy: listQuery.queryParams.sortBy,
+        sortDirection: listQuery.queryParams.sortDirection,
+        role: listQuery.filters.role,
+        isActive: listQuery.filters.isActive,
       }),
     staleTime: QUERY_CONFIG.staleTime,
     gcTime: QUERY_CONFIG.gcTime,
@@ -147,19 +141,30 @@ export function useAdminUsersPage() {
     enabled: canManage,
   });
 
-  const usersMeta = usersQuery.data?.meta ?? createDefaultPaginationMeta(currentPage);
+  const usersMeta =
+    usersQuery.data?.meta ?? createDefaultPaginationMeta(listQuery.currentPage);
   const pageUsers = useMemo(() => usersQuery.data?.data ?? [], [usersQuery.data]);
-
-  const filteredUsers = useMemo(() => {
-    return pageUsers.filter((item) => {
-      const matchesRole = roleFilter === "all" || item.role === roleFilter;
-      const matchesStatus =
-        statusFilter === "all" ||
-        (statusFilter === "active" ? item.isActive : !item.isActive);
-
-      return matchesRole && matchesStatus;
-    });
-  }, [pageUsers, roleFilter, statusFilter]);
+  const roleFilter = listQuery.filters.role ?? "all";
+  const statusFilter = listQuery.filters.isActive ?? "all";
+  const setRoleFilter = useCallback(
+    (value: "all" | UserRole) => {
+      setFilter("role", value === "all" ? undefined : value);
+    },
+    [setFilter]
+  );
+  const setStatusFilter = useCallback(
+    (value: "all" | UserStatusFilter) => {
+      setFilter("isActive", value === "all" ? undefined : value);
+    },
+    [setFilter]
+  );
+  const pagination = {
+    ...listQuery.tableState,
+    currentPage: usersMeta.page,
+    totalPages: usersMeta.totalPages,
+    totalItems: usersMeta.totalRecords,
+    pageSize: usersMeta.limit || listQuery.tableState.pageSize,
+  };
 
   const stats = useMemo(
     () => ({
@@ -359,15 +364,14 @@ export function useAdminUsersPage() {
         return;
       }
 
-      const shouldMoveToPreviousPage = currentPage > 1 && pageUsers.length === 1;
+      const shouldMoveToPreviousPage =
+        currentPage > 1 && pageUsers.length === 1;
 
       try {
         await deleteAdminUser(item.id);
 
         if (shouldMoveToPreviousPage) {
-          startTransition(() => {
-            setCurrentPage((prev) => Math.max(1, prev - 1));
-          });
+          setPage(Math.max(1, currentPage - 1));
         }
 
         await refreshUsers();
@@ -386,7 +390,14 @@ export function useAdminUsersPage() {
         });
       }
     },
-    [confirm, currentPage, pageUsers.length, refreshUsers, toast]
+    [
+      confirm,
+      currentPage,
+      pageUsers.length,
+      refreshUsers,
+      setPage,
+      toast,
+    ]
   );
 
   const handleFormOpenChange = useCallback((open: boolean) => {
@@ -398,36 +409,10 @@ export function useAdminUsersPage() {
     }
   }, []);
 
-  const handlePageChange = useCallback((page: number) => {
-    startTransition(() => {
-      setCurrentPage(page);
-    });
-  }, []);
-
-  const handleSearchChange = useCallback((keyword: string) => {
-    setSearchKeyword(keyword);
-    startTransition(() => {
-      setCurrentPage(1);
-    });
-  }, []);
-
-  const handleSortChange = useCallback(
-    (state: { sortKey: string; sortDirection: SortDirection }) => {
-      setSortBy(state.sortKey);
-      setSortDirection(state.sortDirection);
-      startTransition(() => {
-        setCurrentPage(1);
-      });
-    },
-    []
-  );
-
   return {
     canManage,
     currentUserId: user.id,
-    searchKeyword,
-    sortBy,
-    sortDirection,
+    searchKeyword: listQuery.searchInput,
     roleFilter,
     setRoleFilter,
     statusFilter,
@@ -439,7 +424,8 @@ export function useAdminUsersPage() {
     isHydratingUser,
     usersQuery,
     usersMeta,
-    filteredUsers,
+    filteredUsers: pageUsers,
+    pagination,
     stats,
     auditEntries: auditQuery.data ?? [],
     formFields,
@@ -450,8 +436,7 @@ export function useAdminUsersPage() {
     handleSubmit,
     handleDelete,
     handleFormOpenChange,
-    handlePageChange,
-    handleSearchChange,
-    handleSortChange,
+    handleSearchChange: listQuery.setSearch,
+    resetFilters: listQuery.resetFilters,
   };
 }

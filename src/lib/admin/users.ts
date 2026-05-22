@@ -47,7 +47,7 @@ export interface AdminUserUpdateInput {
   phone?: string;
 }
 
-export const ADMIN_USERS_PAGE_LIMIT = 10;
+export const ADMIN_USERS_PAGE_LIMIT = 50;
 const USER_SORT_FIELDS = new Set([
   "name",
   "email",
@@ -160,6 +160,8 @@ function buildUsersEndpoint(options?: {
   keyword?: string;
   sortBy?: string | null;
   sortDirection?: SortDirection;
+  role?: UserRole;
+  isActive?: "active" | "inactive";
 }) {
   const params = new URLSearchParams();
   const normalizedPage = normalizeUsersPage(options?.page);
@@ -183,6 +185,14 @@ function buildUsersEndpoint(options?: {
     if (normalizedSortDirection) {
       params.set("sort_order", normalizedSortDirection);
     }
+  }
+
+  if (options?.role) {
+    params.set("role", options.role);
+  }
+
+  if (options?.isActive) {
+    params.set("is_active", String(options.isActive === "active"));
   }
 
   return `users?${params.toString()}`;
@@ -214,6 +224,8 @@ export async function listUsersPage(
     keyword?: string;
     sortBy?: string | null;
     sortDirection?: SortDirection;
+    role?: UserRole;
+    isActive?: "active" | "inactive";
   }
 ): Promise<AdminPaginatedUsers> {
   const accessToken = requireBackendAccessToken(backendAccessToken);

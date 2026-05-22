@@ -278,13 +278,6 @@ export function useSosialisasiPKPMap(
               <span style="display: block; flex: 1; min-width: 0; font-size: 13px; color: #374151; font-weight: 500; line-height: 1.45; overflow-wrap: normal; word-break: normal;">${escapeHtml(formattedDate)}</span>
             </div>
             
-            <div style="display: flex; align-items: flex-start; gap: 10px;">
-              <svg style="width: 18px; height: 18px; flex-shrink: 0; color: #0E5B73;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-              </svg>
-              <span style="display: block; flex: 1; min-width: 0; font-size: 13px; color: #374151; font-weight: 500; line-height: 1.45; overflow-wrap: normal; word-break: normal;">${escapeHtml(loc.time)}</span>
-            </div>
-            
             ${loc.peserta
             ? `
             <div style="display: flex; align-items: flex-start; gap: 10px;">

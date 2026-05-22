@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { type AdminFormValues, type FormFieldDef } from "@/components/admin";
 import { useAdminCrud } from "@/hooks/admin/use-admin-crud";
+import { useAdminListQuery } from "@/hooks/admin/use-admin-list-query";
 import { getStringFormValue } from "@/lib/admin/form";
 import { QUERY_CONFIG, QUERY_KEYS } from "@/lib/constants";
 import { ADMIN_RESOURCE_NAMES } from "@/services/admin-resource.service";
@@ -29,6 +30,7 @@ function faqToFormValues(item: FaqItem): AdminFormValues {
 }
 
 export function useAdminFaqPage() {
+  const listQuery = useAdminListQuery();
   const crud = useAdminCrud<FaqItem>({
     queryKey: QUERY_KEYS.adminFaq,
     relatedQueryKeys: [QUERY_KEYS.publicFaq],
@@ -39,14 +41,32 @@ export function useAdminFaqPage() {
   });
 
   const faqQuery = useQuery({
-    queryKey: [QUERY_KEYS.adminFaq],
-    queryFn: () => fetchAdminFaqList({ includeInactive: true }),
+    queryKey: [QUERY_KEYS.adminFaq, listQuery.queryParams.keyword],
+    queryFn: () =>
+      fetchAdminFaqList({
+        includeInactive: true,
+        search: listQuery.queryParams.keyword,
+      }),
     staleTime: 0,
     gcTime: QUERY_CONFIG.gcTime,
     enabled: crud.canManage,
   });
 
   const faqList = faqQuery.data ?? EMPTY_FAQ_ITEMS;
+  const totalPages = Math.max(1, Math.ceil(faqList.length / listQuery.pageSize));
+  const currentPage = Math.min(listQuery.currentPage, totalPages);
+  const pageFaqList = useMemo(() => {
+    const start = (currentPage - 1) * listQuery.pageSize;
+    return faqList.slice(start, start + listQuery.pageSize);
+  }, [currentPage, faqList, listQuery.pageSize]);
+  const pagination = {
+    ...listQuery.tableState,
+    currentPage,
+    totalPages,
+    totalItems: faqList.length,
+    pageSize: listQuery.pageSize,
+    onSortChange: undefined,
+  };
 
   const formFields = useMemo<FormFieldDef[]>(
     () => [
@@ -86,7 +106,8 @@ export function useAdminFaqPage() {
     formErrors: crud.formErrors,
     isSaving: crud.isSaving,
     faqQuery,
-    faqList,
+    faqList: pageFaqList,
+    pagination,
     stats,
     formFields,
     initialValues,
@@ -95,5 +116,8 @@ export function useAdminFaqPage() {
     handleSubmit: crud.handleSubmit,
     handleDelete: crud.handleDelete,
     handleFormOpenChange: crud.handleFormOpenChange,
+    searchKeyword: listQuery.searchInput,
+    handleSearchChange: listQuery.setSearch,
+    resetFilters: listQuery.resetFilters,
   };
 }

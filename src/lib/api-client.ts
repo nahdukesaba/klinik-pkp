@@ -154,6 +154,8 @@ const DEFAULT_TIMEOUT_MS = 30_000;
 const DEFAULT_RETRY_COUNT = 2;
 const DEFAULT_RETRY_DELAY_MS = 400;
 const MAX_RETRY_DELAY_MS = 4_000;
+const TRANSIENT_API_ERROR_PATTERN =
+  /prepared statement|SQLSTATE\s+(42P05|26000)/i;
 
 type ApiFetchOptions = RequestInit & {
   retry?: number;
@@ -172,6 +174,8 @@ interface FetchApiListOptions<TApi, TOutput> {
   errorMessage?: string;
   requestOptions?: ApiRequestOptions;
   collectAllPages?: boolean;
+  backendPageLimit?: number;
+  allowPartialResults?: boolean;
 }
 
 export interface ApiPaginationMeta {
@@ -206,6 +210,22 @@ function shouldRetryStatus(status: number): boolean {
   return status === 408 || status === 429 || status === 502 || status === 503 || status === 504;
 }
 
+function getErrorPayloadText(payload: unknown) {
+  if (typeof payload === "string") {
+    return payload;
+  }
+
+  try {
+    return JSON.stringify(payload);
+  } catch {
+    return "";
+  }
+}
+
+function isTransientApiErrorPayload(payload: unknown) {
+  return TRANSIENT_API_ERROR_PATTERN.test(getErrorPayloadText(payload));
+}
+
 function getRetryDelayMs(response: Response | null, baseDelayMs: number, attempt: number): number {
   const retryAfter = response?.headers.get("retry-after");
   if (retryAfter) {
@@ -224,6 +244,29 @@ function getRetryDelayMs(response: Response | null, baseDelayMs: number, attempt
   const jitterMs = Math.floor(Math.random() * 100);
   const backoffMs = baseDelayMs * (2 ** attempt);
   return Math.min(backoffMs + jitterMs, MAX_RETRY_DELAY_MS);
+}
+
+function createRequestSignal(
+  timeoutController: AbortController,
+  externalSignal?: AbortSignal | null
+) {
+  if (!externalSignal) {
+    return timeoutController.signal;
+  }
+
+  if (externalSignal.aborted) {
+    return externalSignal;
+  }
+
+  if (typeof AbortSignal.any === "function") {
+    return AbortSignal.any([timeoutController.signal, externalSignal]);
+  }
+
+  const controller = new AbortController();
+  const abort = () => controller.abort();
+  timeoutController.signal.addEventListener("abort", abort, { once: true });
+  externalSignal.addEventListener("abort", abort, { once: true });
+  return controller.signal;
 }
 
 function appendQueryValue(
@@ -270,6 +313,7 @@ async function apiFetch<T>(
     retry = DEFAULT_RETRY_COUNT,
     retryDelayMs = DEFAULT_RETRY_DELAY_MS,
     suppressErrorLog: _suppressErrorLog = false,
+    signal: externalSignal,
     ...fetchOptions
   } =
     options ?? {};
@@ -287,21 +331,28 @@ async function apiFetch<T>(
   for (let attempt = 0; attempt <= retry; attempt += 1) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
+    const requestSignal = createRequestSignal(controller, externalSignal);
 
     try {
       const response = await fetch(url, {
         ...fetchOptions,
         headers,
-        signal: controller.signal,
+        signal: requestSignal,
       });
 
       if (!response.ok) {
-        if (shouldRetryStatus(response.status) && attempt < retry) {
+        const payload = await response.json().catch(() => null);
+        const isRetryableTransient500 =
+          response.status === 500 && isTransientApiErrorPayload(payload);
+
+        if (
+          (shouldRetryStatus(response.status) || isRetryableTransient500) &&
+          attempt < retry
+        ) {
           const delayMs = getRetryDelayMs(response, retryDelayMs, attempt);
           await sleep(delayMs);
           continue;
         }
-        const payload = await response.json().catch(() => null);
         const normalizedError = normalizeApiError(
           response.status,
           payload,
@@ -317,6 +368,10 @@ async function apiFetch<T>(
 
       return await response.json();
     } catch (error) {
+      if (externalSignal?.aborted) {
+        throw error;
+      }
+
       // AbortError → timeout
       if (error instanceof DOMException && error.name === "AbortError") {
         if (attempt < retry) {
@@ -402,18 +457,50 @@ function normalizeApiListPage<T>(
   };
 }
 
+function getApiResponseErrorText(response: ApiResponse<unknown>) {
+  if (typeof response.error === "string") {
+    return response.error;
+  }
+
+  return [
+    response.message,
+    response.error?.code,
+    response.error?.message,
+    response.details ? JSON.stringify(response.details) : undefined,
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function isTransientApiListResponse(response: ApiResponse<unknown>) {
+  return !response.success &&
+    TRANSIENT_API_ERROR_PATTERN.test(getApiResponseErrorText(response));
+}
+
 async function fetchApiListPage<T>(
   endpoint: string,
   query: ApiQueryParams | undefined,
   requestOptions: ApiRequestOptions | undefined,
   errorMessage: string
 ): Promise<ApiListPage<T>> {
-  const response = await apiClient.get<ApiResponse<unknown>>(
-    buildApiEndpoint(endpoint, query),
-    requestOptions
-  );
+  const retry = requestOptions?.retry ?? DEFAULT_RETRY_COUNT;
+  const retryDelayMs = requestOptions?.retryDelayMs ?? DEFAULT_RETRY_DELAY_MS;
 
-  return normalizeApiListPage<T>(response, errorMessage);
+  for (let attempt = 0; attempt <= retry; attempt += 1) {
+    const response = await apiClient.get<ApiResponse<unknown>>(
+      buildApiEndpoint(endpoint, query),
+      requestOptions
+    );
+
+    if (isTransientApiListResponse(response) && attempt < retry) {
+      await sleep(getRetryDelayMs(null, retryDelayMs, attempt));
+      continue;
+    }
+
+    return normalizeApiListPage<T>(response, errorMessage);
+  }
+
+  throw new Error(errorMessage);
 }
 
 function getPositiveNumberQueryValue(value: ApiQueryParam | undefined) {
@@ -429,6 +516,54 @@ function getPositiveNumberQueryValue(value: ApiQueryParam | undefined) {
   }
 
   return undefined;
+}
+
+function getEffectivePageLimit(
+  meta: ApiListPage<unknown>["meta"],
+  requestedLimit: number | undefined,
+  itemCount: number
+) {
+  if (typeof meta.limit === "number" && Number.isFinite(meta.limit) && meta.limit > 0) {
+    return Math.trunc(meta.limit);
+  }
+
+  if (requestedLimit && itemCount > 0 && itemCount < requestedLimit) {
+    return itemCount;
+  }
+
+  return requestedLimit ?? Math.max(itemCount, 1);
+}
+
+function getTotalRecords(
+  meta: ApiListPage<unknown>["meta"],
+  fallbackCount: number
+) {
+  return typeof meta.totalRecords === "number" &&
+    Number.isFinite(meta.totalRecords) &&
+    meta.totalRecords >= 0
+    ? Math.trunc(meta.totalRecords)
+    : fallbackCount;
+}
+
+function getBackendQuery(
+  query: ApiQueryParams | undefined,
+  backendPageLimit: number | undefined
+) {
+  const requestedLimit = getPositiveNumberQueryValue(query?.limit);
+
+  if (
+    !query ||
+    !backendPageLimit ||
+    !requestedLimit ||
+    requestedLimit <= backendPageLimit
+  ) {
+    return query;
+  }
+
+  return {
+    ...query,
+    limit: backendPageLimit,
+  };
 }
 
 function normalizeApiPaginationMeta(
@@ -466,6 +601,42 @@ function normalizeApiPaginationMeta(
   };
 }
 
+async function fetchApiListPages<T>(
+  endpoint: string,
+  query: ApiQueryParams | undefined,
+  requestOptions: ApiRequestOptions | undefined,
+  errorMessage: string,
+  startPage: number,
+  endPage: number,
+  limit: number,
+  knownPages: Map<number, T[]> = new Map()
+) {
+  const items: T[] = [];
+
+  for (let page = startPage; page <= endPage; page += 1) {
+    const knownItems = knownPages.get(page);
+    if (knownItems) {
+      items.push(...knownItems);
+      continue;
+    }
+
+    const nextPage = await fetchApiListPage<T>(
+      endpoint,
+      {
+        ...query,
+        page,
+        limit,
+      },
+      requestOptions,
+      errorMessage
+    );
+
+    items.push(...nextPage.items);
+  }
+
+  return items;
+}
+
 export async function fetchApiList<TApi, TOutput = TApi>(
   endpoint: string,
   options: FetchApiListOptions<TApi, TOutput> = {}
@@ -476,46 +647,62 @@ export async function fetchApiList<TApi, TOutput = TApi>(
     errorMessage = "Gagal mengambil data dari server",
     requestOptions,
     collectAllPages = true,
+    backendPageLimit,
+    allowPartialResults = false,
   } = options;
+  const backendQuery = getBackendQuery(query, backendPageLimit);
 
   const initialPage = await fetchApiListPage<TApi>(
     endpoint,
-    query,
+    backendQuery,
     requestOptions,
     errorMessage
   );
 
   const items = [...initialPage.items];
-  const basePage =
-    typeof query?.page === "number" && Number.isFinite(query.page)
-      ? Number(query.page)
-      : initialPage.meta.page ?? 1;
-  const pageLimit =
-    typeof query?.limit === "number" && Number.isFinite(query.limit)
-      ? Number(query.limit)
-      : initialPage.meta.limit;
+  const requestedPage = getPositiveNumberQueryValue(query?.page);
+  const requestedLimit = getPositiveNumberQueryValue(query?.limit);
+  const backendRequestedLimit = getPositiveNumberQueryValue(backendQuery?.limit);
+  const basePage = requestedPage ?? initialPage.meta.page ?? 1;
+  const pageLimit = getEffectivePageLimit(
+    initialPage.meta,
+    backendRequestedLimit,
+    initialPage.items.length
+  );
+  const totalRecords = getTotalRecords(initialPage.meta, items.length);
+  const backendHonorsRequestedLimit =
+    !requestedLimit || !pageLimit || pageLimit >= requestedLimit;
 
   if (
     collectAllPages &&
-    initialPage.meta.totalRecords &&
+    (backendPageLimit !== undefined || backendHonorsRequestedLimit) &&
+    totalRecords > items.length &&
     pageLimit &&
-    items.length < initialPage.meta.totalRecords
+    items.length < totalRecords
   ) {
-    const totalPages = Math.ceil(initialPage.meta.totalRecords / pageLimit);
+    const totalPages = Math.ceil(totalRecords / pageLimit);
 
     for (let page = basePage + 1; page <= totalPages; page += 1) {
-      const nextPage = await fetchApiListPage<TApi>(
-        endpoint,
-        {
-          ...query,
-          page,
-          limit: pageLimit,
-        },
-        requestOptions,
-        errorMessage
-      );
+      try {
+        const nextPage = await fetchApiListPage<TApi>(
+          endpoint,
+          {
+            ...backendQuery,
+            page,
+            limit: pageLimit,
+          },
+          requestOptions,
+          errorMessage
+        );
 
-      items.push(...nextPage.items);
+        items.push(...nextPage.items);
+      } catch (error) {
+        if (allowPartialResults && items.length > 0) {
+          break;
+        }
+
+        throw error;
+      }
     }
   }
 
@@ -535,19 +722,112 @@ export async function fetchApiListWithMeta<TApi, TOutput = TApi>(
     transform,
     errorMessage = "Gagal mengambil data dari server",
     requestOptions,
+    backendPageLimit,
+    allowPartialResults = false,
   } = options;
+  const requestedPage = getPositiveNumberQueryValue(query?.page);
+  const requestedLimit = getPositiveNumberQueryValue(query?.limit);
+  const shouldUseBackendCompatLimit =
+    requestedPage !== undefined &&
+    requestedLimit !== undefined &&
+    backendPageLimit !== undefined &&
+    requestedLimit > backendPageLimit;
+  const initialBackendLimit = shouldUseBackendCompatLimit
+    ? backendPageLimit
+    : requestedLimit;
+  const initialBackendPage =
+    shouldUseBackendCompatLimit && initialBackendLimit
+      ? Math.floor(
+          ((requestedPage - 1) * requestedLimit) / initialBackendLimit
+        ) + 1
+      : requestedPage;
+  const backendQuery =
+    initialBackendPage && initialBackendLimit
+      ? {
+          ...query,
+          page: initialBackendPage,
+          limit: initialBackendLimit,
+        }
+      : query;
 
   const pageResult = await fetchApiListPage<TApi>(
     endpoint,
-    query,
+    backendQuery,
     requestOptions,
     errorMessage
   );
+  const backendLimit = getEffectivePageLimit(
+    pageResult.meta,
+    initialBackendLimit,
+    pageResult.items.length
+  );
+  const totalRecords = getTotalRecords(pageResult.meta, pageResult.items.length);
+  const shouldRepage = Boolean(
+    backendPageLimit !== undefined &&
+    requestedPage &&
+    requestedLimit &&
+    backendLimit > 0 &&
+    backendLimit < requestedLimit &&
+    totalRecords > pageResult.items.length
+  );
+
+  if (
+    shouldRepage &&
+    requestedPage !== undefined &&
+    requestedLimit !== undefined
+  ) {
+    const startPage =
+      Math.floor(((requestedPage - 1) * requestedLimit) / backendLimit) + 1;
+    const endPage = Math.min(
+      Math.ceil(totalRecords / backendLimit),
+      Math.ceil((requestedPage * requestedLimit) / backendLimit)
+    );
+    const knownPages = new Map<number, TApi[]>();
+
+    if (pageResult.meta.page) {
+      knownPages.set(pageResult.meta.page, pageResult.items);
+    }
+
+    let rangeItems: TApi[];
+
+    try {
+      rangeItems = await fetchApiListPages<TApi>(
+        endpoint,
+        {
+          ...query,
+          limit: backendLimit,
+        },
+        requestOptions,
+        errorMessage,
+        startPage,
+        endPage,
+        backendLimit,
+        knownPages
+      );
+    } catch (error) {
+      if (!allowPartialResults || pageResult.items.length === 0) {
+        throw error;
+      }
+
+      rangeItems = pageResult.items;
+    }
+    const startOffset = ((requestedPage - 1) * requestedLimit) % backendLimit;
+    const pageItems = rangeItems.slice(startOffset, startOffset + requestedLimit);
+
+    return {
+      items: transform
+        ? pageItems.map(transform)
+        : (pageItems as unknown as TOutput[]),
+      meta: normalizeApiPaginationMeta(pageResult.meta, query, pageItems.length),
+    };
+  }
+
+  const pageItems = pageResult.items;
 
   return {
     items: transform
-      ? pageResult.items.map(transform)
-      : (pageResult.items as unknown as TOutput[]),
-    meta: normalizeApiPaginationMeta(pageResult.meta, query, pageResult.items.length),
+      ? pageItems.map(transform)
+      : (pageItems as unknown as TOutput[]),
+    meta: normalizeApiPaginationMeta(pageResult.meta, query, pageItems.length),
   };
 }

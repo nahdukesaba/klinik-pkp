@@ -20,6 +20,8 @@ export {
   deleteAction,
 } from "./AdminDataTable";
 export type { Column, TableAction } from "./AdminDataTable";
+export { AdminTableFilters } from "./data-table/AdminTableFilters";
+export type { AdminFilterSelect } from "./data-table/AdminTableFilters";
 export { AdminFormDialog } from "./AdminFormDialog";
 export type {
   AdminFormValue,

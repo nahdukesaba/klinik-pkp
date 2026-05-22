@@ -86,12 +86,11 @@ function createDesaPopupContent(desa: BspsData, statusColor: string): string {
   return buildSafePopup({
     title: desa.nama,
     headerColor: statusColor,
-    gridFirst: true,
-    gridFields: [
+    fields: [
       { label: "Kelurahan", value: desa.kelurahan },
       { label: "Kecamatan", value: desa.kecamatan },
+      { label: "Kabupaten", value: desa.kabupaten },
     ],
-    fields: [{ label: "Kabupaten", value: desa.kabupaten }],
     extraHtml: `
       <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 8px 0 6px 0;" />
       <p style="margin: 0; font-weight: 600; color: #1e293b;">

@@ -8,7 +8,6 @@ import { type AdminFormValues, type FormFieldDef } from "@/components/admin";
 import { useAdminLocationOptions } from "@/hooks/use-admin-location-options";
 import { getNumberFormValue, getStringFormValue } from "@/lib/admin/form";
 import {
-  ADMIN_TABLE_PAGE_SIZE,
   QUERY_CONFIG,
   QUERY_KEYS,
 } from "@/lib/constants";
@@ -19,6 +18,7 @@ import {
 } from "@/services/bsps.service";
 
 import { useAdminCrud } from "./use-admin-crud";
+import { useAdminListQuery } from "./use-admin-list-query";
 
 const EMPTY_BSPS_ITEMS: BspsData[] = [];
 
@@ -60,6 +60,7 @@ function bspsToFormValues(item: BspsData): AdminFormValues {
 }
 
 export function useAdminBspsPage() {
+  const listQuery = useAdminListQuery();
   const crud = useAdminCrud<BspsData>({
     queryKey: QUERY_KEYS.adminBsps,
     resource: ADMIN_RESOURCE_NAMES.bsps,
@@ -78,19 +79,10 @@ export function useAdminBspsPage() {
   const bspsQuery = useQuery({
     queryKey: [
       QUERY_KEYS.adminBsps,
-      crud.currentPage,
-      crud.searchKeyword,
-      crud.sortBy,
-      crud.sortDirection,
+      listQuery.queryParams,
     ],
-    queryFn: () =>
-      fetchBspsPage({
-        page: crud.currentPage,
-        perPage: ADMIN_TABLE_PAGE_SIZE,
-        keyword: crud.searchKeyword,
-        sortBy: crud.sortBy,
-        sortDirection: crud.sortDirection,
-      }),
+    queryFn: ({ signal }) =>
+      fetchBspsPage(listQuery.queryParams, { signal }),
     staleTime: QUERY_CONFIG.staleTime,
     gcTime: QUERY_CONFIG.gcTime,
     placeholderData: keepPreviousData,
@@ -168,6 +160,13 @@ export function useAdminBspsPage() {
 
   const bspsList = bspsQuery.data?.items ?? EMPTY_BSPS_ITEMS;
   const bspsMeta = bspsQuery.data?.meta;
+  const pagination = {
+    ...listQuery.tableState,
+    currentPage: bspsMeta?.page ?? listQuery.tableState.currentPage,
+    totalPages: bspsMeta?.totalPages ?? 1,
+    totalItems: bspsMeta?.totalRecords ?? bspsList.length,
+    pageSize: bspsMeta?.limit ?? listQuery.tableState.pageSize,
+  };
   const stats = useMemo(
     () => ({
       totalLokasi: bspsMeta?.totalRecords ?? bspsList.length,
@@ -198,11 +197,7 @@ export function useAdminBspsPage() {
     handleSubmit: crud.handleSubmit,
     handleDelete: crud.handleDelete,
     handleFormOpenChange: crud.handleFormOpenChange,
-    setCurrentPage: crud.setCurrentPage,
-    searchKeyword: crud.searchKeyword,
-    sortBy: crud.sortBy,
-    sortDirection: crud.sortDirection,
-    handleSearchChange: crud.handleSearchChange,
-    handleSortChange: crud.handleSortChange,
+    pagination,
+    resetFilters: listQuery.resetFilters,
   };
 }

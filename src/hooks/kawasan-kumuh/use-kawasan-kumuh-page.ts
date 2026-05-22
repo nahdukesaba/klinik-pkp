@@ -18,7 +18,7 @@ export function useKawasanKumuhPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const kawasan = useKawasanKumuh();
-  const mapLazy = useLazyMount();
+  const mapLazy = useLazyMount({ initiallyMounted: true });
   const map = useKawasanKumuhMap(kawasan.filteredKawasan, setSelectedKawasan, mapLazy.isMounted);
 
   const totalPenduduk = useMemo(

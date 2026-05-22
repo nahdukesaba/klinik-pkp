@@ -1,18 +1,28 @@
 /** Service API untuk data BSPS (Bantuan Stimulan Perumahan Swadaya). */
 
 import {
+  apiClient,
   fetchApiList,
   fetchApiListWithMeta,
   extractVillageName,
   extractDistrictName,
   extractRegionName,
+  type ApiRequestOptions,
   type ApiPaginatedResult,
+  type ApiResponse,
   type CoordinateApi,
   type VillageApi,
   type DistrictApi,
   type RegionApi,
 } from "@/lib/api-client";
-import type { ApiListQueryControls } from "@/types/api";
+import {
+  clampApiPageLimit,
+  PUBLIC_LIST_FETCH_LIMIT,
+  PUBLIC_YEAR_FILTER_OPTIONS,
+} from "@/lib/constants";
+import type { ApiListQueryControls, BspsFilterParams } from "@/types/api";
+
+const BSPS_BACKEND_PAGE_LIMIT = 100;
 
 // --- Tipe API ---
 
@@ -121,12 +131,15 @@ const STATUS_MAP: Record<string, "selesai" | "proses" | "rencana"> = {
   "Rencana": "rencana",
 };
 
-export interface BspsListParams extends ApiListQueryControls {
-  year?: number;
-  regionId?: string;
-  districtId?: string;
-  villageId?: string;
+export interface BspsListParams
+  extends Omit<ApiListQueryControls, "keyword">,
+    BspsFilterParams {
+  status?: BspsData["status"] | string;
   collectAllPages?: boolean;
+}
+
+interface YearOptionsResponse {
+  years?: number[];
 }
 
 // --- Transformasi ---
@@ -163,27 +176,58 @@ export async function fetchBspsList(
     typeof input === "number"
       ? { year: input }
       : input ?? {};
+  const collectAllPages = params.collectAllPages ?? true;
+  const limit = Math.min(
+    clampApiPageLimit(params.perPage, PUBLIC_LIST_FETCH_LIMIT),
+    BSPS_BACKEND_PAGE_LIMIT
+  );
 
   return fetchApiList<BspsApiItem, BspsData>("/bsps", {
     query: {
       year_given: params.year,
       page: params.page,
-      limit: params.perPage,
-      keyword: params.keyword,
+      limit,
       sort_by: params.sortBy,
       sort_order: params.sortBy ? params.sortDirection : undefined,
+      status: params.status,
       region_id: params.regionId,
       district_id: params.districtId,
       village_id: params.villageId,
+      all: collectAllPages ? true : undefined,
     },
     transform: transformBspsItem,
     errorMessage: "Gagal mengambil data BSPS dari server",
-    collectAllPages: params.collectAllPages ?? false,
+    requestOptions: { retry: 0 },
+    collectAllPages: false,
+    backendPageLimit: BSPS_BACKEND_PAGE_LIMIT,
+    allowPartialResults: true,
   });
 }
 
+export async function fetchBspsAvailableYears(): Promise<number[]> {
+  try {
+    const response = await apiClient.get<ApiResponse<YearOptionsResponse>>(
+      "/bsps/years",
+      { retry: 0 }
+    );
+
+    if (!response.success || !Array.isArray(response.data?.years)) {
+      return [...PUBLIC_YEAR_FILTER_OPTIONS];
+    }
+
+    const years = [...new Set(response.data.years)]
+      .filter((year) => Number.isFinite(year))
+      .sort((left, right) => right - left);
+
+    return years.length > 0 ? years : [...PUBLIC_YEAR_FILTER_OPTIONS];
+  } catch {
+    return [...PUBLIC_YEAR_FILTER_OPTIONS];
+  }
+}
+
 export async function fetchBspsPage(
-  input?: number | BspsListParams
+  input?: number | BspsListParams,
+  requestOptions?: ApiRequestOptions
 ): Promise<ApiPaginatedResult<BspsData>> {
   const params =
     typeof input === "number"
@@ -194,16 +238,18 @@ export async function fetchBspsPage(
     query: {
       year_given: params.year,
       page: params.page,
-      limit: params.perPage,
-      keyword: params.keyword,
+      limit: clampApiPageLimit(params.perPage, BSPS_BACKEND_PAGE_LIMIT),
       sort_by: params.sortBy,
       sort_order: params.sortBy ? params.sortDirection : undefined,
+      status: params.status,
       region_id: params.regionId,
       district_id: params.districtId,
       village_id: params.villageId,
     },
     transform: transformBspsItem,
     errorMessage: "Gagal mengambil data BSPS dari server",
-    requestOptions: { retry: 0 },
+    requestOptions,
+    backendPageLimit: BSPS_BACKEND_PAGE_LIMIT,
+    allowPartialResults: true,
   });
 }

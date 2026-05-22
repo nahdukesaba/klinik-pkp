@@ -84,7 +84,7 @@ export default function AdminBspsPage() {
     isSaving,
     bspsQuery,
     bspsList,
-    bspsMeta,
+    pagination,
     stats,
     formFields,
     initialValues,
@@ -94,12 +94,6 @@ export default function AdminBspsPage() {
     handleSubmit,
     handleDelete,
     handleFormOpenChange,
-    setCurrentPage,
-    searchKeyword,
-    sortBy,
-    sortDirection,
-    handleSearchChange,
-    handleSortChange,
   } = useAdminBspsPage();
 
   if (!canManage) {
@@ -139,26 +133,10 @@ export default function AdminBspsPage() {
       <AdminDataTable<BspsData>
         columns={bspsColumns}
         data={bspsList}
-        searchFields={["nama", "kelurahan", "kecamatan", "kabupaten"]}
-        searchPlaceholder="Cari lokasi BSPS..."
         actions={[editAction(openEditDialog), deleteAction(handleDelete)]}
         isLoading={bspsQuery.isLoading}
-        isRefreshing={bspsQuery.isFetching && !bspsQuery.isLoading}
         emptyMessage="Belum ada data BSPS."
-        pagination={{
-          currentPage: bspsMeta?.page ?? 1,
-          totalPages: bspsMeta?.totalPages ?? 1,
-          totalItems: bspsMeta?.totalRecords ?? bspsList.length,
-          pageSize: bspsMeta?.limit ?? 10,
-          onPageChange: setCurrentPage,
-          searchValue: searchKeyword,
-          onSearchChange: handleSearchChange,
-          searchMode: "local",
-          sortKey: sortBy,
-          sortDirection,
-          onSortChange: handleSortChange,
-          sortMode: "local",
-        }}
+        pagination={pagination}
       />
 
       <AdminFormDialog

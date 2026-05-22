@@ -8,7 +8,6 @@ import { type AdminFormValues, type FormFieldDef } from "@/components/admin";
 import { useAdminLocationOptions } from "@/hooks/use-admin-location-options";
 import { getNumberFormValue, getStringFormValue } from "@/lib/admin/form";
 import {
-  ADMIN_TABLE_PAGE_SIZE,
   QUERY_CONFIG,
   QUERY_KEYS,
 } from "@/lib/constants";
@@ -19,6 +18,7 @@ import {
 } from "@/services/kawasan-kumuh.service";
 
 import { useAdminCrud } from "./use-admin-crud";
+import { useAdminListQuery } from "./use-admin-list-query";
 
 const EMPTY_KAWASAN_KUMUH_ITEMS: KawasanKumuhData[] = [];
 
@@ -57,6 +57,7 @@ function kumuhToFormValues(item: KawasanKumuhData): AdminFormValues {
 }
 
 export function useAdminKawasanKumuhPage() {
+  const listQuery = useAdminListQuery();
   const crud = useAdminCrud<KawasanKumuhData>({
     queryKey: QUERY_KEYS.adminKawasanKumuh,
     resource: ADMIN_RESOURCE_NAMES.kumuh,
@@ -74,19 +75,10 @@ export function useAdminKawasanKumuhPage() {
   const kumuhQuery = useQuery({
     queryKey: [
       QUERY_KEYS.adminKawasanKumuh,
-      crud.currentPage,
-      crud.searchKeyword,
-      crud.sortBy,
-      crud.sortDirection,
+      listQuery.queryParams,
     ],
-    queryFn: () =>
-      fetchKumuhPage({
-        page: crud.currentPage,
-        perPage: ADMIN_TABLE_PAGE_SIZE,
-        keyword: crud.searchKeyword,
-        sortBy: crud.sortBy,
-        sortDirection: crud.sortDirection,
-      }),
+    queryFn: ({ signal }) =>
+      fetchKumuhPage(listQuery.queryParams, { signal }),
     staleTime: QUERY_CONFIG.staleTime,
     gcTime: QUERY_CONFIG.gcTime,
     placeholderData: keepPreviousData,
@@ -178,6 +170,13 @@ export function useAdminKawasanKumuhPage() {
 
   const kumuhList = kumuhQuery.data?.items ?? EMPTY_KAWASAN_KUMUH_ITEMS;
   const kumuhMeta = kumuhQuery.data?.meta;
+  const pagination = {
+    ...listQuery.tableState,
+    currentPage: kumuhMeta?.page ?? listQuery.tableState.currentPage,
+    totalPages: kumuhMeta?.totalPages ?? 1,
+    totalItems: kumuhMeta?.totalRecords ?? kumuhList.length,
+    pageSize: kumuhMeta?.limit ?? listQuery.tableState.pageSize,
+  };
   const stats = useMemo(
     () => ({
       totalKawasan: kumuhMeta?.totalRecords ?? kumuhList.length,
@@ -208,11 +207,9 @@ export function useAdminKawasanKumuhPage() {
     handleSubmit: crud.handleSubmit,
     handleDelete: crud.handleDelete,
     handleFormOpenChange: crud.handleFormOpenChange,
-    setCurrentPage: crud.setCurrentPage,
-    searchKeyword: crud.searchKeyword,
-    sortBy: crud.sortBy,
-    sortDirection: crud.sortDirection,
-    handleSearchChange: crud.handleSearchChange,
-    handleSortChange: crud.handleSortChange,
+    pagination,
+    searchKeyword: listQuery.searchInput,
+    handleSearchChange: listQuery.setSearch,
+    resetFilters: listQuery.resetFilters,
   };
 }

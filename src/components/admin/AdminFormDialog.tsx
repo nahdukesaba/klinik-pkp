@@ -46,7 +46,7 @@ export interface FormFieldDef {
     | "textarea"
     | "select"
     | "number"
-    | "datetime-local"
+    | "date"
     | "file";
   placeholder?: string;
   required?: boolean;

@@ -108,8 +108,12 @@ async function AdminOverviewDetails({
   );
 }
 
-async function AdminExternalStatsSection() {
-  const summary = await getExternalDashboardStats();
+async function AdminExternalStatsSection({
+  backendAccessToken,
+}: {
+  backendAccessToken?: string;
+}) {
+  const summary = await getExternalDashboardStats({ backendAccessToken });
   const moduleSummaries = moduleCards.map((item) => ({
     ...item,
     summary: summary.modules.find((module) => module.key === item.key),
@@ -201,7 +205,9 @@ export default async function AdminOverviewPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <Suspense fallback={<AdminExternalStatsSkeleton />}>
-        <AdminExternalStatsSection />
+        <AdminExternalStatsSection
+          backendAccessToken={user?.backendAccessToken}
+        />
       </Suspense>
 
       <Suspense fallback={<AdminOverviewDetailsSkeleton />}>

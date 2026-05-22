@@ -24,7 +24,6 @@ import {
 import { useConfirmDialog } from "@/components/providers/ConfirmDialogProvider";
 import { useAdminCreateIntent } from "@/hooks/admin/use-admin-create-intent";
 import { useAdminLocationOptions } from "@/hooks/use-admin-location-options";
-import { useCurrentTime } from "@/hooks/use-current-time";
 import { useToast } from "@/hooks/use-toast";
 import { getStringFormValue } from "@/lib/admin/form";
 import { canManageContent } from "@/lib/admin/roles";
@@ -33,7 +32,6 @@ import {
   normalizeAdminFieldErrors,
 } from "@/lib/admin-client";
 import {
-  ADMIN_TABLE_PAGE_SIZE,
   QUERY_CONFIG,
   QUERY_KEYS,
 } from "@/lib/constants";
@@ -45,31 +43,23 @@ import {
   updateAdminSosialisasi,
   type SosialisasiLocation,
 } from "@/services/sosialisasi.service";
-import type { SortDirection } from "@/types/api";
+
+import { useAdminListQuery } from "./use-admin-list-query";
 
 export function useAdminSosialisasiPage(view: SosialisasiAdminView) {
   const { user } = useAdminAuth();
   const { toast } = useToast();
   const confirm = useConfirmDialog();
   const queryClient = useQueryClient();
-  const currentTime = useCurrentTime();
+  const listQuery = useAdminListQuery();
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<SosialisasiLocation | null>(null);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [draftValues, setDraftValues] = useState<AdminFormValues>({});
   const [isSaving, setIsSaving] = useState(false);
-  const [pagesByView, setPagesByView] = useState<Record<SosialisasiAdminView, number>>({
-    lokasi: 1,
-    jadwal: 1,
-    berita: 1,
-  });
-  const [searchKeyword, setSearchKeyword] = useState("");
-  const [sortBy, setSortBy] = useState<string | null>(null);
-  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
   const canManage = canManageContent(user.role);
-  const currentPage = pagesByView[view];
   const { regionOptions, districtOptions, villageOptions } =
     useAdminLocationOptions(
       getStringFormValue(draftValues, "regionId"),
@@ -81,16 +71,10 @@ export function useAdminSosialisasiPage(view: SosialisasiAdminView) {
     queryKey: [
       QUERY_KEYS.adminSosialisasi,
       view,
-      currentPage,
-      searchKeyword,
-      sortBy,
-      sortDirection,
+      listQuery.queryParams,
     ],
-    queryFn: () =>
-      fetchSosialisasiPage({
-        page: currentPage,
-        perPage: ADMIN_TABLE_PAGE_SIZE,
-      }),
+    queryFn: ({ signal }) =>
+      fetchSosialisasiPage(listQuery.queryParams, { signal }),
     staleTime: QUERY_CONFIG.staleTime,
     gcTime: QUERY_CONFIG.gcTime,
     placeholderData: keepPreviousData,
@@ -103,13 +87,10 @@ export function useAdminSosialisasiPage(view: SosialisasiAdminView) {
     }
 
     return {
-      ...buildSosialisasiResultFromLocations(
-        sosialisasiQuery.data.locations,
-        currentTime
-      ),
+      ...buildSosialisasiResultFromLocations(sosialisasiQuery.data.locations),
       meta: sosialisasiQuery.data.meta,
     };
-  }, [currentTime, sosialisasiQuery.data]);
+  }, [sosialisasiQuery.data]);
 
   const resetFormState = useCallback(() => {
     setEditingItem(null);
@@ -135,39 +116,6 @@ export function useAdminSosialisasiPage(view: SosialisasiAdminView) {
     setDraftValues(buildSosialisasiDraftValues(item) ?? {});
     setFormOpen(true);
   }, []);
-
-  const handlePageChange = useCallback(
-    (page: number) => {
-      setPagesByView((current) => ({
-        ...current,
-        [view]: page,
-      }));
-    },
-    [view]
-  );
-
-  const handleSearchChange = useCallback(
-    (keyword: string) => {
-      setSearchKeyword(keyword);
-      setPagesByView((current) => ({
-        ...current,
-        [view]: 1,
-      }));
-    },
-    [view]
-  );
-
-  const handleSortChange = useCallback(
-    (state: { sortKey: string; sortDirection: SortDirection }) => {
-      setSortBy(state.sortKey);
-      setSortDirection(state.sortDirection);
-      setPagesByView((current) => ({
-        ...current,
-        [view]: 1,
-      }));
-    },
-    [view]
-  );
 
   useAdminCreateIntent({
     enabled: canManage && view !== "berita",
@@ -217,6 +165,13 @@ export function useAdminSosialisasiPage(view: SosialisasiAdminView) {
   }, [liveSosialisasiData, view]);
 
   const sosialisasiMeta = liveSosialisasiData?.meta;
+  const pagination = {
+    ...listQuery.tableState,
+    currentPage: sosialisasiMeta?.page ?? listQuery.tableState.currentPage,
+    totalPages: sosialisasiMeta?.totalPages ?? 1,
+    totalItems: sosialisasiMeta?.totalRecords ?? viewConfig.data.length,
+    pageSize: sosialisasiMeta?.limit ?? listQuery.tableState.pageSize,
+  };
 
   const refreshSosialisasi = useCallback(async () => {
     await queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.adminSosialisasi] });
@@ -351,20 +306,17 @@ export function useAdminSosialisasiPage(view: SosialisasiAdminView) {
     editingItem,
     formErrors,
     isSaving,
-    currentPage,
-    searchKeyword,
-    sortBy,
-    sortDirection,
+    searchKeyword: listQuery.searchInput,
     sosialisasiQuery,
     viewConfig,
     sosialisasiMeta,
+    pagination,
     formFields,
     initialValues,
     actions,
     openCreateDialog,
-    handlePageChange,
-    handleSearchChange,
-    handleSortChange,
+    handleSearchChange: listQuery.setSearch,
+    resetFilters: listQuery.resetFilters,
     handleSubmit,
     handleFormOpenChange,
     setDraftValues,

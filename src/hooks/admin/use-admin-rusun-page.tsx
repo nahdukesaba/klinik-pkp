@@ -15,7 +15,6 @@ import {
   getStringFormValue,
 } from "@/lib/admin/form";
 import {
-  ADMIN_TABLE_PAGE_SIZE,
   QUERY_CONFIG,
   QUERY_KEYS,
   UPLOAD_CONSTRAINTS,
@@ -27,6 +26,7 @@ import {
 } from "@/services/rusun.service";
 
 import { useAdminCrud } from "./use-admin-crud";
+import { useAdminListQuery } from "./use-admin-list-query";
 
 const EMPTY_RUSUN_ITEMS: RusunData[] = [];
 
@@ -83,6 +83,7 @@ function rusunToFormValues(item: RusunData): AdminFormValues {
 }
 
 export function useAdminRusunPage() {
+  const listQuery = useAdminListQuery();
   const crud = useAdminCrud<RusunData>({
     queryKey: QUERY_KEYS.adminRusun,
     resource: ADMIN_RESOURCE_NAMES.rusun,
@@ -101,19 +102,10 @@ export function useAdminRusunPage() {
   const rusunQuery = useQuery({
     queryKey: [
       QUERY_KEYS.adminRusun,
-      crud.currentPage,
-      crud.searchKeyword,
-      crud.sortBy,
-      crud.sortDirection,
+      listQuery.queryParams,
     ],
-    queryFn: () =>
-      fetchRusunPage({
-        page: crud.currentPage,
-        perPage: ADMIN_TABLE_PAGE_SIZE,
-        keyword: crud.searchKeyword,
-        sortBy: crud.sortBy,
-        sortDirection: crud.sortDirection,
-      }),
+    queryFn: ({ signal }) =>
+      fetchRusunPage(listQuery.queryParams, { signal }),
     staleTime: QUERY_CONFIG.staleTime,
     gcTime: QUERY_CONFIG.gcTime,
     placeholderData: keepPreviousData,
@@ -227,6 +219,13 @@ export function useAdminRusunPage() {
 
   const rusunList = rusunQuery.data?.items ?? EMPTY_RUSUN_ITEMS;
   const rusunMeta = rusunQuery.data?.meta;
+  const pagination = {
+    ...listQuery.tableState,
+    currentPage: rusunMeta?.page ?? listQuery.tableState.currentPage,
+    totalPages: rusunMeta?.totalPages ?? 1,
+    totalItems: rusunMeta?.totalRecords ?? rusunList.length,
+    pageSize: rusunMeta?.limit ?? listQuery.tableState.pageSize,
+  };
   const stats = useMemo(
     () => ({
       totalRusun: rusunMeta?.totalRecords ?? rusunList.length,
@@ -254,11 +253,7 @@ export function useAdminRusunPage() {
     handleSubmit: crud.handleSubmit,
     handleDelete: crud.handleDelete,
     handleFormOpenChange: crud.handleFormOpenChange,
-    setCurrentPage: crud.setCurrentPage,
-    searchKeyword: crud.searchKeyword,
-    sortBy: crud.sortBy,
-    sortDirection: crud.sortDirection,
-    handleSearchChange: crud.handleSearchChange,
-    handleSortChange: crud.handleSortChange,
+    pagination,
+    resetFilters: listQuery.resetFilters,
   };
 }

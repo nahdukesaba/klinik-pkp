@@ -34,12 +34,10 @@ import { getSortedUniqueYears } from "@/lib/date";
 interface YearFilterSelectProps {
   /** Daftar tahun yang tersedia (descending) */
   years: number[];
-  /** Tahun yang sedang dipilih ("all" atau string tahun) */
+  /** Tahun yang sedang dipilih */
   selectedYear: string;
   /** Callback saat tahun dipilih */
   onYearChange: (year: string) => void;
-  /** Tampilkan opsi "Semua Tahun" (default: true) */
-  showAllOption?: boolean;
   /** Kelas tambahan untuk trigger */
   className?: string;
 }
@@ -48,7 +46,6 @@ export const YearFilterSelect = memo(function YearFilterSelect({
   years,
   selectedYear,
   onYearChange,
-  showAllOption = true,
   className = "",
 }: YearFilterSelectProps) {
   const normalizedYears = useMemo(() => getSortedUniqueYears(years), [years]);
@@ -59,7 +56,7 @@ export const YearFilterSelect = memo(function YearFilterSelect({
         className={`w-full sm:w-auto sm:min-w-[9rem] min-h-10 text-sm ${className}`}
       >
         <span className="break-words whitespace-normal text-left leading-tight">
-          {selectedYear === "all" ? "Semua Tahun" : selectedYear}
+          {selectedYear}
         </span>
       </SelectTrigger>
       <SelectContent className="bg-popover z-[9999]">
@@ -68,9 +65,6 @@ export const YearFilterSelect = memo(function YearFilterSelect({
             {y}
           </SelectItem>
         ))}
-        {showAllOption && (
-          <SelectItem value="all">Semua Tahun</SelectItem>
-        )}
       </SelectContent>
     </Select>
   );

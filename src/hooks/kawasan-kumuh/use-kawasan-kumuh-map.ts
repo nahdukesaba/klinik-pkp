@@ -57,10 +57,27 @@ export function useKawasanKumuhMap(
     if (!isEnabled) return;
     if (typeof window === "undefined" || !mapRef.current || mapInstanceRef.current) return;
 
+    let isDisposed = false;
     let resizeObserver: ResizeObserver | undefined;
+    const invalidateMapSize = (map: L.Map) => {
+      if (isDisposed || mapInstanceRef.current !== map) {
+        return;
+      }
+
+      const container = map.getContainer();
+      if (!container?.isConnected) {
+        return;
+      }
+
+      try {
+        map.invalidateSize();
+      } catch {
+        // Leaflet can throw if a queued resize runs after the map is removed.
+      }
+    };
 
     loadLeaflet().then((L) => {
-      if (!mapRef.current || mapInstanceRef.current) return;
+      if (isDisposed || !mapRef.current || mapInstanceRef.current) return;
 
       cleanupMapContainer(mapRef.current);
 
@@ -81,13 +98,16 @@ export function useKawasanKumuhMap(
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
       }).addTo(map);
 
-      setTimeout(() => map.invalidateSize(), 100);
-      setTimeout(() => map.invalidateSize(), 500);
+      mapInstanceRef.current = map;
+      setIsMapReady(true);
+
+      setTimeout(() => invalidateMapSize(map), 100);
+      setTimeout(() => invalidateMapSize(map), 500);
 
       // ResizeObserver to handle dynamic layout changes
       if (mapRef.current) {
         resizeObserver = new ResizeObserver(() => {
-          map.invalidateSize();
+          invalidateMapSize(map);
         });
         resizeObserver.observe(mapRef.current);
       }
@@ -95,15 +115,14 @@ export function useKawasanKumuhMap(
       map.on("click", (e) => {
         e.originalEvent?.stopPropagation();
       });
-
-      mapInstanceRef.current = map;
-      setIsMapReady(true);
     });
 
     return () => {
+      isDisposed = true;
       resizeObserver?.disconnect();
       destroyMap(mapInstanceRef.current);
       mapInstanceRef.current = null;
+      setIsMapReady(false);
     };
   }, [isEnabled]);
 
@@ -189,7 +208,11 @@ export function useKawasanKumuhMap(
       });
 
       if (displayedKawasan.length > 0) {
-        mapInstanceRef.current!.invalidateSize();
+        try {
+          mapInstanceRef.current!.invalidateSize();
+        } catch {
+          return;
+        }
         setTimeout(() => {
           if (!mapInstanceRef.current) return;
           const bounds = L.latLngBounds(displayedKawasan.map((k) => [k.lat, k.lng]));

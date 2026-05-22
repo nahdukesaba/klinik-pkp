@@ -32,7 +32,11 @@ export interface AdminUsersPageResponse {
 }
 
 export async function fetchAdminUsersPage(
-  params: ApiListQueryControls & { limit: number }
+  params: ApiListQueryControls & {
+    limit: number;
+    role?: UserRole;
+    isActive?: "active" | "inactive";
+  }
 ) {
   return adminFetch<AdminUsersPageResponse>(
     buildApiEndpoint(ADMIN_USERS_ENDPOINT, {
@@ -41,6 +45,9 @@ export async function fetchAdminUsersPage(
       keyword: params.keyword,
       sort_by: params.sortBy,
       sort_order: params.sortBy ? params.sortDirection : undefined,
+      role: params.role,
+      is_active:
+        params.isActive == null ? undefined : params.isActive === "active",
     })
   );
 }

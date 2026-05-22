@@ -11,12 +11,19 @@ import {
   AdminFormDialog,
   AdminPageHeader,
   AdminStatsGrid,
+  AdminTableFilters,
   deleteAction,
   editAction,
   type Column,
 } from "@/components/admin";
 import { useAdminBankDesainPage } from "@/hooks/admin/use-admin-bank-desain-page";
 import type { BankDesainData } from "@/services/bank-desain.service";
+
+const ALL_VALUE = "all";
+
+function toSelectValue(value?: string | number | boolean) {
+  return value == null ? ALL_VALUE : String(value);
+}
 
 const desainColumns: Column<BankDesainData>[] = [
   {
@@ -95,7 +102,7 @@ export default function AdminBankDesainPage() {
     isSaving,
     desainQuery,
     desainList,
-    desainMeta,
+    pagination,
     stats,
     formFields,
     initialValues,
@@ -104,12 +111,13 @@ export default function AdminBankDesainPage() {
     handleSubmit,
     handleDelete,
     handleFormOpenChange,
-    setCurrentPage,
     searchKeyword,
-    sortBy,
-    sortDirection,
     handleSearchChange,
-    handleSortChange,
+    filters,
+    handleBedroomFilterChange,
+    handleBathroomFilterChange,
+    handleGarageFilterChange,
+    resetFilters,
   } = useAdminBankDesainPage();
 
   if (!canManage) {
@@ -139,28 +147,59 @@ export default function AdminBankDesainPage() {
         <AdminErrorAlert message={`Gagal mengambil data: ${desainQuery.error.message}`} />
       ) : null}
 
+      <AdminTableFilters
+        searchValue={searchKeyword}
+        searchPlaceholder="Cari desain..."
+        onSearchChange={handleSearchChange}
+        onReset={resetFilters}
+        selects={[
+          {
+            key: "bedroomCount",
+            label: "Kamar Tidur",
+            value: toSelectValue(filters.bedroomCount),
+            options: [
+              { value: ALL_VALUE, label: "Semua Kamar Tidur" },
+              { value: "1", label: "1 Kamar Tidur" },
+              { value: "2", label: "2 Kamar Tidur" },
+              { value: "3", label: "3 Kamar Tidur" },
+              { value: "4", label: "4 Kamar Tidur" },
+            ],
+            onChange: handleBedroomFilterChange,
+          },
+          {
+            key: "bathroomCount",
+            label: "Kamar Mandi",
+            value: toSelectValue(filters.bathroomCount),
+            options: [
+              { value: ALL_VALUE, label: "Semua Kamar Mandi" },
+              { value: "1", label: "1 Kamar Mandi" },
+              { value: "2", label: "2 Kamar Mandi" },
+              { value: "3", label: "3 Kamar Mandi" },
+              { value: "4", label: "4 Kamar Mandi" },
+            ],
+            onChange: handleBathroomFilterChange,
+          },
+          {
+            key: "hasGarage",
+            label: "Garasi/Teras",
+            value: toSelectValue(filters.hasGarage),
+            options: [
+              { value: ALL_VALUE, label: "Semua" },
+              { value: "true", label: "Dengan Garasi/Teras" },
+              { value: "false", label: "Tanpa Garasi/Teras" },
+            ],
+            onChange: handleGarageFilterChange,
+          },
+        ]}
+      />
+
       <AdminDataTable<BankDesainData>
         columns={desainColumns}
         data={desainList}
-        searchFields={["title", "code"]}
-        searchPlaceholder="Cari desain..."
         actions={[editAction(openEditDialog), deleteAction(handleDelete)]}
         isLoading={desainQuery.isLoading}
-        isRefreshing={desainQuery.isFetching && !desainQuery.isLoading}
         emptyMessage="Belum ada data bank desain."
-        pagination={{
-          currentPage: desainMeta?.page ?? 1,
-          totalPages: desainMeta?.totalPages ?? 1,
-          totalItems: desainMeta?.totalRecords ?? desainList.length,
-          pageSize: desainMeta?.limit ?? 10,
-          onPageChange: setCurrentPage,
-          searchValue: searchKeyword,
-          onSearchChange: handleSearchChange,
-          sortKey: sortBy,
-          sortDirection,
-          onSortChange: handleSortChange,
-          sortMode: "local",
-        }}
+        pagination={pagination}
       />
 
       <AdminFormDialog

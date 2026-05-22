@@ -1,5 +1,5 @@
 /**
- * Helper tanggal/jam terpusat untuk aplikasi Klinik PKP.
+ * Helper tanggal terpusat untuk aplikasi Klinik PKP.
  *
  * Semua tampilan publik menggunakan zona waktu Indonesia Barat agar konsisten
  * antara admin, backend, dan pengguna publik.
@@ -32,9 +32,6 @@ function getPartMap(
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
     ...options,
   });
 
@@ -91,6 +88,10 @@ export function getMonthKey(rawDate: string) {
   return dateKey ? dateKey.slice(0, 7) : "";
 }
 
+export function getTodayDateKey() {
+  return getDateKey(new Date().toISOString());
+}
+
 export function getSortedUniqueYears(
   years: Array<number | string>,
   options: { includeCurrentYear?: boolean } = {}
@@ -109,35 +110,32 @@ export function getSortedUniqueYears(
   return [...new Set(normalizedYears)].sort((left, right) => right - left);
 }
 
-export function getTimeKey(rawDate: string) {
-  const parts = getPartMap(rawDate);
-  if (!parts?.hour || !parts.minute) {
-    return "";
+export function getRecentYearOptions(
+  options: { fromYear?: number; yearsBack?: number; yearsForward?: number } = {}
+) {
+  const fromYear = options.fromYear ?? new Date().getFullYear();
+  const yearsBack = options.yearsBack ?? 10;
+  const yearsForward = options.yearsForward ?? 0;
+  const startYear = fromYear + yearsForward;
+  const endYear = fromYear - yearsBack;
+  const years: number[] = [];
+
+  for (let year = startYear; year >= endYear; year -= 1) {
+    years.push(year);
   }
 
-  return `${parts.hour}:${parts.minute}`;
+  return years;
 }
 
-export function formatTimeRangeId(startRawDate: string, endRawDate: string) {
-  const start = getTimeKey(startRawDate);
-  const end = getTimeKey(endRawDate);
-
-  if (!start || !end) {
-    return "";
-  }
-
-  return `${start} - ${end}`;
-}
-
-export function toDateTimeLocalInputValue(rawDate: string | null | undefined) {
+export function toDateInputValue(rawDate: string | null | undefined) {
   if (!rawDate) {
     return "";
   }
 
   const parts = getPartMap(rawDate);
-  if (!parts?.year || !parts.month || !parts.day || !parts.hour || !parts.minute) {
+  if (!parts?.year || !parts.month || !parts.day) {
     return "";
   }
 
-  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
+  return `${parts.year}-${parts.month}-${parts.day}`;
 }

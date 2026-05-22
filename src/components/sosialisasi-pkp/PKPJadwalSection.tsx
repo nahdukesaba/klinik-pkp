@@ -18,7 +18,6 @@
 import {
   ArrowRight,
   Calendar,
-  Clock,
   MapPin,
   Search,
 } from "lucide-react";
@@ -104,12 +103,8 @@ function JadwalCard({
             {jadwal.name}
           </h3>
 
-          {/* Time & Location */}
+          {/* Location */}
           <div className="flex flex-col gap-1.5 text-xs text-muted-foreground">
-            <div className="flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5 text-primary flex-shrink-0" />
-              <span>{jadwal.time} WIB</span>
-            </div>
             <div className="flex items-start gap-1.5">
               <MapPin className="w-3.5 h-3.5 text-primary flex-shrink-0 mt-0.5" />
               <span className="line-clamp-2">{jadwal.alamat}</span>

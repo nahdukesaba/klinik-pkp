@@ -203,7 +203,7 @@ export function buildSafePopup(options: SafePopupOptions): string {
           ${gridFields
             .map(
               (f) =>
-                `<div style="overflow-wrap: break-word;"><strong style="color: #1e293b;">${escapeHtml(f.label)}:</strong> ${escapeHtml(String(f.value))}</div>`
+                `<div style="min-width: 0; overflow-wrap: anywhere; word-break: break-word;"><strong style="color: #1e293b;">${escapeHtml(f.label)}:</strong> ${escapeHtml(String(f.value))}</div>`
             )
             .join("")}
          </div>`
@@ -238,7 +238,7 @@ export function buildSafePopup(options: SafePopupOptions): string {
     : "";
 
   return `
-    <div style="min-width: 220px; max-width: 340px; width: max-content; font-family: system-ui, sans-serif;">
+    <div style="width: 300px; max-width: calc(100vw - 48px); font-family: system-ui, sans-serif;">
       ${imageSection}
       <div style="background: linear-gradient(135deg, ${safeHeaderColor}, ${safeGradientEnd}); color: white; ${headerStyle}">
         <h3 style="font-weight: bold; font-size: 14px; margin: 0; line-height: 1.3; word-break: break-word;">${safeTitle}</h3>

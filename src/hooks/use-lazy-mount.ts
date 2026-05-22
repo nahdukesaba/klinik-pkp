@@ -3,10 +3,12 @@
 import { useState, useCallback, useRef } from "react";
 
 /** Lazy mount komponen saat masuk viewport via IntersectionObserver callback ref. */
-export function useLazyMount(options: { rootMargin?: string } = {}) {
-  const { rootMargin = "100px" } = options;
-  const [isMounted, setIsMounted] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
+export function useLazyMount(
+  options: { rootMargin?: string; initiallyMounted?: boolean } = {}
+) {
+  const { rootMargin = "100px", initiallyMounted = false } = options;
+  const [isMounted, setIsMounted] = useState(initiallyMounted);
+  const [isVisible, setIsVisible] = useState(initiallyMounted);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const elementRef = useRef<HTMLDivElement | null>(null);
 

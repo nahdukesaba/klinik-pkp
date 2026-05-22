@@ -1,5 +1,5 @@
 import {
-  CalendarClock,
+  CalendarDays,
   MapPin,
   Newspaper,
 } from "lucide-react";
@@ -42,7 +42,6 @@ const lokasiColumns: Column<SosialisasiLocation>[] = [
     render: (item) => (
       <div>
         <p className="text-sm text-foreground">{item.date}</p>
-        <p className="text-xs text-muted-foreground">{item.time}</p>
       </div>
     ),
   },
@@ -90,7 +89,6 @@ const jadwalColumns: Column<SosialisasiLocation>[] = [
         <p className="text-sm text-foreground">
           {formatDateId(item.scheduledAtStart)}
         </p>
-        <p className="text-xs text-muted-foreground">{item.time}</p>
       </div>
     ),
   },
@@ -161,17 +159,15 @@ const beritaColumns: Column<SosialisasiLocation>[] = [
   },
 ];
 
-function sortByScheduledAtAsc(items: SosialisasiLocation[]) {
+function sortByDateAsc(items: SosialisasiLocation[]) {
   return [...items].sort((left, right) =>
-    new Date(left.scheduledAtStart).getTime() -
-    new Date(right.scheduledAtStart).getTime()
+    left.date.localeCompare(right.date)
   );
 }
 
-function sortByScheduledAtDesc(items: SosialisasiLocation[]) {
+function sortByDateDesc(items: SosialisasiLocation[]) {
   return [...items].sort((left, right) =>
-    new Date(right.scheduledAtStart).getTime() -
-    new Date(left.scheduledAtStart).getTime()
+    right.date.localeCompare(left.date)
   );
 }
 
@@ -203,8 +199,8 @@ export function buildSosialisasiViewConfig(params: {
   } = params;
 
   if (view === "jadwal") {
-    const agenda = sortByScheduledAtAsc(locations);
-    const allAgenda = sortByScheduledAtAsc(statsLocations);
+    const agenda = sortByDateAsc(locations);
+    const allAgenda = sortByDateAsc(statsLocations);
     const currentMonth = getMonthKey(new Date().toISOString());
     const currentMonthCount = allAgenda.filter((item) =>
       getMonthKey(item.scheduledAtStart) === currentMonth
@@ -214,9 +210,7 @@ export function buildSosialisasiViewConfig(params: {
       title: "Jadwal Kegiatan Sosialisasi",
       addLabel: "Tambah Jadwal",
       dialogTitle: "Data Jadwal Sosialisasi",
-      searchPlaceholder: "Cari agenda kegiatan...",
       emptyMessage: "Belum ada jadwal kegiatan sosialisasi.",
-      searchFields: ["name", "kabupaten", "kecamatan", "kelurahan", "alamat"],
       columns: jadwalColumns,
       data: agenda,
       stats: [
@@ -225,17 +219,17 @@ export function buildSosialisasiViewConfig(params: {
         { label: "Mendatang", value: statsUpcomingLocations.length },
         { label: "Selesai", value: statsCompletedLocations.length },
       ],
-      icon: <CalendarClock className="h-5 w-5" />,
+      icon: <CalendarDays className="h-5 w-5" />,
     };
   }
 
   if (view === "berita") {
-    const berita = sortByScheduledAtDesc(
+    const berita = sortByDateDesc(
       [...pendingLocations, ...completedLocations].filter(
         (item) => item.description.trim() !== ""
       )
     );
-    const allBerita = sortByScheduledAtDesc(
+    const allBerita = sortByDateDesc(
       [...statsPendingLocations, ...statsCompletedLocations].filter(
         (item) => item.description.trim() !== ""
       )
@@ -245,9 +239,7 @@ export function buildSosialisasiViewConfig(params: {
       title: "Berita Sosialisasi",
       addLabel: "Upload Gambar",
       dialogTitle: "Gambar Berita Sosialisasi",
-      searchPlaceholder: "Cari berita sosialisasi...",
       emptyMessage: "Belum ada kegiatan selesai yang menunggu atau siap dipublikasikan.",
-      searchFields: ["name", "kabupaten", "description", "alamat"],
       columns: beritaColumns,
       data: berita,
       stats: [
@@ -267,9 +259,7 @@ export function buildSosialisasiViewConfig(params: {
     title: "Info Peta Sosialisasi",
     addLabel: "Tambah Lokasi",
     dialogTitle: "Data Lokasi Sosialisasi",
-    searchPlaceholder: "Cari lokasi sosialisasi...",
     emptyMessage: "Belum ada lokasi sosialisasi.",
-    searchFields: ["name", "kabupaten", "alamat", "description"],
     columns: lokasiColumns,
     data: locations,
     stats: [

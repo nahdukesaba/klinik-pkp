@@ -2,7 +2,6 @@
 
 import { useCallback, useMemo, useState } from "react";
 
-import { CURRENT_YEAR } from "@/lib/constants";
 import { getSortedUniqueYears } from "@/lib/date";
 import { sanitizeInput } from "@/lib/security";
 import { type SosialisasiLocation } from "@/services/sosialisasi.service";
@@ -20,7 +19,7 @@ export function useSosialisasiPKPJadwal(
   upcomingLocations: SosialisasiLocation[],
   kabupatenOptions: string[]
 ) {
-  const [jadwalYear, setJadwalYear] = useState<string>(CURRENT_YEAR);
+  const [jadwalYear, setJadwalYear] = useState<string>("");
   const [jadwalMonth, setJadwalMonth] = useState<string>("all");
   const [jadwalStartDate, setJadwalStartDate] = useState<string>("");
   const [jadwalEndDate, setJadwalEndDate] = useState<string>("");
@@ -31,10 +30,11 @@ export function useSosialisasiPKPJadwal(
 
   const jadwalYears = useMemo(() => {
     return getSortedUniqueYears(
-      jadwalKegiatan.map((jadwal) => jadwal.date.slice(0, 4)),
-      { includeCurrentYear: true }
+      jadwalKegiatan.map((jadwal) => jadwal.date.slice(0, 4))
     );
   }, [jadwalKegiatan]);
+  const selectedJadwalYear =
+    jadwalYear || (jadwalYears[0] == null ? "" : String(jadwalYears[0]));
 
   const filteredJadwal = useMemo(() => {
     let result = jadwalKegiatan;
@@ -46,8 +46,8 @@ export function useSosialisasiPKPJadwal(
       });
     } else {
       // Filter by year
-      if (jadwalYear !== "all") {
-        result = result.filter((j) => j.date.slice(0, 4) === jadwalYear);
+      if (selectedJadwalYear && selectedJadwalYear !== "all") {
+        result = result.filter((j) => j.date.slice(0, 4) === selectedJadwalYear);
       }
 
       // Filter by month
@@ -76,7 +76,7 @@ export function useSosialisasiPKPJadwal(
     return result.sort((a, b) => a.date.localeCompare(b.date));
   }, [
     jadwalKegiatan,
-    jadwalYear,
+    selectedJadwalYear,
     jadwalMonth,
     jadwalStartDate,
     jadwalEndDate,
@@ -87,7 +87,7 @@ export function useSosialisasiPKPJadwal(
   // Wrap resetFilters in useCallback for stable reference.
   // Ref: vercel-react-best-practices/rerender-functional-setstate
   const resetFilters = useCallback(() => {
-    setJadwalYear(CURRENT_YEAR);
+    setJadwalYear("");
     setJadwalMonth("all");
     setJadwalStartDate("");
     setJadwalEndDate("");
@@ -96,7 +96,7 @@ export function useSosialisasiPKPJadwal(
   }, []);
 
   const hasActiveFilters =
-    jadwalYear !== CURRENT_YEAR ||
+    selectedJadwalYear !== (jadwalYears[0] == null ? "" : String(jadwalYears[0])) ||
     jadwalMonth !== "all" ||
     jadwalStartDate !== "" ||
     jadwalEndDate !== "" ||
@@ -104,7 +104,7 @@ export function useSosialisasiPKPJadwal(
     jadwalKabupatenFilter !== "all";
 
   return {
-    jadwalYear,
+    jadwalYear: selectedJadwalYear,
     setJadwalYear,
     jadwalMonth,
     setJadwalMonth,

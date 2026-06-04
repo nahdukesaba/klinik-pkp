@@ -40,6 +40,7 @@ import {
   ADMIN_RESOURCE_NAMES,
   createAdminResource,
   deleteAdminResource,
+  fetchAdminResourcePage,
   updateAdminResource,
 } from "@/services/admin-resource.service";
 import type { ApiListQueryControls, SosialisasiFilterParams } from "@/types/api";
@@ -323,7 +324,6 @@ export async function fetchSosialisasiList(
     errorMessage: "Gagal mengambil data sosialisasi dari server",
     collectAllPages: false,
     backendPageLimit: PUBLIC_LIST_FETCH_LIMIT,
-    allowPartialResults: true,
   });
 
   return buildSosialisasiResult(items);
@@ -350,9 +350,37 @@ export async function fetchSosialisasiPage(
       errorMessage: "Gagal mengambil data sosialisasi dari server",
       requestOptions,
       backendPageLimit: PUBLIC_LIST_FETCH_LIMIT,
-      allowPartialResults: true,
     }
   );
+
+  return {
+    ...buildSosialisasiResult(pageResult.items),
+    meta: pageResult.meta,
+  };
+}
+
+export async function fetchAdminSosialisasiPage(
+  params: SosialisasiListParams = {},
+  requestOptions?: ApiRequestOptions
+): Promise<SosialisasiPageResult> {
+  const pageResult = await fetchAdminResourcePage<
+    SosialisasiApiItem,
+    SosialisasiApiItem
+  >(ADMIN_RESOURCE_NAMES.sosialisasi, {
+    query: {
+      page: params.page,
+      limit: clampApiPageLimit(params.perPage, PUBLIC_LIST_FETCH_LIMIT),
+      title: params.title ?? params.keyword,
+      location: params.location,
+      sort_by: params.sortBy,
+      sort_order: params.sortBy ? params.sortDirection : undefined,
+      region_id: params.regionId,
+      district_id: params.districtId,
+      village_id: params.villageId,
+    },
+    errorMessage: "Gagal mengambil data sosialisasi admin dari server",
+    requestOptions,
+  });
 
   return {
     ...buildSosialisasiResult(pageResult.items),

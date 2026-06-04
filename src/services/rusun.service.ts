@@ -18,6 +18,10 @@ import {
   clampApiPageLimit,
   PUBLIC_LIST_FETCH_LIMIT,
 } from "@/lib/constants";
+import {
+  ADMIN_RESOURCE_NAMES,
+  fetchAdminResourcePage,
+} from "@/services/admin-resource.service";
 import type { ApiListQueryControls, RusunFilterParams } from "@/types/api";
 
 const RUSUN_BACKEND_PAGE_LIMIT = 100;
@@ -133,7 +137,6 @@ export async function fetchRusunList(
     requestOptions: { retry: 0 },
     collectAllPages: false,
     backendPageLimit: RUSUN_BACKEND_PAGE_LIMIT,
-    allowPartialResults: true,
   });
 }
 
@@ -155,6 +158,28 @@ export async function fetchRusunPage(
     errorMessage: "Gagal mengambil data rusun dari server",
     requestOptions,
     backendPageLimit: RUSUN_BACKEND_PAGE_LIMIT,
-    allowPartialResults: true,
   });
+}
+
+export async function fetchAdminRusunPage(
+  params: RusunListParams = {},
+  requestOptions?: ApiRequestOptions
+): Promise<ApiPaginatedResult<RusunData>> {
+  return fetchAdminResourcePage<RusunApiItem, RusunData>(
+    ADMIN_RESOURCE_NAMES.rusun,
+    {
+      query: {
+        page: params.page,
+        limit: clampApiPageLimit(params.perPage, RUSUN_BACKEND_PAGE_LIMIT),
+        sort_by: params.sortBy,
+        sort_order: params.sortBy ? params.sortDirection : undefined,
+        region_id: params.regionId,
+        district_id: params.districtId,
+        village_id: params.villageId,
+      },
+      transform: transformRusunItem,
+      errorMessage: "Gagal mengambil data rusun admin dari server",
+      requestOptions,
+    }
+  );
 }

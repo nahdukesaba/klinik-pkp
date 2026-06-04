@@ -179,8 +179,9 @@ function SosialisasiKlinikPKPContent() {
                   setBeritaSearch={berita.setBeritaSearch}
                   beritaYears={berita.beritaYears}
                   filteredBerita={berita.filteredBerita}
-                  paginatedBerita={berita.paginatedBerita}
-                  pagination={berita.pagination}
+                  visibleBerita={berita.visibleBerita}
+                  hasMoreBerita={berita.hasMoreBerita}
+                  loadMoreRef={berita.loadMoreRef}
                   resetFilters={berita.resetFilters}
                   hasActiveFilters={berita.hasActiveFilters}
                   onImageClick={handleImageClick}

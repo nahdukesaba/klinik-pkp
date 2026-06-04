@@ -35,6 +35,9 @@ export class AdminApiError extends Error {
 
 let csrfTokenPromise: Promise<string> | null = null;
 let adminSessionRefreshPromise: Promise<boolean> | null = null;
+let csrfTokenCache: { token: string; expiresAt: number } | null = null;
+
+const ADMIN_CSRF_TOKEN_TTL_MS = 9 * 60 * 1000;
 
 function isCsrfErrorPayload(payload: unknown) {
   if (!payload || typeof payload !== "object") {
@@ -51,11 +54,27 @@ function isCsrfErrorPayload(payload: unknown) {
 }
 
 async function getCsrfToken(forceRefresh = false) {
+  const now = Date.now();
+  if (!forceRefresh && csrfTokenCache && csrfTokenCache.expiresAt > now) {
+    return csrfTokenCache.token;
+  }
+
+  if (forceRefresh) {
+    csrfTokenCache = null;
+  }
+
   if (!forceRefresh && csrfTokenPromise) {
     return csrfTokenPromise;
   }
 
   csrfTokenPromise = fetchAdminCsrfToken()
+    .then((token) => {
+      csrfTokenCache = {
+        token,
+        expiresAt: Date.now() + ADMIN_CSRF_TOKEN_TTL_MS,
+      };
+      return token;
+    })
     .finally(() => {
       csrfTokenPromise = null;
     });
@@ -121,9 +140,10 @@ function createAdminApiError(
   fallbackMessage = "Permintaan admin gagal diproses."
 ) {
   const normalizedError = normalizeApiError(status, payload, fallbackMessage);
+  const backendMessage = getApiErrorMessage(payload);
   redirectToLoginIfUnauthorized(status);
 
-  return new AdminApiError(normalizedError.message, status, {
+  return new AdminApiError(backendMessage ?? normalizedError.message, status, {
     code: normalizedError.code,
     details: normalizedError.details,
   });

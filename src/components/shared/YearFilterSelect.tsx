@@ -1,8 +1,8 @@
 /**
- * YearFilterSelect — Komponen reusable dropdown untuk filter tahun.
+ * YearFilterSelect - Komponen reusable dropdown untuk filter tahun.
  *
  * Menampilkan daftar tahun sebagai Select dropdown.
- * Default: tahun sekarang. Text filter selalu terlihat penuh.
+ * Default dipilih oleh hook pemanggil. Text filter selalu terlihat penuh.
  *
  * Dipakai di:
  * - Kawasan Kumuh (header)
@@ -13,7 +13,7 @@
  * ```tsx
  * <YearFilterSelect
  *   years={[2026, 2025, 2024]}
- *   selectedYear="2026"
+ *   selectedYear="2025"
  *   onYearChange={setYear}
  * />
  * ```

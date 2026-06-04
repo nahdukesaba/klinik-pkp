@@ -50,8 +50,10 @@ export function toDateValue(rawDate: string | null | undefined) {
   return toDateInputValue(rawDate);
 }
 
-export function toBackendDateValue(value: string) {
-  return /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : "";
+export function toBackendDateValue(value: string, time = "00:00:00") {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value)
+    ? `${value}T${time}+07:00`
+    : "";
 }
 
 interface UploadFieldHelperOptions {

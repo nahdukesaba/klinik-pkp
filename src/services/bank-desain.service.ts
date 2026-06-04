@@ -11,6 +11,10 @@ import {
   clampApiPageLimit,
   PUBLIC_LIST_FETCH_LIMIT,
 } from "@/lib/constants";
+import {
+  ADMIN_RESOURCE_NAMES,
+  fetchAdminResourcePage,
+} from "@/services/admin-resource.service";
 import type {
   ApiListQueryControls,
   BankDesainFilterParams,
@@ -228,7 +232,6 @@ export async function fetchBankDesainList(
       errorMessage: "Gagal mengambil data bank desain dari server",
       collectAllPages: false,
       backendPageLimit: PUBLIC_LIST_FETCH_LIMIT,
-      allowPartialResults: true,
     }
   );
 
@@ -255,9 +258,31 @@ export async function fetchBankDesainPage(
       errorMessage: "Gagal mengambil data bank desain dari server",
       requestOptions,
       backendPageLimit: PUBLIC_LIST_FETCH_LIMIT,
-      allowPartialResults: true,
     }
   );
 
   return result;
+}
+
+export async function fetchAdminBankDesainPage(
+  params: BankDesainListParams = {},
+  requestOptions?: ApiRequestOptions
+): Promise<ApiPaginatedResult<BankDesainData>> {
+  return fetchAdminResourcePage<BankDesainApiItem, BankDesainData>(
+    ADMIN_RESOURCE_NAMES.bankDesain,
+    {
+      query: {
+        type: normalizeBankDesainTypeParam(params.type),
+        page: params.page,
+        limit: clampApiPageLimit(params.perPage, PUBLIC_LIST_FETCH_LIMIT),
+        name: params.name ?? params.keyword,
+        bedroom_count: params.bedroomCount,
+        bathroom_count: params.bathroomCount,
+        has_garage: normalizeBooleanFilterParam(params.hasGarage),
+      },
+      transform: transformBankDesainItem,
+      errorMessage: "Gagal mengambil data bank desain admin dari server",
+      requestOptions,
+    }
+  );
 }

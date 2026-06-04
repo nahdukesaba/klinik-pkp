@@ -29,6 +29,8 @@ import { type SosialisasiLocation } from "@/services/sosialisasi.service";
 
 // --- Types ---
 
+const JADWAL_VISIBLE_LIMIT = 25;
+
 interface PKPJadwalSectionProps {
   jadwalYear: string;
   setJadwalYear: (value: string) => void;
@@ -152,6 +154,7 @@ export function PKPJadwalSection({
 }: PKPJadwalSectionProps) {
   /** Opsi kabupaten untuk SearchableSelect */
   const kabupatenOptions = stringsToOptions(kabupatenList);
+  const visibleJadwal = filteredJadwal.slice(0, JADWAL_VISIBLE_LIMIT);
 
   /** Slot filter kabupaten untuk mobile layout */
   const kabupatenFilterMobile = (
@@ -231,6 +234,8 @@ export function PKPJadwalSection({
             endDate={jadwalEndDate}
             setEndDate={setJadwalEndDate}
             years={jadwalYears}
+            yearPlaceholder="Pilih Tahun"
+            monthPlaceholder="Pilih Bulan"
             hasActiveFilters={hasActiveFilters}
             onReset={resetFilters}
             compact={compact}
@@ -251,7 +256,7 @@ export function PKPJadwalSection({
           </div>
         ) : filteredJadwal.length > 0 ? (
           <div className="space-y-3 max-h-[500px] lg:max-h-[600px] xl:max-h-[700px] 2xl:max-h-[800px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent hover:scrollbar-thumb-primary/40">
-            {filteredJadwal.map((jadwal, index) => (
+            {visibleJadwal.map((jadwal, index) => (
               <JadwalCard
                 key={jadwal.id}
                 jadwal={jadwal}

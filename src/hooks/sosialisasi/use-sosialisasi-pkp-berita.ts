@@ -1,75 +1,140 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { usePagination } from "@/hooks/use-pagination";
-import { CURRENT_YEAR } from "@/lib/constants";
 import { getSortedUniqueYears } from "@/lib/date";
 import { sanitizeInput } from "@/lib/security";
 import { type BeritaSosialisasi } from "@/services/sosialisasi.service";
 
-/**
- * Hook untuk mengelola filtering berita sosialisasi.
- *
- * Menerima data mentah dari useSosialisasiData (Variabel A)
- * dan menghasilkan data terfilter (Variabel B).
- *
- * @param rawBerita - Data berita dari useSosialisasiData
- */
-export function useSosialisasiPKPBerita(
-  rawBerita: BeritaSosialisasi[]
-) {
-  // Default: tahun sekarang
-  const [beritaYear, setBeritaYear] = useState<string>(CURRENT_YEAR);
+const BERITA_BATCH_SIZE = 10;
+
+export function useSosialisasiPKPBerita(rawBerita: BeritaSosialisasi[]) {
+  const [beritaYear, setBeritaYear] = useState<string>("");
   const [beritaMonth, setBeritaMonth] = useState<string>("all");
   const [beritaStartDate, setBeritaStartDate] = useState<string>("");
   const [beritaEndDate, setBeritaEndDate] = useState<string>("");
   const [beritaSearch, setBeritaSearch] = useState<string>("");
+  const [visibleState, setVisibleState] = useState({
+    key: "",
+    count: BERITA_BATCH_SIZE,
+  });
+  const observerRef = useRef<IntersectionObserver | null>(null);
 
   const beritaYears = useMemo(() => {
-    return getSortedUniqueYears(rawBerita.map((berita) => berita.rawDate.slice(0, 4)), {
-      includeCurrentYear: true,
-    });
+    return getSortedUniqueYears(
+      rawBerita.map((berita) => berita.rawDate.slice(0, 4))
+    );
   }, [rawBerita]);
+  const defaultBeritaYear =
+    beritaYears[0] == null ? "" : String(beritaYears[0]);
+  const selectedBeritaYear = beritaYear || defaultBeritaYear;
 
   const filteredBerita = useMemo(() => {
     let result: BeritaSosialisasi[] = rawBerita;
 
-    // Filter by date range if specified
     if (beritaStartDate && beritaEndDate) {
-      result = result.filter((b) => {
-        return b.rawDate >= beritaStartDate && b.rawDate <= beritaEndDate;
-      });
+      result = result.filter(
+        (berita) =>
+          berita.rawDate >= beritaStartDate && berita.rawDate <= beritaEndDate
+      );
     } else {
-      // Filter by year
-      if (beritaYear !== "all") {
-        result = result.filter((b) => b.rawDate.slice(0, 4) === beritaYear);
+      if (selectedBeritaYear && selectedBeritaYear !== "all") {
+        result = result.filter(
+          (berita) => berita.rawDate.slice(0, 4) === selectedBeritaYear
+        );
       }
 
-      // Filter by month
       if (beritaMonth !== "all") {
-        result = result.filter((b) => b.rawDate.slice(5, 7) === beritaMonth);
+        result = result.filter(
+          (berita) => berita.rawDate.slice(5, 7) === beritaMonth
+        );
       }
     }
 
-    // Filter by search query
     if (beritaSearch.trim()) {
       const query = sanitizeInput(beritaSearch).toLowerCase().trim();
       result = result.filter(
-        (b) =>
-          b.title.toLowerCase().includes(query) ||
-          b.description.toLowerCase().includes(query) ||
-          b.kabupaten.toLowerCase().includes(query)
+        (berita) =>
+          berita.title.toLowerCase().includes(query) ||
+          berita.description.toLowerCase().includes(query) ||
+          berita.kabupaten.toLowerCase().includes(query)
       );
     }
 
-    return result.sort((a, b) => b.rawDate.localeCompare(a.rawDate));
-  }, [rawBerita, beritaYear, beritaMonth, beritaStartDate, beritaEndDate, beritaSearch]);
+    return [...result].sort((left, right) =>
+      right.rawDate.localeCompare(left.rawDate)
+    );
+  }, [
+    rawBerita,
+    selectedBeritaYear,
+    beritaMonth,
+    beritaStartDate,
+    beritaEndDate,
+    beritaSearch,
+  ]);
 
-  // Wrap resetFilters in useCallback for stable reference.
-  // Ref: vercel-react-best-practices/rerender-functional-setstate
+  useEffect(() => {
+    return () => {
+      observerRef.current?.disconnect();
+    };
+  }, []);
+
+  const filteredBeritaKey = useMemo(
+    () => filteredBerita.map((berita) => berita.id).join("|"),
+    [filteredBerita]
+  );
+  const visibleCount =
+    visibleState.key === filteredBeritaKey
+      ? visibleState.count
+      : BERITA_BATCH_SIZE;
+  const visibleBerita = useMemo(
+    () => filteredBerita.slice(0, visibleCount),
+    [filteredBerita, visibleCount]
+  );
+  const hasMoreBerita = visibleCount < filteredBerita.length;
+
+  const loadMoreBerita = useCallback(() => {
+    setVisibleState((currentState) => {
+      const currentCount =
+        currentState.key === filteredBeritaKey
+          ? currentState.count
+          : BERITA_BATCH_SIZE;
+
+      return {
+        key: filteredBeritaKey,
+        count: Math.min(currentCount + BERITA_BATCH_SIZE, filteredBerita.length),
+      };
+    });
+  }, [filteredBerita.length, filteredBeritaKey]);
+
+  const loadMoreRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      observerRef.current?.disconnect();
+
+      if (!node || !hasMoreBerita) {
+        return;
+      }
+
+      if (typeof IntersectionObserver === "undefined") {
+        loadMoreBerita();
+        return;
+      }
+
+      observerRef.current = new IntersectionObserver(
+        ([entry]) => {
+          if (entry?.isIntersecting) {
+            loadMoreBerita();
+          }
+        },
+        { rootMargin: "400px 0px" }
+      );
+      observerRef.current.observe(node);
+    },
+    [hasMoreBerita, loadMoreBerita]
+  );
+
   const resetFilters = useCallback(() => {
-    setBeritaYear(CURRENT_YEAR);
+    setBeritaYear("");
     setBeritaMonth("all");
     setBeritaStartDate("");
     setBeritaEndDate("");
@@ -77,17 +142,14 @@ export function useSosialisasiPKPBerita(
   }, []);
 
   const hasActiveFilters =
-    beritaYear !== CURRENT_YEAR ||
+    selectedBeritaYear !== defaultBeritaYear ||
     beritaMonth !== "all" ||
     beritaStartDate !== "" ||
     beritaEndDate !== "" ||
     beritaSearch.trim() !== "";
 
-  // Pagination: 8 berita per halaman (grid 4 kolom × 2 baris)
-  const pagination = usePagination(filteredBerita, { perPage: 8 });
-
   return {
-    beritaYear,
+    beritaYear: selectedBeritaYear,
     setBeritaYear,
     beritaMonth,
     setBeritaMonth,
@@ -99,8 +161,9 @@ export function useSosialisasiPKPBerita(
     setBeritaSearch,
     beritaYears,
     filteredBerita,
-    paginatedBerita: pagination.paginatedItems,
-    pagination,
+    visibleBerita,
+    hasMoreBerita,
+    loadMoreRef,
     resetFilters,
     hasActiveFilters,
   };

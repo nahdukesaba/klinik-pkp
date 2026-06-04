@@ -13,13 +13,14 @@ import {
   getStringFormValue,
 } from "@/lib/admin/form";
 import {
-  QUERY_CONFIG,
+  ADMIN_QUERY_GC_TIME_MS,
+  ADMIN_QUERY_STALE_TIME_MS,
   QUERY_KEYS,
   UPLOAD_CONSTRAINTS,
 } from "@/lib/constants";
 import { ADMIN_RESOURCE_NAMES } from "@/services/admin-resource.service";
 import {
-  fetchBankDesainPage,
+  fetchAdminBankDesainPage,
   type BankDesainData,
 } from "@/services/bank-desain.service";
 
@@ -96,9 +97,9 @@ export function useAdminBankDesainPage() {
       listQuery.queryParams,
     ],
     queryFn: ({ signal }) =>
-      fetchBankDesainPage(listQuery.queryParams, { signal }),
-    staleTime: QUERY_CONFIG.staleTime,
-    gcTime: QUERY_CONFIG.gcTime,
+      fetchAdminBankDesainPage(listQuery.queryParams, { signal }),
+    staleTime: ADMIN_QUERY_STALE_TIME_MS,
+    gcTime: ADMIN_QUERY_GC_TIME_MS,
     placeholderData: keepPreviousData,
     enabled: crud.canManage,
   });

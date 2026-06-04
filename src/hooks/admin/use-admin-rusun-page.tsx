@@ -15,13 +15,14 @@ import {
   getStringFormValue,
 } from "@/lib/admin/form";
 import {
-  QUERY_CONFIG,
+  ADMIN_QUERY_GC_TIME_MS,
+  ADMIN_QUERY_STALE_TIME_MS,
   QUERY_KEYS,
   UPLOAD_CONSTRAINTS,
 } from "@/lib/constants";
 import { ADMIN_RESOURCE_NAMES } from "@/services/admin-resource.service";
 import {
-  fetchRusunPage,
+  fetchAdminRusunPage,
   type RusunData,
 } from "@/services/rusun.service";
 
@@ -86,6 +87,7 @@ export function useAdminRusunPage() {
   const listQuery = useAdminListQuery();
   const crud = useAdminCrud<RusunData>({
     queryKey: QUERY_KEYS.adminRusun,
+    relatedQueryKeys: [QUERY_KEYS.publicRusun],
     resource: ADMIN_RESOURCE_NAMES.rusun,
     label: "rusun",
     buildPayload: buildRusunFormData,
@@ -105,9 +107,9 @@ export function useAdminRusunPage() {
       listQuery.queryParams,
     ],
     queryFn: ({ signal }) =>
-      fetchRusunPage(listQuery.queryParams, { signal }),
-    staleTime: QUERY_CONFIG.staleTime,
-    gcTime: QUERY_CONFIG.gcTime,
+      fetchAdminRusunPage(listQuery.queryParams, { signal }),
+    staleTime: ADMIN_QUERY_STALE_TIME_MS,
+    gcTime: ADMIN_QUERY_GC_TIME_MS,
     placeholderData: keepPreviousData,
     enabled: crud.canManage,
   });

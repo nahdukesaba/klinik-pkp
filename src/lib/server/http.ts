@@ -29,18 +29,23 @@ function extractErrorMessage(payload: unknown, fallback: string) {
 }
 
 export function createJsonResponse(payload: unknown, status = 200) {
-  if (status >= 400) {
+  const effectiveStatus =
+    status < 400 && isRecord(payload) && payload.success === false
+      ? 400
+      : status;
+
+  if (effectiveStatus >= 400) {
     return applySensitiveResponseHeaders(
       NextResponse.json(
         createApiErrorBody(
-          status,
+          effectiveStatus,
           extractErrorMessage(payload, "Permintaan tidak berhasil."),
           {
-            code: getApiErrorCodeFromPayload(payload, status),
+            code: getApiErrorCodeFromPayload(payload, effectiveStatus),
             details: getApiErrorDetails(payload),
           }
         ),
-        { status }
+        { status: effectiveStatus }
       )
     );
   }

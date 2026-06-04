@@ -37,9 +37,14 @@ export default function SebaranRusunPage() {
     isLoading,
     isError,
     error,
+    refetch,
   } = useSebaranRusun();
   const mapLazyRef = mapLazy.ref;
   const isMapMounted = mapLazy.isMounted;
+
+  if (isError) {
+    return <ApiErrorState error={error} onRetry={refetch} />;
+  }
 
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden">
@@ -98,28 +103,17 @@ export default function SebaranRusunPage() {
               <div className="absolute inset-0 z-20 bg-background/40 backdrop-blur-[1px]" />
             )}
 
-            {/* Error overlay */}
-            {isError && (
-              <div className="absolute inset-0 z-20 flex items-center justify-center bg-background">
-                <ApiErrorState
-                  error={error}
-                  onRetry={() => window.location.reload()}
-                  fullPage={false}
-                />
-              </div>
-            )}
-
             {/*
              * Peta / skeleton:
              * 1. Loading -> overlay di atas skeleton peta.
              * 2. Map belum dimount -> MapSkeleton.
              * 3. Data siap dan map dimount -> RusunMapContainer.
              */}
-            {!isLoading && isMapMounted && !isError ? (
+            {!isLoading && isMapMounted ? (
               <RusunMapContainer mapRef={mapRef} />
-            ) : !isError ? (
+            ) : (
               <MapSkeleton className="w-full h-full" />
-            ) : null}
+            )}
           </div>
           {/* eslint-enable react-hooks/refs */}
         </div>

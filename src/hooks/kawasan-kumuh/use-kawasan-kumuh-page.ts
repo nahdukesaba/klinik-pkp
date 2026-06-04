@@ -30,7 +30,7 @@ export function useKawasanKumuhPage() {
     (kawasanItem: KawasanKumuhData) => {
       setSelectedKawasan(kawasanItem);
       setSidebarOpen(false);
-      map.flyTo(kawasanItem.lat, kawasanItem.lng, 15);
+      map.flyTo(kawasanItem.lat, kawasanItem.lng, 12);
     },
     [map]
   );

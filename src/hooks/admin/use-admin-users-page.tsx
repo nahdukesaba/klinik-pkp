@@ -13,7 +13,12 @@ import {
   AdminApiError,
   normalizeAdminFieldErrors,
 } from "@/lib/admin-client";
-import { QUERY_CONFIG, QUERY_KEY_PARTS, QUERY_KEYS } from "@/lib/constants";
+import {
+  ADMIN_QUERY_GC_TIME_MS,
+  ADMIN_QUERY_STALE_TIME_MS,
+  QUERY_KEY_PARTS,
+  QUERY_KEYS,
+} from "@/lib/constants";
 import { sanitizeNip } from "@/lib/security";
 import {
   createAdminUser,
@@ -127,8 +132,8 @@ export function useAdminUsersPage() {
         role: listQuery.filters.role,
         isActive: listQuery.filters.isActive,
       }),
-    staleTime: QUERY_CONFIG.staleTime,
-    gcTime: QUERY_CONFIG.gcTime,
+    staleTime: ADMIN_QUERY_STALE_TIME_MS,
+    gcTime: ADMIN_QUERY_GC_TIME_MS,
     placeholderData: keepPreviousData,
     enabled: canManage,
   });
@@ -136,8 +141,8 @@ export function useAdminUsersPage() {
   const auditQuery = useQuery({
     queryKey: [QUERY_KEYS.adminAudit, QUERY_KEY_PARTS.users],
     queryFn: () => fetchAdminAuditEntries({ limit: 8 }),
-    staleTime: QUERY_CONFIG.staleTime,
-    gcTime: QUERY_CONFIG.gcTime,
+    staleTime: ADMIN_QUERY_STALE_TIME_MS,
+    gcTime: ADMIN_QUERY_GC_TIME_MS,
     enabled: canManage,
   });
 

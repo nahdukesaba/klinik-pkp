@@ -75,6 +75,10 @@ interface DateRangeFilterGroupProps {
   extraFiltersDesktop?: ReactNode;
   /** Ukuran kompak (font/spacing lebih kecil) */
   compact?: boolean;
+  /** Placeholder filter tahun */
+  yearPlaceholder?: string;
+  /** Placeholder filter bulan */
+  monthPlaceholder?: string;
 }
 
 // --- Komponen Utama ---
@@ -94,6 +98,8 @@ export function DateRangeFilterGroup({
   extraFiltersMobile,
   extraFiltersDesktop,
   compact = false,
+  yearPlaceholder = "Pilih Tahun",
+  monthPlaceholder = "Pilih Bulan",
 }: DateRangeFilterGroupProps) {
   const normalizedYears = useMemo(() => getSortedUniqueYears(years), [years]);
   /** Handler: pilih year → reset date range */
@@ -132,9 +138,9 @@ export function DateRangeFilterGroup({
 
         {/* Year + Month grid */}
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          <Select value={year} onValueChange={handleYearChange}>
+          <Select value={year} onValueChange={handleYearChange} disabled={normalizedYears.length === 0}>
             <SelectTrigger className={`w-full bg-secondary ${sizeClass}`}>
-              <SelectValue placeholder="Tahun" />
+              <SelectValue placeholder={yearPlaceholder} />
             </SelectTrigger>
             <SelectContent className="bg-popover z-[9999]">
               {normalizedYears.map((y) => (
@@ -145,7 +151,7 @@ export function DateRangeFilterGroup({
 
           <Select value={month} onValueChange={handleMonthChange}>
             <SelectTrigger className={`w-full bg-secondary ${sizeClass}`}>
-              <SelectValue placeholder="Bulan" />
+              <SelectValue placeholder={monthPlaceholder} />
             </SelectTrigger>
             <SelectContent className="bg-popover z-[9999]">
               <SelectItem value="all">Semua Bulan</SelectItem>
@@ -200,9 +206,9 @@ export function DateRangeFilterGroup({
         {extraFiltersDesktop}
 
         {/* Year */}
-        <Select value={year} onValueChange={handleYearChange}>
+        <Select value={year} onValueChange={handleYearChange} disabled={normalizedYears.length === 0}>
           <SelectTrigger className="w-[120px] bg-secondary h-10 text-sm">
-            <SelectValue placeholder="Tahun" />
+            <SelectValue placeholder={yearPlaceholder} />
           </SelectTrigger>
           <SelectContent className="bg-popover z-[9999]">
             {normalizedYears.map((y) => (
@@ -214,7 +220,7 @@ export function DateRangeFilterGroup({
         {/* Month */}
         <Select value={month} onValueChange={handleMonthChange}>
           <SelectTrigger className="w-[140px] bg-secondary h-10 text-sm">
-            <SelectValue placeholder="Bulan" />
+            <SelectValue placeholder={monthPlaceholder} />
           </SelectTrigger>
           <SelectContent className="bg-popover z-[9999]">
             <SelectItem value="all">Semua Bulan</SelectItem>

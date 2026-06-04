@@ -24,7 +24,6 @@ import {
 } from "lucide-react";
 
 import { DateRangeFilterGroup } from "@/components/shared/DateRangeFilterGroup";
-import { GridPagination } from "@/components/shared/GridPagination";
 import { Input } from "@/components/ui/input";
 import { formatDateId } from "@/lib/date";
 import { type BeritaSosialisasi } from "@/services/sosialisasi.service";
@@ -44,14 +43,9 @@ interface PKPBeritaSectionProps {
   setBeritaSearch: (search: string) => void;
   beritaYears: number[];
   filteredBerita: BeritaSosialisasi[];
-  paginatedBerita: BeritaSosialisasi[];
-  pagination: {
-    currentPage: number;
-    totalPages: number;
-    setCurrentPage: (page: number) => void;
-    goToNextPage: () => void;
-    goToPrevPage: () => void;
-  };
+  visibleBerita: BeritaSosialisasi[];
+  hasMoreBerita: boolean;
+  loadMoreRef: (node: HTMLDivElement | null) => void;
   resetFilters: () => void;
   hasActiveFilters: boolean;
   onImageClick?: (images: string[], index: number, title: string) => void;
@@ -183,8 +177,9 @@ export function PKPBeritaSection({
   setBeritaSearch,
   beritaYears,
   filteredBerita,
-  paginatedBerita,
-  pagination,
+  visibleBerita,
+  hasMoreBerita,
+  loadMoreRef,
   resetFilters,
   hasActiveFilters,
   onImageClick,
@@ -225,6 +220,8 @@ export function PKPBeritaSection({
           endDate={beritaEndDate}
           setEndDate={setBeritaEndDate}
           years={beritaYears}
+          yearPlaceholder="Pilih Tahun"
+          monthPlaceholder="Pilih Bulan"
           hasActiveFilters={hasActiveFilters}
           onReset={resetFilters}
           extraFiltersMobile={
@@ -237,7 +234,7 @@ export function PKPBeritaSection({
       {filteredBerita.length > 0 ? (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6">
-            {paginatedBerita.map((berita, index) => (
+            {visibleBerita.map((berita, index) => (
               <BeritaCard
                 key={berita.id}
                 berita={berita}
@@ -247,13 +244,16 @@ export function PKPBeritaSection({
               />
             ))}
           </div>
-          <GridPagination
-            currentPage={pagination.currentPage}
-            totalPages={pagination.totalPages}
-            onPageChange={pagination.setCurrentPage}
-            onPrev={pagination.goToPrevPage}
-            onNext={pagination.goToNextPage}
-          />
+          {hasMoreBerita && (
+            <div ref={loadMoreRef} className="grid grid-cols-1 gap-4 pt-6 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="h-64 animate-pulse rounded-xl border border-border bg-card/80 sm:rounded-2xl"
+                />
+              ))}
+            </div>
+          )}
         </>
       ) : (
         <div className="text-center py-12 bg-card rounded-2xl border border-border">

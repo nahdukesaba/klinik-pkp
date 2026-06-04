@@ -18,10 +18,10 @@ import {
 import type { ApiResponse } from "@/types/api";
 
 const BACKEND_TIMEOUT_MS = 30_000;
-const BACKEND_GET_RETRY_ATTEMPTS = 2;
-const BACKEND_GET_RETRY_DELAY_MS = 180;
+const BACKEND_GET_RETRY_ATTEMPTS = 4;
+const BACKEND_GET_RETRY_DELAY_MS = 250;
 const AGGREGATED_LIST_CACHE_TTL_MS = 2 * 60 * 1000;
-const YEAR_OPTIONS_CACHE_TTL_MS = 10 * 60 * 1000;
+const YEAR_OPTIONS_CACHE_TTL_MS = 30 * 1000;
 const MAX_AGGREGATED_BACKEND_PAGES = 50;
 const MIN_YEAR = 1900;
 const MAX_YEAR = 2100;
@@ -68,6 +68,18 @@ type CachedJsonPayload = {
 
 const serverPayloadCache = new Map<string, CachedJsonPayload>();
 
+class BackendProxyError extends Error {
+  readonly status: number;
+  readonly code: string;
+
+  constructor(status: number, code: string, message: string) {
+    super(message);
+    this.name = "BackendProxyError";
+    this.status = status;
+    this.code = code;
+  }
+}
+
 type NormalizedProxySearchParams =
   | { ok: true; searchParams: URLSearchParams }
   | { ok: false; response: NextResponse };
@@ -96,6 +108,32 @@ function getPayloadText(payload: unknown) {
   } catch {
     return "";
   }
+}
+
+function getBackendUnavailableMessage(message: string) {
+  return /fetch failed|network|ECONN|ENOTFOUND|ETIMEDOUT|ECONNREFUSED|terminated/i.test(
+    message
+  )
+    ? "Backend tidak dapat dihubungi. Data belum dapat dibaca."
+    : message;
+}
+
+function createBackendProxyErrorResponse(error: unknown) {
+  if (error instanceof BackendProxyError) {
+    return createJsonErrorResponse(
+      getBackendUnavailableMessage(error.message),
+      error.status,
+      undefined,
+      error.code
+    );
+  }
+
+  return createJsonErrorResponse(
+    "Backend tidak dapat dihubungi. Data belum dapat dibaca.",
+    502,
+    undefined,
+    "BAD_GATEWAY"
+  );
 }
 
 function getBackendPayloadMessage(payload: unknown, fallback: string) {
@@ -138,6 +176,17 @@ function setCachedPayload(key: string, payload: unknown, ttlMs: number) {
     payload,
     expiresAt: Date.now() + ttlMs,
   });
+}
+
+export function invalidateBackendProxyCacheForResource(resource: string) {
+  for (const key of serverPayloadCache.keys()) {
+    if (
+      key.startsWith(`list:${resource}?`) ||
+      key.startsWith(`years:${resource}?`)
+    ) {
+      serverPayloadCache.delete(key);
+    }
+  }
 }
 
 function getIntegerParam(value: string | null) {
@@ -335,8 +384,23 @@ async function fetchBackendJson(backendUrl: string) {
   for (let attempt = 1; attempt <= BACKEND_GET_RETRY_ATTEMPTS + 1; attempt += 1) {
     try {
       const { response, payload } = await fetchBackendJsonOnce(backendUrl);
+      const isTransientPayload = TRANSIENT_BACKEND_ERROR_PATTERN.test(
+        getPayloadText(payload)
+      );
 
       if (response.ok) {
+        if (isRecord(payload) && payload.success === false) {
+          lastMessage = getBackendPayloadMessage(
+            payload,
+            "Backend mengembalikan response gagal."
+          );
+
+          if (attempt <= BACKEND_GET_RETRY_ATTEMPTS && isTransientPayload) {
+            await sleep(BACKEND_GET_RETRY_DELAY_MS * attempt);
+            continue;
+          }
+        }
+
         return payload as ApiResponse<unknown>;
       }
 
@@ -346,7 +410,7 @@ async function fetchBackendJson(backendUrl: string) {
       );
       const isTransient500 =
         response.status === 500 &&
-        TRANSIENT_BACKEND_ERROR_PATTERN.test(getPayloadText(payload));
+        isTransientPayload;
 
       if (
         attempt <= BACKEND_GET_RETRY_ATTEMPTS &&
@@ -358,6 +422,14 @@ async function fetchBackendJson(backendUrl: string) {
 
       throw new Error(lastMessage);
     } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        throw new BackendProxyError(
+          504,
+          "GATEWAY_TIMEOUT",
+          "Waktu tunggu ke backend habis. Data belum dapat dibaca."
+        );
+      }
+
       lastMessage = error instanceof Error ? error.message : lastMessage;
 
       if (
@@ -368,51 +440,23 @@ async function fetchBackendJson(backendUrl: string) {
         continue;
       }
 
-      throw new Error(lastMessage);
+      throw new BackendProxyError(
+        502,
+        "BAD_GATEWAY",
+        getBackendUnavailableMessage(
+          lastMessage || "Backend tidak dapat dihubungi. Data belum dapat dibaca."
+        )
+      );
     }
   }
 
-  throw new Error(lastMessage);
-}
-
-function createEmptyListResponse(params: {
-  page: number;
-  limit: number;
-  totalRecords?: number;
-  totalPages?: number;
-  warning?: string;
-  partial?: boolean;
-}) {
-  return createJsonResponse({
-    data: {
-      items: [],
-      total_records: params.totalRecords ?? 0,
-      page: params.page,
-      limit: params.limit,
-      total_pages: params.totalPages ?? 1,
-      partial: params.partial ?? false,
-      warning: params.warning,
-    },
-  });
-}
-
-function createSafeListFallbackResponse(
-  path: string[],
-  searchParams: URLSearchParams,
-  warning: string
-) {
-  if (!isSafeListPath(path)) {
-    return null;
-  }
-
-  const { page, limit } = getSafeListRequestMeta(searchParams);
-
-  return createEmptyListResponse({
-    page,
-    limit,
-    partial: true,
-    warning,
-  });
+  throw new BackendProxyError(
+    502,
+    "BAD_GATEWAY",
+    getBackendUnavailableMessage(
+      lastMessage || "Backend tidak dapat dihubungi. Data belum dapat dibaca."
+    )
+  );
 }
 
 function getYearOptionsConfig(path: string[]) {
@@ -510,15 +554,8 @@ async function createAggregatedListResponse(
     setCachedPayload(cacheKey, payload, AGGREGATED_LIST_CACHE_TTL_MS);
 
     return createJsonResponse({ data: payload });
-  } catch {
-    const { page, limit } = getSafeListRequestMeta(searchParams);
-
-    return createEmptyListResponse({
-      page,
-      limit,
-      partial: true,
-      warning: "Backend lambat merespons. Data sementara belum dapat dibaca.",
-    });
+  } catch (error) {
+    return createBackendProxyErrorResponse(error);
   }
 }
 
@@ -565,14 +602,8 @@ async function createYearOptionsResponse(path: string[]) {
     setCachedPayload(cacheKey, years, YEAR_OPTIONS_CACHE_TTL_MS);
 
     return createJsonResponse({ data: { years } });
-  } catch {
-    return createJsonResponse({
-      data: {
-        years: [],
-        partial: true,
-        warning: "Daftar tahun belum dapat dibaca.",
-      },
-    });
+  } catch (error) {
+    return createBackendProxyErrorResponse(error);
   }
 }
 
@@ -664,44 +695,12 @@ export async function proxyBackendRequest(
       );
     }
 
-    if (
-      request.method === "GET" &&
-      backendResponse.status >= 500 &&
-      isSafeListPath(path)
-    ) {
-      const body = await backendResponse.clone().text().catch(() => "");
-      const safeFallback = createSafeListFallbackResponse(
-        path,
-        normalizedQuery.searchParams,
-        TRANSIENT_BACKEND_ERROR_PATTERN.test(body)
-          ? "Sebagian data belum dapat dibaca dari backend."
-          : "Backend mengembalikan error saat membaca halaman data."
-      );
-
-      if (safeFallback) {
-        return safeFallback;
-      }
-    }
-
     return new NextResponse(backendResponse.body, {
       status: backendResponse.status,
       statusText: backendResponse.statusText,
       headers: forwardResponseHeaders(backendResponse.headers),
     });
   } catch (error) {
-    if (request.method === "GET" && isSafeListPath(path)) {
-      const { page, limit } = getSafeListRequestMeta(
-        normalizedQuery.searchParams
-      );
-
-      return createEmptyListResponse({
-        page,
-        limit,
-        partial: true,
-        warning: "Backend lambat merespons. Data sementara belum dapat dibaca.",
-      });
-    }
-
     if (error instanceof DOMException && error.name === "AbortError") {
       return createJsonErrorResponse(
         "Waktu tunggu habis. Silakan coba beberapa saat lagi.",

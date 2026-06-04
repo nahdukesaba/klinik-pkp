@@ -6,9 +6,9 @@
  * peta dan sidebar tidak perlu memuat dataset semua tahun sekaligus.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
-import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
 import { useCascadingFilter } from "@/hooks/use-cascading-filter";
 import { useDebounce } from "@/hooks/use-debounce";
@@ -16,8 +16,9 @@ import { usePagination } from "@/hooks/use-pagination";
 import {
   DEFAULT_DEBOUNCE_DELAY_MS,
   LONG_LIVED_QUERY_STALE_TIME_MS,
-  PUBLIC_DEFAULT_YEAR,
-  PUBLIC_YEAR_FILTER_OPTIONS,
+  PUBLIC_KUMUH_DEFAULT_YEAR,
+  PUBLIC_KUMUH_YEAR_FILTER_OPTIONS,
+  PUBLIC_YEAR_OPTIONS_STALE_TIME_MS,
   QUERY_CONFIG,
   QUERY_KEY_PARTS,
   QUERY_KEYS,
@@ -28,69 +29,45 @@ import {
   fetchKumuhList,
 } from "@/services/kawasan-kumuh.service";
 
-const SIDEBAR_PER_PAGE = 12;
+const SIDEBAR_PER_PAGE = 25;
 
 export function useKawasanKumuh() {
-  const queryClient = useQueryClient();
   const [yearFilter, setYearFilter] = useState("");
   const yearsQuery = useQuery({
     queryKey: [QUERY_KEYS.publicKawasanKumuh, "years"],
     queryFn: fetchKumuhAvailableYears,
     ...QUERY_CONFIG,
     retry: false,
-    staleTime: LONG_LIVED_QUERY_STALE_TIME_MS,
+    staleTime: PUBLIC_YEAR_OPTIONS_STALE_TIME_MS,
     gcTime: LONG_LIVED_QUERY_STALE_TIME_MS,
   });
   const availableYears = useMemo(
     () =>
       yearsQuery.data?.length
         ? yearsQuery.data
-        : [...PUBLIC_YEAR_FILTER_OPTIONS],
+        : [...PUBLIC_KUMUH_YEAR_FILTER_OPTIONS],
     [yearsQuery.data]
   );
-  const selectedYear = yearFilter || String(availableYears[0] ?? PUBLIC_DEFAULT_YEAR);
+  const selectedYear = yearFilter || (
+    availableYears[0] == null ? "" : String(availableYears[0])
+  );
 
   const parsedYear = parseInt(selectedYear, 10);
   const yearParam = Number.isFinite(parsedYear)
     ? parsedYear
-    : PUBLIC_DEFAULT_YEAR;
+    : undefined;
 
   const query = useQuery({
     queryKey: [QUERY_KEYS.publicKawasanKumuh, yearParam],
-    queryFn: () => fetchKumuhList(yearParam),
+    queryFn: () => fetchKumuhList(yearParam ?? PUBLIC_KUMUH_DEFAULT_YEAR),
     placeholderData: keepPreviousData,
     ...QUERY_CONFIG,
+    enabled: yearParam !== undefined,
     retry: false,
     staleTime: LONG_LIVED_QUERY_STALE_TIME_MS,
     gcTime: LONG_LIVED_QUERY_STALE_TIME_MS,
   });
   const data = useMemo(() => query.data ?? [], [query.data]);
-
-  useEffect(() => {
-    if (query.isLoading || yearsQuery.isLoading) {
-      return;
-    }
-
-    for (const year of availableYears) {
-      if (year === yearParam) {
-        continue;
-      }
-
-      void queryClient.prefetchQuery({
-        queryKey: [QUERY_KEYS.publicKawasanKumuh, year],
-        queryFn: () => fetchKumuhList(year),
-        retry: false,
-        staleTime: LONG_LIVED_QUERY_STALE_TIME_MS,
-        gcTime: LONG_LIVED_QUERY_STALE_TIME_MS,
-      });
-    }
-  }, [
-    availableYears,
-    query.isLoading,
-    queryClient,
-    yearParam,
-    yearsQuery.isLoading,
-  ]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -102,7 +79,8 @@ export function useKawasanKumuh() {
     const q = sanitizeInput(debouncedSearch).toLowerCase();
 
     return cascading.filteredItems.filter((kawasan) => {
-      const matchesYear = kawasan.yearInspected === yearParam;
+      const matchesYear =
+        yearParam === undefined || kawasan.yearInspected === yearParam;
       const matchesSearch =
         !debouncedSearch ||
         kawasan.name.toLowerCase().includes(q) ||

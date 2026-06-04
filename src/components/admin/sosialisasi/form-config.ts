@@ -197,7 +197,7 @@ export function buildSosialisasiFormData(
     );
     formData.set(
       "scheduled_at_end",
-      toBackendDateValue(toDateValue(existingItem.scheduledAtEnd))
+      toBackendDateValue(toDateValue(existingItem.scheduledAtEnd), "23:59:59")
     );
     formData.set(
       "coordinate",
@@ -231,7 +231,7 @@ export function buildSosialisasiFormData(
   );
   formData.set(
     "scheduled_at_end",
-    toBackendDateValue(getStringFormValue(values, "scheduledAtEnd"))
+    toBackendDateValue(getStringFormValue(values, "scheduledAtEnd"), "23:59:59")
   );
   formData.set(
     "coordinate",

@@ -20,6 +20,14 @@ import {
   PUBLIC_LIST_FETCH_LIMIT,
   PUBLIC_YEAR_FILTER_OPTIONS,
 } from "@/lib/constants";
+import {
+  normalizeYearOptions,
+  type YearOptionsResponse,
+} from "@/lib/year-options";
+import {
+  ADMIN_RESOURCE_NAMES,
+  fetchAdminResourcePage,
+} from "@/services/admin-resource.service";
 import type { ApiListQueryControls, BspsFilterParams } from "@/types/api";
 
 const BSPS_BACKEND_PAGE_LIMIT = 100;
@@ -138,10 +146,6 @@ export interface BspsListParams
   collectAllPages?: boolean;
 }
 
-interface YearOptionsResponse {
-  years?: number[];
-}
-
 // --- Transformasi ---
 
 /** Transform data API → format frontend */
@@ -200,7 +204,6 @@ export async function fetchBspsList(
     requestOptions: { retry: 0 },
     collectAllPages: false,
     backendPageLimit: BSPS_BACKEND_PAGE_LIMIT,
-    allowPartialResults: true,
   });
 }
 
@@ -211,15 +214,11 @@ export async function fetchBspsAvailableYears(): Promise<number[]> {
       { retry: 0 }
     );
 
-    if (!response.success || !Array.isArray(response.data?.years)) {
+    if (!response.success) {
       return [...PUBLIC_YEAR_FILTER_OPTIONS];
     }
 
-    const years = [...new Set(response.data.years)]
-      .filter((year) => Number.isFinite(year))
-      .sort((left, right) => right - left);
-
-    return years.length > 0 ? years : [...PUBLIC_YEAR_FILTER_OPTIONS];
+    return normalizeYearOptions(response.data?.years, PUBLIC_YEAR_FILTER_OPTIONS);
   } catch {
     return [...PUBLIC_YEAR_FILTER_OPTIONS];
   }
@@ -250,6 +249,35 @@ export async function fetchBspsPage(
     errorMessage: "Gagal mengambil data BSPS dari server",
     requestOptions,
     backendPageLimit: BSPS_BACKEND_PAGE_LIMIT,
-    allowPartialResults: true,
   });
+}
+
+export async function fetchAdminBspsPage(
+  input?: number | BspsListParams,
+  requestOptions?: ApiRequestOptions
+): Promise<ApiPaginatedResult<BspsData>> {
+  const params =
+    typeof input === "number"
+      ? { year: input }
+      : input ?? {};
+
+  return fetchAdminResourcePage<BspsApiItem, BspsData>(
+    ADMIN_RESOURCE_NAMES.bsps,
+    {
+      query: {
+        year_given: params.year,
+        page: params.page,
+        limit: clampApiPageLimit(params.perPage, BSPS_BACKEND_PAGE_LIMIT),
+        sort_by: params.sortBy,
+        sort_order: params.sortBy ? params.sortDirection : undefined,
+        status: params.status,
+        region_id: params.regionId,
+        district_id: params.districtId,
+        village_id: params.villageId,
+      },
+      transform: transformBspsItem,
+      errorMessage: "Gagal mengambil data BSPS admin dari server",
+      requestOptions,
+    }
+  );
 }

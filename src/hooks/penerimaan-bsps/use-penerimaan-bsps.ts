@@ -16,6 +16,7 @@ import {
   DEFAULT_DEBOUNCE_DELAY_MS,
   LONG_LIVED_QUERY_STALE_TIME_MS,
   PUBLIC_DEFAULT_YEAR,
+  PUBLIC_YEAR_OPTIONS_STALE_TIME_MS,
   PUBLIC_YEAR_FILTER_OPTIONS,
   QUERY_CONFIG,
   QUERY_KEY_PARTS,
@@ -37,22 +38,28 @@ export function usePenerimaanBsps() {
     queryFn: fetchBspsAvailableYears,
     ...QUERY_CONFIG,
     retry: false,
-    staleTime: LONG_LIVED_QUERY_STALE_TIME_MS,
+    staleTime: PUBLIC_YEAR_OPTIONS_STALE_TIME_MS,
     gcTime: LONG_LIVED_QUERY_STALE_TIME_MS,
   });
-  const availableYears = yearsQuery.data?.length
-    ? yearsQuery.data
-    : [...PUBLIC_YEAR_FILTER_OPTIONS];
-  const selectedYear = yearFilter || String(availableYears[0] ?? PUBLIC_DEFAULT_YEAR);
+  const availableYears = useMemo(
+    () =>
+      yearsQuery.data?.length
+        ? yearsQuery.data
+        : [...PUBLIC_YEAR_FILTER_OPTIONS],
+    [yearsQuery.data]
+  );
+  const selectedYear = yearFilter || (
+    availableYears[0] == null ? "" : String(availableYears[0])
+  );
   const parsedYear = parseInt(selectedYear, 10);
   const yearParam = Number.isFinite(parsedYear)
     ? parsedYear
-    : PUBLIC_DEFAULT_YEAR;
+    : undefined;
 
   const dataQuery = useQuery({
     queryKey: [QUERY_KEYS.publicBsps, yearParam],
-    queryFn: () => fetchBspsList(yearParam),
-    enabled: !yearsQuery.isLoading,
+    queryFn: () => fetchBspsList(yearParam ?? PUBLIC_DEFAULT_YEAR),
+    enabled: yearParam !== undefined,
     placeholderData: keepPreviousData,
     ...QUERY_CONFIG,
     retry: false,
@@ -78,7 +85,7 @@ export function usePenerimaanBsps() {
     const q = sanitizeInput(debouncedSearch).toLowerCase();
 
     return cascading.filteredItems.filter((p) => {
-      const matchesYear = p.yearGiven === yearParam;
+      const matchesYear = yearParam === undefined || p.yearGiven === yearParam;
 
       const matchesSearch = !debouncedSearch || p.nama.toLowerCase().includes(q);
       const matchesStatus = statusFilter === "all" || p.status === statusFilter;

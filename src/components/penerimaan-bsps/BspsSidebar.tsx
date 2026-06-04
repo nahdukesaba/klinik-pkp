@@ -16,7 +16,7 @@ import { SidebarPagination } from "@/components/shared/SidebarPagination";
 import { cn } from "@/lib/utils";
 import type { BspsData } from "@/services/bsps.service";
 
-const ITEMS_PER_PAGE = 20;
+const ITEMS_PER_PAGE = 25;
 
 interface FilterState {
   searchQuery: string;

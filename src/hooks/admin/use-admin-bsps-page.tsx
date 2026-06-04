@@ -8,12 +8,13 @@ import { type AdminFormValues, type FormFieldDef } from "@/components/admin";
 import { useAdminLocationOptions } from "@/hooks/use-admin-location-options";
 import { getNumberFormValue, getStringFormValue } from "@/lib/admin/form";
 import {
-  QUERY_CONFIG,
+  ADMIN_QUERY_GC_TIME_MS,
+  ADMIN_QUERY_STALE_TIME_MS,
   QUERY_KEYS,
 } from "@/lib/constants";
 import { ADMIN_RESOURCE_NAMES } from "@/services/admin-resource.service";
 import {
-  fetchBspsPage,
+  fetchAdminBspsPage,
   type BspsData,
 } from "@/services/bsps.service";
 
@@ -63,6 +64,7 @@ export function useAdminBspsPage() {
   const listQuery = useAdminListQuery();
   const crud = useAdminCrud<BspsData>({
     queryKey: QUERY_KEYS.adminBsps,
+    relatedQueryKeys: [QUERY_KEYS.publicBsps],
     resource: ADMIN_RESOURCE_NAMES.bsps,
     label: "BSPS",
     buildPayload: buildBspsPayload,
@@ -82,9 +84,9 @@ export function useAdminBspsPage() {
       listQuery.queryParams,
     ],
     queryFn: ({ signal }) =>
-      fetchBspsPage(listQuery.queryParams, { signal }),
-    staleTime: QUERY_CONFIG.staleTime,
-    gcTime: QUERY_CONFIG.gcTime,
+      fetchAdminBspsPage(listQuery.queryParams, { signal }),
+    staleTime: ADMIN_QUERY_STALE_TIME_MS,
+    gcTime: ADMIN_QUERY_GC_TIME_MS,
     placeholderData: keepPreviousData,
     enabled: crud.canManage,
   });

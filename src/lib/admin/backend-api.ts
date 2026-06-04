@@ -7,7 +7,7 @@ import {
 
 /** Tipe detail error dari backend */
 type BackendErrorDetails = Record<string, string | string[]>;
-const BACKEND_JSON_RETRY_COUNT = 2;
+const BACKEND_JSON_RETRY_COUNT = 4;
 const BACKEND_JSON_RETRY_DELAY_MS = 350;
 const TRANSIENT_BACKEND_ERROR_PATTERN =
   /prepared statement|SQLSTATE\s+(42P05|26000)/i;

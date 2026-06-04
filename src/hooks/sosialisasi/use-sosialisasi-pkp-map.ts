@@ -73,8 +73,7 @@ export function useSosialisasiPKPMap(
 
   const [mapReady, setMapReady] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
-  // Default: tahun sekarang agar peta langsung fokus ke data tahun ini
-  const [mapYear, setMapYear] = useState<string>(CURRENT_YEAR);
+  const [mapYear, setMapYear] = useState<string>("");
   const [mapStatusFilter, setMapStatusFilter] = useState<string>("all");
   const [mapSearchQuery, setMapSearchQuery] = useState<string>("");
   const [mapShowFilters, setMapShowFilters] = useState(true);
@@ -91,19 +90,22 @@ export function useSosialisasiPKPMap(
   const cascading = useCascadingFilter(allLocations);
 
   // Daftar tahun yang tersedia dari semua lokasi
-  const mapYears = useMemo(() => {
-    return getSortedUniqueYears(allLocations.map((location) => location.date.slice(0, 4)), {
-      includeCurrentYear: true,
-    });
-  }, [allLocations]);
+  const mapYears = useMemo(
+    () =>
+      getSortedUniqueYears(
+        allLocations.map((location) => location.date.slice(0, 4))
+      ),
+    [allLocations]
+  );
+  const selectedMapYear = mapYear || String(mapYears[0] ?? CURRENT_YEAR);
 
   // Combined filtering (cascading + year + status + search)
   const filteredMapLocations = useMemo(() => {
     let result = cascading.filteredItems;
 
-    // Filter by year (default: tahun sekarang)
-    if (mapYear !== "all") {
-      result = result.filter((loc) => loc.date.slice(0, 4) === mapYear);
+    // Filter by year, default mengikuti tahun data tertinggi.
+    if (selectedMapYear !== "all") {
+      result = result.filter((loc) => loc.date.slice(0, 4) === selectedMapYear);
     }
 
     // Filter by status
@@ -125,7 +127,7 @@ export function useSosialisasiPKPMap(
     }
 
     return result;
-  }, [cascading.filteredItems, mapYear, mapStatusFilter, debouncedSearchQuery]);
+  }, [cascading.filteredItems, selectedMapYear, mapStatusFilter, debouncedSearchQuery]);
 
   // Expose cascading filter lists with "all" prefix for backward compatibility
   const mapKabupatenList = useMemo(
@@ -500,7 +502,7 @@ export function useSosialisasiPKPMap(
     mapReady,
     mapError,
     flyTo,
-    mapYear,
+    mapYear: selectedMapYear,
     setMapYear,
     mapYears,
     mapKabupatenFilter: cascading.filterState.kabupatenFilter,

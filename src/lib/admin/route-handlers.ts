@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 
+import { invalidateBackendProxyCacheForResource } from "@/lib/server/backend-proxy";
 import {
   createBackendErrorResponse,
   createJsonErrorResponse,
@@ -127,18 +128,6 @@ function validateExternalResourceId(id: string) {
   return validation.success ? validation.data : null;
 }
 
-function buildFaqMutationFormData(data: {
-  question: string;
-  answer: string;
-  is_active: boolean;
-}) {
-  const formData = new FormData();
-  formData.set("question", data.question);
-  formData.set("answer", data.answer);
-  formData.set("is_active", String(data.is_active));
-  return formData;
-}
-
 async function recordAudit(
   request: NextRequest,
   actor: AdminSessionUser,
@@ -204,7 +193,7 @@ async function readExternalMutationBody(request: NextRequest, resource: string) 
       };
     }
 
-    return { ok: true as const, body: buildFaqMutationFormData(validation.data) };
+    return { ok: true as const, body: validation.data };
   }
 
   return { ok: true as const, body };
@@ -264,12 +253,15 @@ export async function handleExternalAdminResourceDetail(
     );
   }
 
+  const detailSearchParams = new URLSearchParams(request.nextUrl.searchParams);
+  detailSearchParams.delete("id");
+
   const result = await proxyExternalAdminResource({
     resource: validatedResource,
     method: "GET",
     id: validatedId,
     accessToken: auth.user.backendAccessToken,
-    searchParams: request.nextUrl.searchParams,
+    searchParams: detailSearchParams,
   });
 
   return createJsonResponse(result.payload, result.status);
@@ -349,6 +341,7 @@ export async function handleExternalAdminResourceMutation(
   });
 
   markAdminStateChanged(ADMIN_STATE_TAGS.externalStats);
+  invalidateBackendProxyCacheForResource(validatedResource);
 
   return createJsonResponse(result.payload, result.status);
 }

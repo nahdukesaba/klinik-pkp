@@ -8,12 +8,13 @@ import { type AdminFormValues, type FormFieldDef } from "@/components/admin";
 import { useAdminLocationOptions } from "@/hooks/use-admin-location-options";
 import { getNumberFormValue, getStringFormValue } from "@/lib/admin/form";
 import {
-  QUERY_CONFIG,
+  ADMIN_QUERY_GC_TIME_MS,
+  ADMIN_QUERY_STALE_TIME_MS,
   QUERY_KEYS,
 } from "@/lib/constants";
 import { ADMIN_RESOURCE_NAMES } from "@/services/admin-resource.service";
 import {
-  fetchKumuhPage,
+  fetchAdminKumuhPage,
   type KawasanKumuhData,
 } from "@/services/kawasan-kumuh.service";
 
@@ -60,6 +61,7 @@ export function useAdminKawasanKumuhPage() {
   const listQuery = useAdminListQuery();
   const crud = useAdminCrud<KawasanKumuhData>({
     queryKey: QUERY_KEYS.adminKawasanKumuh,
+    relatedQueryKeys: [QUERY_KEYS.publicKawasanKumuh],
     resource: ADMIN_RESOURCE_NAMES.kumuh,
     label: "kawasan",
     buildPayload: buildKumuhPayload,
@@ -78,9 +80,9 @@ export function useAdminKawasanKumuhPage() {
       listQuery.queryParams,
     ],
     queryFn: ({ signal }) =>
-      fetchKumuhPage(listQuery.queryParams, { signal }),
-    staleTime: QUERY_CONFIG.staleTime,
-    gcTime: QUERY_CONFIG.gcTime,
+      fetchAdminKumuhPage(listQuery.queryParams, { signal }),
+    staleTime: ADMIN_QUERY_STALE_TIME_MS,
+    gcTime: ADMIN_QUERY_GC_TIME_MS,
     placeholderData: keepPreviousData,
     enabled: crud.canManage,
   });

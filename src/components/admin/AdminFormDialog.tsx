@@ -491,6 +491,8 @@ function AdminFormDialogBody({
     [fields, initialValues]
   );
   const [values, setValues] = useState<AdminFormValues>(defaultValues);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const effectiveLoading = isLoading || isSubmitting;
 
   useEffect(() => {
     if (!onValuesChange) {
@@ -505,11 +507,20 @@ function AdminFormDialogBody({
   }, []);
 
   const handleSubmit = useCallback(
-    (event: React.FormEvent) => {
+    async (event: React.FormEvent) => {
       event.preventDefault();
-      onSubmit(values);
+      if (effectiveLoading) {
+        return;
+      }
+
+      setIsSubmitting(true);
+      try {
+        await onSubmit(values);
+      } finally {
+        setIsSubmitting(false);
+      }
     },
-    [onSubmit, values]
+    [effectiveLoading, onSubmit, values]
   );
 
   return (
@@ -609,12 +620,12 @@ function AdminFormDialogBody({
           type="button"
           variant="outline"
           onClick={() => onOpenChange(false)}
-          disabled={isLoading}
+          disabled={effectiveLoading}
         >
           Batal
         </Button>
-        <Button type="submit" disabled={isLoading}>
-          {isLoading ? (
+        <Button type="submit" disabled={effectiveLoading}>
+          {effectiveLoading ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
               Menyimpan...

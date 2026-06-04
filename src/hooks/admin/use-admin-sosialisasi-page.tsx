@@ -32,19 +32,24 @@ import {
   normalizeAdminFieldErrors,
 } from "@/lib/admin-client";
 import {
-  QUERY_CONFIG,
+  ADMIN_QUERY_GC_TIME_MS,
+  ADMIN_QUERY_STALE_TIME_MS,
   QUERY_KEYS,
 } from "@/lib/constants";
 import {
   buildSosialisasiResultFromLocations,
   createAdminSosialisasi,
   deleteAdminSosialisasi,
-  fetchSosialisasiPage,
+  fetchAdminSosialisasiPage,
   updateAdminSosialisasi,
   type SosialisasiLocation,
 } from "@/services/sosialisasi.service";
 
 import { useAdminListQuery } from "./use-admin-list-query";
+
+function canUploadSosialisasiDocumentation(item: SosialisasiLocation | null) {
+  return item?.status === "pending";
+}
 
 export function useAdminSosialisasiPage(view: SosialisasiAdminView) {
   const { user } = useAdminAuth();
@@ -74,9 +79,9 @@ export function useAdminSosialisasiPage(view: SosialisasiAdminView) {
       listQuery.queryParams,
     ],
     queryFn: ({ signal }) =>
-      fetchSosialisasiPage(listQuery.queryParams, { signal }),
-    staleTime: QUERY_CONFIG.staleTime,
-    gcTime: QUERY_CONFIG.gcTime,
+      fetchAdminSosialisasiPage(listQuery.queryParams, { signal }),
+    staleTime: ADMIN_QUERY_STALE_TIME_MS,
+    gcTime: ADMIN_QUERY_GC_TIME_MS,
     placeholderData: keepPreviousData,
     enabled: canManage,
   });
@@ -103,12 +108,27 @@ export function useAdminSosialisasiPage(view: SosialisasiAdminView) {
     setFormOpen(true);
   }, [resetFormState]);
 
-  const openBeritaUploadDialog = useCallback((item: SosialisasiLocation) => {
-    setEditingItem(item);
-    setFormErrors({});
-    setDraftValues({ images: [] });
-    setFormOpen(true);
-  }, []);
+  const openBeritaUploadDialog = useCallback(
+    (item: SosialisasiLocation) => {
+      if (!canUploadSosialisasiDocumentation(item)) {
+        toast({
+          title: "Dokumentasi belum bisa diunggah",
+          description:
+            item.status === "mendatang"
+              ? "Dokumentasi hanya bisa diunggah setelah kegiatan selesai."
+              : "Dokumentasi hanya bisa diunggah untuk status Pending Dokumentasi.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setEditingItem(item);
+      setFormErrors({});
+      setDraftValues({ images: [] });
+      setFormOpen(true);
+    },
+    [toast]
+  );
 
   const openEditDialog = useCallback((item: SosialisasiLocation) => {
     setEditingItem(item);
@@ -174,7 +194,10 @@ export function useAdminSosialisasiPage(view: SosialisasiAdminView) {
   };
 
   const refreshSosialisasi = useCallback(async () => {
-    await queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.adminSosialisasi] });
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.adminSosialisasi] }),
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.publicSosialisasi] }),
+    ]);
   }, [queryClient]);
 
   const handleSubmit = useCallback(
@@ -183,6 +206,12 @@ export function useAdminSosialisasiPage(view: SosialisasiAdminView) {
       setFormErrors({});
 
       try {
+        if (view === "berita" && !canUploadSosialisasiDocumentation(editingItem)) {
+          throw new Error(
+            "Dokumentasi hanya bisa diunggah untuk kegiatan yang sudah selesai dan berstatus Pending Dokumentasi."
+          );
+        }
+
         const formData = buildSosialisasiFormData(values, {
           view,
           existingItem: editingItem,
@@ -271,6 +300,7 @@ export function useAdminSosialisasiPage(view: SosialisasiAdminView) {
           label: "Upload Gambar",
           icon: <ImageIcon className="h-4 w-4" />,
           onClick: openBeritaUploadDialog,
+          isVisible: canUploadSosialisasiDocumentation,
         },
       ];
     }

@@ -220,7 +220,7 @@ export function useKawasanKumuhMap(
             padding: [50, 50],
             animate: true,
             duration: 1.5,
-            maxZoom: 15,
+            maxZoom: displayedKawasan.length === 1 ? 12 : 13,
           });
         }, 300);
       }

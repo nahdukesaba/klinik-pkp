@@ -44,7 +44,8 @@ export function AdminAuthProvider({
   children,
 }: AdminAuthProviderProps) {
   const sessionLifetimeMs = 15 * 60 * 1000;
-  const activityWindowMs = 15 * 60 * 1000;
+  const inactivityTimeoutMs = 5 * 60 * 1000;
+  const activityWindowMs = inactivityTimeoutMs;
   const refreshBufferMs = 2 * 60 * 1000;
   const refreshCooldownMs = 60_000;
   const lastActivityAtRef = useRef(Date.now());
@@ -123,41 +124,77 @@ export function AdminAuthProvider({
   }, [sessionLifetimeMs, user.accessTokenExpiresAt]);
 
   useEffect(() => {
+    let logoutInFlight = false;
+
     const markActivity = () => {
       lastActivityAtRef.current = Date.now();
     };
 
+    const logoutIfInactive = () => {
+      if (
+        logoutInFlight ||
+        Date.now() - lastActivityAtRef.current < inactivityTimeoutMs
+      ) {
+        return;
+      }
+
+      logoutInFlight = true;
+      void logout();
+    };
+
+    const handleActivity = () => {
+      logoutIfInactive();
+      if (!logoutInFlight) {
+        markActivity();
+      }
+    };
+
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
+        logoutIfInactive();
+        if (logoutInFlight) {
+          return;
+        }
+
         markActivity();
         void refreshSession();
       }
     };
 
     const handleFocus = () => {
+      logoutIfInactive();
+      if (logoutInFlight) {
+        return;
+      }
+
       markActivity();
       void refreshSession();
     };
 
     const intervalId = window.setInterval(() => {
+      logoutIfInactive();
+      if (logoutInFlight) {
+        return;
+      }
+
       void refreshSession();
     }, 30_000);
 
-    window.addEventListener("pointerdown", markActivity, { passive: true });
-    window.addEventListener("keydown", markActivity);
-    window.addEventListener("scroll", markActivity, { passive: true });
+    window.addEventListener("pointerdown", handleActivity, { passive: true });
+    window.addEventListener("keydown", handleActivity);
+    window.addEventListener("scroll", handleActivity, { passive: true });
     window.addEventListener("focus", handleFocus);
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       window.clearInterval(intervalId);
-      window.removeEventListener("pointerdown", markActivity);
-      window.removeEventListener("keydown", markActivity);
-      window.removeEventListener("scroll", markActivity);
+      window.removeEventListener("pointerdown", handleActivity);
+      window.removeEventListener("keydown", handleActivity);
+      window.removeEventListener("scroll", handleActivity);
       window.removeEventListener("focus", handleFocus);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [refreshSession]);
+  }, [inactivityTimeoutMs, logout, refreshSession]);
 
   return (
     <AdminAuthContext.Provider value={{ user, logout, refreshSession }}>

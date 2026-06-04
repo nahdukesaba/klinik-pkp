@@ -1,5 +1,7 @@
 /** JWT Token & Authentication (Server-side) — httpOnly cookies, jose library. */
 
+import "server-only";
+
 import { SignJWT, jwtVerify, type JWTPayload } from "jose";
 
 // --- Konfigurasi ---

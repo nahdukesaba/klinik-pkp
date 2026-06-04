@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 
 import type { SortDirection } from "@/types/api";
 
@@ -18,6 +18,42 @@ import type { AdminDataTableProps, Column } from "./data-table/types";
 
 export type { Column, TableAction } from "./data-table/types";
 export { StatusBadge, RoleBadge, editAction, deleteAction };
+
+const sortCollator = new Intl.Collator("id-ID", {
+  numeric: true,
+  sensitivity: "base",
+});
+
+function getSortValue<T extends object>(
+  item: T,
+  columns: Column<T>[],
+  sortKey: string
+) {
+  const column = columns.find(
+    (entry) => (entry.sortField ?? entry.key) === sortKey
+  );
+  const itemKey = column?.key ?? sortKey;
+  return (item as Record<string, unknown>)[itemKey];
+}
+
+function compareSortValues(left: unknown, right: unknown) {
+  const leftEmpty = left == null || left === "";
+  const rightEmpty = right == null || right === "";
+
+  if (leftEmpty && rightEmpty) return 0;
+  if (leftEmpty) return 1;
+  if (rightEmpty) return -1;
+
+  if (typeof left === "number" && typeof right === "number") {
+    return left - right;
+  }
+
+  if (left instanceof Date && right instanceof Date) {
+    return left.getTime() - right.getTime();
+  }
+
+  return sortCollator.compare(String(left), String(right));
+}
 
 export function AdminDataTable<T extends object>({
   columns,
@@ -42,6 +78,20 @@ export function AdminDataTable<T extends object>({
   const pageStart = totalItems === 0 ? 0 : (activePage - 1) * pageSize + 1;
   const pageEnd =
     totalItems === 0 ? 0 : pageStart + Math.max(0, data.length - 1);
+  const sortedData = useMemo(() => {
+    if (!activeSortKey) {
+      return data;
+    }
+
+    return [...data].sort((left, right) => {
+      const result = compareSortValues(
+        getSortValue(left, columns, activeSortKey),
+        getSortValue(right, columns, activeSortKey)
+      );
+
+      return activeSortDirection === "asc" ? result : -result;
+    });
+  }, [activeSortDirection, activeSortKey, columns, data]);
 
   const handleSort = useCallback(
     (key: string) => {
@@ -93,7 +143,7 @@ export function AdminDataTable<T extends object>({
     <div className="overflow-hidden rounded-xl border border-border bg-card">
       <AdminDataTableMobileCards
         columns={columns}
-        data={data}
+        data={sortedData}
         keyField={keyField}
         activePage={activePage}
         emptyMessage={emptyMessage}
@@ -103,7 +153,7 @@ export function AdminDataTable<T extends object>({
 
       <AdminDataTableDesktop
         columns={columns}
-        data={data}
+        data={sortedData}
         actions={actions}
         keyField={keyField}
         activePage={activePage}

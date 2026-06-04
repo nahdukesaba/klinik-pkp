@@ -20,7 +20,7 @@ interface PKPMapSectionProps {
     coordinates: [number, number];
     status: string;
   }>;
-  /** Filter tahun — default: tahun sekarang */
+  /** Filter tahun, default mengikuti tahun data tertinggi. */
   mapYear: string;
   setMapYear: (year: string) => void;
   mapYears: number[];
@@ -69,22 +69,23 @@ export function PKPMapSection({
 }: PKPMapSectionProps) {
   // Map is now initialized automatically in the hook
   const currentYear = new Date().getFullYear().toString();
+  const defaultYear = mapYears[0]?.toString() ?? currentYear;
   const DEFAULT_STATUS = "all";
 
   // Cek filter aktif selain nilai default.
   const activeFilterCount = useMemo(() => {
     let count = 0;
-    if (mapYear !== "all" && mapYear !== currentYear) count++;
+    if (mapYear !== "all" && mapYear !== defaultYear) count++;
     if (kabupatenFilter !== "all") count++;
     if (kecamatanFilter !== "all") count++;
     if (kelurahanFilter !== "all") count++;
     if (statusFilter !== "all" && statusFilter !== DEFAULT_STATUS) count++;
     return count;
-  }, [mapYear, kabupatenFilter, kecamatanFilter, kelurahanFilter, statusFilter, currentYear]);
+  }, [mapYear, kabupatenFilter, kecamatanFilter, kelurahanFilter, statusFilter, defaultYear]);
 
-  // Reset filters (tahun → sekarang, status → mendatang)
+  // Reset filters ke nilai awal data aktif.
   const resetFilters = () => {
-    setMapYear(currentYear);
+    setMapYear(defaultYear);
     setKabupatenFilter("all");
     setKecamatanFilter("all");
     setKelurahanFilter("all");

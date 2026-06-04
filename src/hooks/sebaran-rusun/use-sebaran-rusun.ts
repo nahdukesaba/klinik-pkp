@@ -27,7 +27,7 @@ import {
 import { sanitizeInput } from "@/lib/security";
 import { fetchRusunList, type RusunData } from "@/services/rusun.service";
 
-const SIDEBAR_PER_PAGE = 12;
+const SIDEBAR_PER_PAGE = 25;
 const EMPTY_RUSUN: RusunData[] = [];
 
 export function useSebaranRusun() {
@@ -113,6 +113,7 @@ export function useSebaranRusun() {
     isLoading: query.isLoading,
     isError: query.isError,
     error: query.error,
+    refetch: query.refetch,
     filters: {
       searchQuery,
       kabupatenFilter: cascading.filterState.kabupatenFilter,

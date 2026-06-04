@@ -21,15 +21,21 @@ function shouldRetryQuery(failureCount: number, error: unknown) {
   return failureCount < 2;
 }
 
-/** Default React Query config. Data selalu dianggap fresh dari backend. */
+export const DEFAULT_QUERY_STALE_TIME_MS = 30 * 1000;
+export const DEFAULT_QUERY_GC_TIME_MS = 5 * 60 * 1000;
+
+/** Default React Query config. Cache pendek agar navigasi cepat tanpa menahan data terlalu lama. */
 export const QUERY_CONFIG = {
-  staleTime: 0,
-  gcTime: 0,
+  staleTime: DEFAULT_QUERY_STALE_TIME_MS,
+  gcTime: DEFAULT_QUERY_GC_TIME_MS,
   retry: shouldRetryQuery,
   refetchOnWindowFocus: false,
 } as const;
 
 export const LONG_LIVED_QUERY_STALE_TIME_MS = 5 * 60 * 1000;
+export const PUBLIC_YEAR_OPTIONS_STALE_TIME_MS = 30 * 1000;
+export const ADMIN_QUERY_STALE_TIME_MS = 30 * 1000;
+export const ADMIN_QUERY_GC_TIME_MS = 5 * 60 * 1000;
 export const DEFAULT_DEBOUNCE_DELAY_MS = 400;
 
 /**
@@ -53,6 +59,8 @@ export const API_MAX_PAGE_LIMIT = 100;
 export const PUBLIC_LIST_FETCH_LIMIT = API_MAX_PAGE_LIMIT;
 export const PUBLIC_YEAR_FILTER_OPTIONS = [2025, 2024, 2023] as const;
 export const PUBLIC_DEFAULT_YEAR = PUBLIC_YEAR_FILTER_OPTIONS[0];
+export const PUBLIC_KUMUH_YEAR_FILTER_OPTIONS = [2025, 2024, 2023, 2022] as const;
+export const PUBLIC_KUMUH_DEFAULT_YEAR = PUBLIC_KUMUH_YEAR_FILTER_OPTIONS[0];
 
 export function clampApiPageLimit(
   value: number | null | undefined,
@@ -138,7 +146,33 @@ export function getApiUrl(endpoint: string): string {
  * "rusun/1/file.jpg" → /api/ext/uploads/rusun/1/file.jpg
  */
 export function buildImageUrl(path: string): string {
-  const clean = path.startsWith("/") ? path.slice(1) : path;
+  const cleanPath = path.trim();
+
+  if (!cleanPath) {
+    return "";
+  }
+
+  if (
+    cleanPath.startsWith("http://") ||
+    cleanPath.startsWith("https://") ||
+    cleanPath.startsWith("/api/ext/")
+  ) {
+    return cleanPath;
+  }
+
+  if (cleanPath.startsWith("api/ext/")) {
+    return `/${cleanPath}`;
+  }
+
+  if (cleanPath.startsWith("/api/v1/")) {
+    return cleanPath.replace("/api/v1/", `${API_BASE_URL}/`);
+  }
+
+  if (cleanPath.startsWith("api/v1/")) {
+    return `/${cleanPath}`.replace("/api/v1/", `${API_BASE_URL}/`);
+  }
+
+  const clean = cleanPath.startsWith("/") ? cleanPath.slice(1) : cleanPath;
   const withUploads = clean.startsWith("uploads/") ? clean : `uploads/${clean}`;
   return `${API_BASE_URL}/${withUploads}`;
 }

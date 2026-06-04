@@ -13,9 +13,18 @@ import {
 } from "@/lib/api-client";
 import {
   clampApiPageLimit,
+  PUBLIC_KUMUH_YEAR_FILTER_OPTIONS,
   PUBLIC_LIST_FETCH_LIMIT,
-  PUBLIC_YEAR_FILTER_OPTIONS,
 } from "@/lib/constants";
+import {
+  normalizeYearOption,
+  normalizeYearOptions,
+  type YearOptionsResponse,
+} from "@/lib/year-options";
+import {
+  ADMIN_RESOURCE_NAMES,
+  fetchAdminResourcePage,
+} from "@/services/admin-resource.service";
 import type {
   ApiListQueryControls,
   KawasanKumuhFilterParams,
@@ -67,10 +76,6 @@ export interface KumuhListParams
   collectAllPages?: boolean;
 }
 
-interface YearOptionsResponse {
-  years?: number[];
-}
-
 export const kawasanStatusColors: Record<string, { fill: string; label: string }> = {
   berat: { fill: "#dc2626", label: "Kumuh Berat" },
   sedang: { fill: "#f59e0b", label: "Kumuh Sedang" },
@@ -113,7 +118,7 @@ export function transformKumuhItem(item: KumuhApiItem): KawasanKumuhData {
     status: deriveSlumStatus(item.slum_value),
     slumValue: item.slum_value,
     legalitasLahan: "Legal",
-    yearInspected: item.year_inspected ?? new Date().getFullYear(),
+    yearInspected: normalizeYearOption(item.year_inspected),
   };
 }
 
@@ -127,9 +132,10 @@ export async function fetchKumuhList(
     KUMUH_BACKEND_PAGE_LIMIT
   );
 
-  return fetchApiList<KumuhApiItem, KawasanKumuhData>("/kumuh", {
+  const requestedYear = params.yearInspected ?? params.year;
+  const items = await fetchApiList<KumuhApiItem, KawasanKumuhData>("/kumuh", {
     query: {
-      year_inspected: params.yearInspected ?? params.year,
+      year_inspected: requestedYear,
       page: params.page,
       limit,
       area_name: params.areaName ?? params.keyword,
@@ -145,8 +151,11 @@ export async function fetchKumuhList(
     requestOptions: { retry: 0 },
     collectAllPages: false,
     backendPageLimit: KUMUH_BACKEND_PAGE_LIMIT,
-    allowPartialResults: true,
   });
+
+  return requestedYear !== undefined && Number.isFinite(requestedYear)
+    ? items.filter((item) => item.yearInspected === requestedYear)
+    : items;
 }
 
 export async function fetchKumuhAvailableYears(): Promise<number[]> {
@@ -156,17 +165,16 @@ export async function fetchKumuhAvailableYears(): Promise<number[]> {
       { retry: 0 }
     );
 
-    if (!response.success || !Array.isArray(response.data?.years)) {
-      return [...PUBLIC_YEAR_FILTER_OPTIONS];
+    if (!response.success) {
+      return [...PUBLIC_KUMUH_YEAR_FILTER_OPTIONS];
     }
 
-    const years = [...new Set(response.data.years)]
-      .filter((year) => Number.isFinite(year))
-      .sort((left, right) => right - left);
-
-    return years.length > 0 ? years : [...PUBLIC_YEAR_FILTER_OPTIONS];
+    return normalizeYearOptions(
+      response.data?.years,
+      PUBLIC_KUMUH_YEAR_FILTER_OPTIONS
+    );
   } catch {
-    return [...PUBLIC_YEAR_FILTER_OPTIONS];
+    return [...PUBLIC_KUMUH_YEAR_FILTER_OPTIONS];
   }
 }
 
@@ -192,6 +200,33 @@ export async function fetchKumuhPage(
     errorMessage: "Gagal mengambil data kawasan kumuh dari server",
     requestOptions,
     backendPageLimit: KUMUH_BACKEND_PAGE_LIMIT,
-    allowPartialResults: true,
   });
+}
+
+export async function fetchAdminKumuhPage(
+  input?: number | KumuhListParams,
+  requestOptions?: ApiRequestOptions
+): Promise<ApiPaginatedResult<KawasanKumuhData>> {
+  const params = typeof input === "number" ? { year: input } : input ?? {};
+  const requestedYear = params.yearInspected ?? params.year;
+
+  return fetchAdminResourcePage<KumuhApiItem, KawasanKumuhData>(
+    ADMIN_RESOURCE_NAMES.kumuh,
+    {
+      query: {
+        year_inspected: requestedYear,
+        page: params.page,
+        limit: clampApiPageLimit(params.perPage, KUMUH_BACKEND_PAGE_LIMIT),
+        area_name: params.areaName ?? params.keyword,
+        sort_by: params.sortBy,
+        sort_order: params.sortBy ? params.sortDirection : undefined,
+        region_id: params.regionId,
+        district_id: params.districtId,
+        village_id: params.villageId,
+      },
+      transform: transformKumuhItem,
+      errorMessage: "Gagal mengambil data kawasan kumuh admin dari server",
+      requestOptions,
+    }
+  );
 }

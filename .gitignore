@@ -54,8 +54,10 @@ skills-lock.json
 
 # Local build and temp artifacts
 .turbo/
+.eslintcache
 *.tmp
 *.temp
 
 # Docs
-docs/
+docs/*
+!docs/PROJECT_GUIDE.md

@@ -183,14 +183,14 @@ export function usePenerimaanMap(
 
     setSelectedDesaId(desa.id);
     map.stop();
-    map.flyTo(desa.coordinates, 16, {
+    map.flyTo(desa.coordinates, filteredDesa.length === 1 ? 12 : 16, {
       animate: true,
       duration: 1.1,
       easeLinearity: 0.12,
     });
     centerMarkersRef.current.get(desa.id)?.openPopup();
     void renderRecipientMarkers(desa);
-  }, [renderRecipientMarkers]);
+  }, [filteredDesa.length, renderRecipientMarkers]);
 
   useEffect(() => {
     if (!isEnabled) return;
@@ -304,7 +304,7 @@ export function usePenerimaanMap(
         const handleDesaSelection = () => {
           setSelectedDesaId(desa.id);
           map.stop();
-          map.flyTo(displayCoordinate, 16, {
+          map.flyTo(displayCoordinate, displayedDesa.length === 1 ? 12 : 16, {
             animate: true,
             duration: 1.1,
             easeLinearity: 0.12,

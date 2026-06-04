@@ -175,7 +175,6 @@ interface FetchApiListOptions<TApi, TOutput> {
   requestOptions?: ApiRequestOptions;
   collectAllPages?: boolean;
   backendPageLimit?: number;
-  allowPartialResults?: boolean;
 }
 
 export interface ApiPaginationMeta {
@@ -648,7 +647,6 @@ export async function fetchApiList<TApi, TOutput = TApi>(
     requestOptions,
     collectAllPages = true,
     backendPageLimit,
-    allowPartialResults = false,
   } = options;
   const backendQuery = getBackendQuery(query, backendPageLimit);
 
@@ -683,26 +681,18 @@ export async function fetchApiList<TApi, TOutput = TApi>(
     const totalPages = Math.ceil(totalRecords / pageLimit);
 
     for (let page = basePage + 1; page <= totalPages; page += 1) {
-      try {
-        const nextPage = await fetchApiListPage<TApi>(
-          endpoint,
-          {
-            ...backendQuery,
-            page,
-            limit: pageLimit,
-          },
-          requestOptions,
-          errorMessage
-        );
+      const nextPage = await fetchApiListPage<TApi>(
+        endpoint,
+        {
+          ...backendQuery,
+          page,
+          limit: pageLimit,
+        },
+        requestOptions,
+        errorMessage
+      );
 
-        items.push(...nextPage.items);
-      } catch (error) {
-        if (allowPartialResults && items.length > 0) {
-          break;
-        }
-
-        throw error;
-      }
+      items.push(...nextPage.items);
     }
   }
 
@@ -723,7 +713,6 @@ export async function fetchApiListWithMeta<TApi, TOutput = TApi>(
     errorMessage = "Gagal mengambil data dari server",
     requestOptions,
     backendPageLimit,
-    allowPartialResults = false,
   } = options;
   const requestedPage = getPositiveNumberQueryValue(query?.page);
   const requestedLimit = getPositiveNumberQueryValue(query?.limit);
@@ -788,29 +777,19 @@ export async function fetchApiListWithMeta<TApi, TOutput = TApi>(
       knownPages.set(pageResult.meta.page, pageResult.items);
     }
 
-    let rangeItems: TApi[];
-
-    try {
-      rangeItems = await fetchApiListPages<TApi>(
-        endpoint,
-        {
-          ...query,
-          limit: backendLimit,
-        },
-        requestOptions,
-        errorMessage,
-        startPage,
-        endPage,
-        backendLimit,
-        knownPages
-      );
-    } catch (error) {
-      if (!allowPartialResults || pageResult.items.length === 0) {
-        throw error;
-      }
-
-      rangeItems = pageResult.items;
-    }
+    const rangeItems = await fetchApiListPages<TApi>(
+      endpoint,
+      {
+        ...query,
+        limit: backendLimit,
+      },
+      requestOptions,
+      errorMessage,
+      startPage,
+      endPage,
+      backendLimit,
+      knownPages
+    );
     const startOffset = ((requestedPage - 1) * requestedLimit) % backendLimit;
     const pageItems = rangeItems.slice(startOffset, startOffset + requestedLimit);
 

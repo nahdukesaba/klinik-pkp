@@ -269,15 +269,13 @@ function deriveWarning(resource: ExternalStatsResource, items: ResourceItem[]) {
 }
 
 async function fetchExternalCollectionSnapshot(
-  resource: ExternalStatsResource,
-  options: ExternalStatsReadOptions = {}
+  resource: ExternalStatsResource
 ) {
   const payload = await fetchBackendJson<ApiResponse<unknown>>(
     `${resource.path}?page=1&limit=10`,
     {
-      headers: options.backendAccessToken
-        ? { Authorization: `Bearer ${options.backendAccessToken}` }
-        : undefined,
+      retry: 4,
+      timeoutMs: 30_000,
     }
   );
   const items = extractApiCollectionItems<ResourceItem>(payload.data);
@@ -315,7 +313,7 @@ function createModuleSummary(
 }
 
 async function readExternalDashboardStats(
-  options: ExternalStatsReadOptions = {}
+  _options: ExternalStatsReadOptions = {}
 ): Promise<ExternalStatsSummary> {
   const totals: Record<ExternalStatsKey, number> = { ...EMPTY_TOTALS };
   const modules: ExternalStatsModuleSummary[] = [];
@@ -337,7 +335,7 @@ async function readExternalDashboardStats(
 
   const results = await Promise.allSettled(
     EXTERNAL_STATS_RESOURCES.map(async (resource) => {
-      const snapshot = await fetchExternalCollectionSnapshot(resource, options);
+      const snapshot = await fetchExternalCollectionSnapshot(resource);
 
       return createModuleSummary(
         resource,

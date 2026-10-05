@@ -104,7 +104,7 @@ export function AdminSosialisasiManager({
         onOpenChange={handleFormOpenChange}
         title={
           view === "berita"
-            ? "Upload Gambar Berita"
+            ? "Kelola Gambar Berita"
             : editingItem
               ? `Edit ${viewConfig.dialogTitle}`
               : `Tambah ${viewConfig.dialogTitle}`
@@ -120,7 +120,7 @@ export function AdminSosialisasiManager({
         onSubmit={handleSubmit}
         submitLabel={
           view === "berita"
-            ? "Unggah Gambar"
+            ? "Simpan Dokumentasi"
             : editingItem
               ? "Simpan Perubahan"
               : viewConfig.addLabel

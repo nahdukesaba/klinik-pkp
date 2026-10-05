@@ -28,7 +28,20 @@ import { useAdminCrud } from "./use-admin-crud";
 import { useAdminListQuery } from "./use-admin-list-query";
 
 const EMPTY_BANK_DESAIN_ITEMS: BankDesainData[] = [];
-const BANK_DESAIN_TYPE = "Tipe 36";
+
+const BANK_DESAIN_TYPE_OPTIONS = [
+  { value: "Tipe 36", label: "Tipe 36" },
+  { value: "Tipe 45", label: "Tipe 45" },
+  { value: "Tipe 54", label: "Tipe 54" },
+  { value: "Rusun", label: "Rusun" },
+];
+
+const BANK_DESAIN_API_TYPE_BY_FRONTEND: Record<string, string> = {
+  T36: "Tipe 36",
+  T45: "Tipe 45",
+  T54: "Tipe 54",
+  RUSUN: "Rusun",
+};
 
 type BankDesainAdminFilters = {
   bedroomCount?: number;
@@ -40,7 +53,7 @@ function buildBankDesainFormData(values: AdminFormValues) {
   const formData = new FormData();
 
   formData.set("name", getStringFormValue(values, "name"));
-  formData.set("type", BANK_DESAIN_TYPE);
+  formData.set("type", getStringFormValue(values, "designType"));
   formData.set("bedroom_count", getStringFormValue(values, "bedroomCount"));
   formData.set("bathroom_count", getStringFormValue(values, "bathroomCount"));
   formData.set("total_area", getStringFormValue(values, "totalArea"));
@@ -70,6 +83,7 @@ function buildBankDesainFormData(values: AdminFormValues) {
 function desainToFormValues(item: BankDesainData): AdminFormValues {
   return {
     name: item.title,
+    designType: BANK_DESAIN_API_TYPE_BY_FRONTEND[item.type] ?? item.type,
     bedroomCount: String(item.bedrooms),
     bathroomCount: String(item.bathrooms),
     totalArea: String(item.area),
@@ -111,6 +125,13 @@ export function useAdminBankDesainPage() {
         label: "Nama Desain",
         type: "text",
         required: true,
+      },
+      {
+        name: "designType",
+        label: "Tipe Desain",
+        type: "select",
+        required: true,
+        options: BANK_DESAIN_TYPE_OPTIONS,
       },
       {
         name: "bedroomCount",

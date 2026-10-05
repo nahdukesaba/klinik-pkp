@@ -50,8 +50,25 @@ export function applySensitiveResponseHeaders(
   return response;
 }
 
+function getRequestOrigin(request: NextRequest) {
+  const forwardedHost = request.headers
+    .get("x-forwarded-host")
+    ?.split(",")[0]
+    ?.trim();
+  const host =
+    forwardedHost || request.headers.get("host") || request.nextUrl.host;
+
+  const forwardedProto = request.headers
+    .get("x-forwarded-proto")
+    ?.split(",")[0]
+    ?.trim();
+  const protocol = forwardedProto || request.nextUrl.protocol.replace(":", "");
+
+  return `${protocol}://${host}`;
+}
+
 export function hasTrustedSameOrigin(request: NextRequest) {
-  const requestOrigin = request.nextUrl.origin;
+  const requestOrigin = getRequestOrigin(request);
   const originHeader = resolveOrigin(request.headers.get("origin"));
 
   if (originHeader) {

@@ -237,7 +237,7 @@ export function buildSosialisasiViewConfig(params: {
 
     return {
       title: "Berita Sosialisasi",
-      addLabel: "Upload Gambar",
+      addLabel: "Kelola Gambar",
       dialogTitle: "Gambar Berita Sosialisasi",
       emptyMessage: "Belum ada kegiatan selesai yang menunggu atau siap dipublikasikan.",
       columns: beritaColumns,

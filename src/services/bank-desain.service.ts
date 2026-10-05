@@ -86,16 +86,25 @@ export interface BankDesainListParams
 // --- Mapping tipe ---
 
 const BANK_DESAIN_FALLBACK_IMAGE = "/service-bank-desain.jpg";
-const BANK_DESAIN_API_TYPE = "Tipe 36";
-const BANK_DESAIN_FRONTEND_TYPE = "T36";
-
 const TYPE_MAP: Record<string, string> = {
-  [BANK_DESAIN_API_TYPE]: BANK_DESAIN_FRONTEND_TYPE,
+  "Tipe 36": "T36",
+  "Tipe 45": "T45",
+  "Tipe 54": "T54",
+  Rusun: "RUSUN",
 };
 
-/** Label tipe untuk tampilan filter */
 const TYPE_LABELS: Record<string, string> = {
-  [BANK_DESAIN_FRONTEND_TYPE]: "Tipe 36 (36 m²)",
+  T36: "Tipe 36 (36 m²)",
+  T45: "Tipe 45 (45 m²)",
+  T54: "Tipe 54 (54 m²)",
+  RUSUN: "Rusun",
+};
+
+const FRONTEND_TO_API_TYPE: Record<string, string> = {
+  T36: "Tipe 36",
+  T45: "Tipe 45",
+  T54: "Tipe 54",
+  RUSUN: "Rusun",
 };
 
 function normalizeBankDesainTypeParam(type?: string) {
@@ -103,7 +112,7 @@ function normalizeBankDesainTypeParam(type?: string) {
     return undefined;
   }
 
-  return type === BANK_DESAIN_FRONTEND_TYPE ? BANK_DESAIN_API_TYPE : type;
+  return FRONTEND_TO_API_TYPE[type] ?? type;
 }
 
 function normalizeBooleanFilterParam(value: BankDesainListParams["hasGarage"]) {
@@ -168,7 +177,7 @@ export function transformBankDesainItem(item: BankDesainApiItem): BankDesainData
     area: item.total_area,
     previewImages: imageUrls,
     rabPdfUrl: fileUrls[0] ?? "",
-    designFileUrl: fileUrls[0],
+    designFileUrl: imageUrls[0],
     description: "",
   };
 }

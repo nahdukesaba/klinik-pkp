@@ -43,11 +43,8 @@
     "eslint": "^9.39.4",
     "eslint-config-next": "^16.2.1",
     "eslint-plugin-import": "^2.32.0",
-    "postcss": "8.5.14",
+    "postcss": "8.5.28",
     "tailwindcss": "^4.2.2",
     "typescript": "^6.0.2"
-  },
-  "overrides": {
-    "postcss": "8.5.14"
   }
 }

@@ -48,7 +48,7 @@ import {
 import { useAdminListQuery } from "./use-admin-list-query";
 
 function canUploadSosialisasiDocumentation(item: SosialisasiLocation | null) {
-  return item?.status === "pending";
+  return item?.status === "pending" || item?.status === "selesai";
 }
 
 export function useAdminSosialisasiPage(view: SosialisasiAdminView) {
@@ -112,11 +112,9 @@ export function useAdminSosialisasiPage(view: SosialisasiAdminView) {
     (item: SosialisasiLocation) => {
       if (!canUploadSosialisasiDocumentation(item)) {
         toast({
-          title: "Dokumentasi belum bisa diunggah",
+          title: "Dokumentasi belum bisa dikelola",
           description:
-            item.status === "mendatang"
-              ? "Dokumentasi hanya bisa diunggah setelah kegiatan selesai."
-              : "Dokumentasi hanya bisa diunggah untuk status Pending Dokumentasi.",
+            "Dokumentasi hanya bisa dikelola setelah kegiatan selesai.",
           variant: "destructive",
         });
         return;
@@ -208,7 +206,7 @@ export function useAdminSosialisasiPage(view: SosialisasiAdminView) {
       try {
         if (view === "berita" && !canUploadSosialisasiDocumentation(editingItem)) {
           throw new Error(
-            "Dokumentasi hanya bisa diunggah untuk kegiatan yang sudah selesai dan berstatus Pending Dokumentasi."
+            "Dokumentasi hanya bisa dikelola setelah kegiatan selesai."
           );
         }
 
@@ -297,7 +295,7 @@ export function useAdminSosialisasiPage(view: SosialisasiAdminView) {
     if (view === "berita") {
       return [
         {
-          label: "Upload Gambar",
+          label: "Kelola Gambar",
           icon: <ImageIcon className="h-4 w-4" />,
           onClick: openBeritaUploadDialog,
           isVisible: canUploadSosialisasiDocumentation,

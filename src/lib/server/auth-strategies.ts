@@ -8,6 +8,12 @@ import {
 } from "@/lib/admin/backend-api";
 import type { ApiResponse } from "@/lib/api-client";
 import { sanitizeEmail, sanitizeNip } from "@/lib/security";
+import {
+  getKlinikContext,
+  loginWithSso,
+  refreshSsoSession,
+  SsoAuthError,
+} from "@/lib/server/sso-auth";
 
 // ---------------------------------------------------------------------------
 // Tipe bersama
@@ -145,21 +151,21 @@ function resolveBackendAuthUrls() {
 
 /** Ambil profil pengguna yang sudah terautentikasi dari backend. */
 async function fetchAuthenticatedBackendUser(
-  accessToken: string
+  accessToken: string,
 ): Promise<AuthenticatedBackendUser> {
   const payload = await fetchBackendJson<ApiResponse<Record<string, unknown>>>(
     "users/me",
     {
       headers: { Authorization: `Bearer ${accessToken}` },
       timeoutMs: 15_000,
-    }
+    },
   );
 
   if (!payload.success || !payload.data || typeof payload.data !== "object") {
     throw new BackendApiError(
       "Gagal memuat profil pengguna.",
       502,
-      payload.details
+      payload.details,
     );
   }
 
@@ -175,6 +181,51 @@ async function fetchAuthenticatedBackendUser(
         : "Admin PKP",
     role: typeof data.role === "string" ? data.role : "user",
   };
+}
+
+// ---------------------------------------------------------------------------
+// Strategi SSO terpusat
+// ---------------------------------------------------------------------------
+
+export async function authenticateAgainstCentralSso(input: {
+  email: string;
+  password: string;
+}): Promise<ExternalAuthResult> {
+  try {
+    const session = await loginWithSso({
+      email: sanitizeEmail(input.email),
+      password: input.password,
+    });
+
+    const klinikContext = await getKlinikContext(session.accessToken);
+
+    return {
+      ok: true,
+      user: {
+        id: klinikContext.id,
+        email: sanitizeEmail(session.user.email),
+        nip: sanitizeNip(session.user.pegawai?.nip ?? ""),
+        name: session.user.fullName || "Admin PKP",
+        role: klinikContext.role,
+      },
+      backendAccessToken: session.accessToken,
+      backendRefreshToken: session.refreshToken,
+    };
+  } catch (error) {
+    if (error instanceof SsoAuthError) {
+      return {
+        ok: false,
+        status: error.status,
+        error: error.message,
+      };
+    }
+
+    return {
+      ok: false,
+      status: 502,
+      error: "Layanan autentikasi sedang tidak tersedia.",
+    };
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -239,7 +290,7 @@ export function authenticateAgainstLocalAdminEnv(input: {
 
 async function authenticateAgainstExternalBackend(
   input: { email: string; nip: string; password: string },
-  _origin: string
+  _origin: string,
 ): Promise<ExternalAuthResult> {
   const backendAuthUrls = resolveBackendAuthUrls();
 
@@ -331,7 +382,7 @@ async function authenticateAgainstExternalBackend(
 
     const refreshToken = extractCookieValue(
       getSetCookieHeaders(response),
-      "refresh_token"
+      "refresh_token",
     );
 
     return {
@@ -355,8 +406,7 @@ async function authenticateAgainstExternalBackend(
             : typeof backendUser.full_name === "string"
               ? backendUser.full_name
               : "Admin PKP",
-        role:
-          typeof backendUser.role === "string" ? backendUser.role : "user",
+        role: typeof backendUser.role === "string" ? backendUser.role : "user",
       },
       backendAccessToken,
       backendRefreshToken: refreshToken,
@@ -373,7 +423,7 @@ async function authenticateAgainstExternalBackend(
 /** Wrapper deduplikasi — mencegah request autentikasi identik secara bersamaan. */
 export async function authenticateAgainstExternalBackendDedup(
   input: { email: string; nip: string; password: string },
-  origin: string
+  origin: string,
 ): Promise<ExternalAuthResult> {
   const key = `${origin}|${input.email.toLowerCase()}|${input.nip}`;
   const existing = pendingExternalAuth.get(key);
@@ -383,7 +433,7 @@ export async function authenticateAgainstExternalBackendDedup(
 
   const requestPromise = authenticateAgainstExternalBackend(
     input,
-    origin
+    origin,
   ).finally(() => {
     pendingExternalAuth.delete(key);
   });
@@ -396,105 +446,37 @@ export async function refreshExternalBackendSession(params: {
   backendRefreshToken: string;
   origin: string;
 }): Promise<ExternalAuthResult> {
-  const backendAuthUrls = resolveBackendAuthUrls();
+  void params.origin;
 
-  if (!backendAuthUrls.length) {
+  try {
+    const session = await refreshSsoSession(params.backendRefreshToken);
+    const klinikContext = await getKlinikContext(session.accessToken);
+
+    return {
+      ok: true,
+      user: {
+        id: klinikContext.id,
+        email: sanitizeEmail(session.user.email),
+        nip: sanitizeNip(session.user.pegawai?.nip ?? ""),
+        name: session.user.fullName || "Admin PKP",
+        role: klinikContext.role,
+      },
+      backendAccessToken: session.accessToken,
+      backendRefreshToken: session.refreshToken,
+    };
+  } catch (error) {
+    if (error instanceof SsoAuthError) {
+      return {
+        ok: false,
+        status: error.status,
+        error: error.message,
+      };
+    }
+
     return {
       ok: false,
-      status: 503,
-      error: "Layanan autentikasi belum tersedia.",
+      status: 502,
+      error: "Layanan autentikasi sedang tidak tersedia.",
     };
   }
-
-  for (const backendAuthUrl of backendAuthUrls) {
-    let response: Response;
-
-    try {
-      response = await fetch(backendAuthUrl, {
-        method: "PUT",
-        headers: {
-          Accept: "application/json",
-          Cookie: `refresh_token=${encodeURIComponent(params.backendRefreshToken)}`,
-        },
-        signal: AbortSignal.timeout(15_000),
-      });
-    } catch (error) {
-      if (error instanceof DOMException && error.name === "AbortError") {
-        return {
-          ok: false,
-          status: 504,
-          error: "Waktu tunggu refresh sesi habis. Silakan coba lagi.",
-        };
-      }
-
-      return {
-        ok: false,
-        status: 502,
-        error: "Layanan autentikasi sedang tidak tersedia.",
-      };
-    }
-
-    const contentType = response.headers.get("content-type") ?? "";
-    const payload = contentType.includes("application/json")
-      ? await response.json().catch(() => null)
-      : null;
-
-    if (!response.ok) {
-      return {
-        ok: false,
-        status: normalizeAuthFailureStatus(response.status),
-        error: extractAuthFailureMessage(payload, response.status),
-        details: extractAuthFailureDetails(payload),
-      };
-    }
-
-    const backendAccessToken =
-      payload?.data?.access_token ??
-      payload?.access_token ??
-      payload?.data?.token ??
-      payload?.token;
-
-    if (
-      typeof backendAccessToken !== "string" ||
-      backendAccessToken.trim() === ""
-    ) {
-      return {
-        ok: false,
-        status: 502,
-        error: "Refresh sesi berhasil, tetapi access token tidak tersedia.",
-      };
-    }
-
-    try {
-      const backendUser = await fetchAuthenticatedBackendUser(backendAccessToken);
-      const rotatedRefreshToken =
-        extractCookieValue(getSetCookieHeaders(response), "refresh_token") ??
-        params.backendRefreshToken;
-
-      return {
-        ok: true,
-        user: backendUser,
-        backendAccessToken,
-        backendRefreshToken: rotatedRefreshToken,
-      };
-    } catch (error) {
-      return {
-        ok: false,
-        status:
-          error instanceof BackendApiError && error.status >= 500
-            ? error.status
-            : 502,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Gagal memuat profil pengguna setelah refresh sesi.",
-      };
-    }
-  }
-
-  return {
-    ok: false,
-    status: 502,
-    error: "Layanan autentikasi tidak tersedia.",
-  };
 }

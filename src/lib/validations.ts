@@ -14,12 +14,6 @@ export const loginSchema = z.object({
     .max(255, "Email terlalu panjang")
     .transform(sanitizeEmail),
 
-  nip: z
-    .string()
-    .min(1, "NIP wajib diisi")
-    .transform(sanitizeNip)
-    .refine((val: string) => /^\d{18}$/.test(val), "NIP harus tepat 18 digit"),
-
   password: z
     .string()
     .min(1, "Password wajib diisi")
@@ -48,7 +42,9 @@ const phoneSchema = z
   .string()
   .max(50, "Nomor telepon terlalu panjang")
   .transform((value) =>
-    sanitizeInput(value).replace(/[^\d+\-\s()]/g, "").trim()
+    sanitizeInput(value)
+      .replace(/[^\d+\-\s()]/g, "")
+      .trim(),
   );
 
 const adminUserNameSchema = z
@@ -130,7 +126,7 @@ export interface ValidationResult<T> {
 /** Validasi data dengan Zod schema dan kembalikan hasil terstruktur. */
 export function validateForm<T>(
   schema: z.ZodSchema<T>,
-  data: unknown
+  data: unknown,
 ): ValidationResult<T> {
   const result = schema.safeParse(data);
 

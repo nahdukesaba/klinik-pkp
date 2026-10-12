@@ -6,7 +6,6 @@ import { AUTH_ENDPOINTS } from "@/services/auth-endpoints";
 
 export interface LoginAdminSessionValues {
   email: string;
-  nip: string;
   password: string;
 }
 

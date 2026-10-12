@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 
 import { useToast } from "@/hooks/use-toast";
 import { warmUpAdminCsrfToken } from "@/lib/admin-client";
-import { checkRateLimit, sanitizeNip } from "@/lib/security";
+import { checkRateLimit } from "@/lib/security";
 import { loginSchema, validateForm } from "@/lib/validations";
 import { loginAdminSession } from "@/services/auth.service";
 
@@ -25,7 +25,6 @@ export function useLoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState("");
-  const [nip, setNip] = useState("");
   const [password, setPassword] = useState("");
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const { toast } = useToast();
@@ -54,7 +53,7 @@ export function useLoginPage() {
         return;
       }
 
-      const validation = validateForm(loginSchema, { email, nip, password });
+      const validation = validateForm(loginSchema, { email, password });
       if (!validation.success) {
         setFormErrors(validation.errors ?? {});
         toast({
@@ -91,14 +90,14 @@ export function useLoginPage() {
           description:
             error instanceof Error
               ? error.message
-              : "Email, NIP, atau password salah.",
+              : "Email atau password salah.",
           variant: "destructive",
         });
       } finally {
         setIsLoading(false);
       }
     },
-    [email, isLoading, nip, password, redirectTarget, toast]
+    [email, isLoading, password, redirectTarget, toast],
   );
 
   const togglePassword = useCallback(() => {
@@ -109,14 +108,11 @@ export function useLoginPage() {
     showPassword,
     isLoading,
     email,
-    nip,
     password,
     formErrors,
     setEmail,
-    setNip,
     setPassword,
     togglePassword,
     handleLogin,
-    sanitizeNip,
   };
 }

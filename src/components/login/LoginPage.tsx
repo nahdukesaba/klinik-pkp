@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-import { Eye, EyeOff, Lock, Mail, User } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 
 import { AuthPageShell } from "@/components/login/AuthPageShell";
 import { Button } from "@/components/ui/button";
@@ -15,15 +15,12 @@ export default function LoginPage() {
     showPassword,
     isLoading,
     email,
-    nip,
     password,
     formErrors,
     setEmail,
-    setNip,
     setPassword,
     togglePassword,
     handleLogin,
-    sanitizeNip,
   } = useLoginPage();
 
   return (
@@ -35,7 +32,10 @@ export default function LoginPage() {
     >
       <form onSubmit={handleLogin} className="space-y-3.5">
         <div className="space-y-1">
-          <Label htmlFor="email" className="text-sm font-medium text-foreground">
+          <Label
+            htmlFor="email"
+            className="text-sm font-medium text-foreground"
+          >
             Email
           </Label>
           <div className="relative">
@@ -56,39 +56,6 @@ export default function LoginPage() {
           </div>
           {formErrors.email && (
             <p className="text-xs text-red-500">{formErrors.email}</p>
-          )}
-        </div>
-
-        <div className="space-y-1">
-          <Label htmlFor="nip" className="text-sm font-medium text-foreground">
-            NIP
-          </Label>
-          <div className="relative">
-            <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              id="nip"
-              type="text"
-              placeholder="Nomor Induk Pegawai"
-              value={nip}
-              onChange={(event) =>
-                setNip(sanitizeNip(event.target.value).slice(0, 18))
-              }
-              className={`h-10 border-border bg-background/50 pl-10 transition-colors focus:border-primary ${
-                formErrors.nip ? "border-red-500" : ""
-              }`}
-              required
-              autoComplete="off"
-              maxLength={18}
-              inputMode="numeric"
-              pattern="[0-9]{18}"
-            />
-          </div>
-          {formErrors.nip ? (
-            <p className="text-xs text-red-500">{formErrors.nip}</p>
-          ) : (
-            <p className="text-[11px] text-muted-foreground">
-              NIP harus 18 digit.
-            </p>
           )}
         </div>
 

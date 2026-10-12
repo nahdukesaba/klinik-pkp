@@ -1,9 +1,6 @@
 import { NextRequest } from "next/server";
 
-import {
-  getRequestIpAddress,
-  hasValidCsrfToken,
-} from "@/lib/admin/security";
+import { getRequestIpAddress, hasValidCsrfToken } from "@/lib/admin/security";
 import {
   createSessionAdminUser,
   recordSuccessfulLogin,
@@ -18,8 +15,7 @@ import {
   type AuthUser,
 } from "@/lib/auth";
 import {
-  authenticateAgainstExternalBackendDedup,
-  authenticateAgainstLocalAdminEnv,
+  authenticateAgainstCentralSso,
   type ExternalAuthResult,
 } from "@/lib/server/auth-strategies";
 import {
@@ -48,11 +44,11 @@ function attachBackendSessionCookies(
           path: string;
           maxAge: number;
           priority: "high";
-        }
+        },
       ) => void;
     };
   },
-  authResult: Extract<ExternalAuthResult, { ok: true }>
+  authResult: Extract<ExternalAuthResult, { ok: true }>,
 ) {
   const backendAccessCookie = getBackendAccessCookieOptions();
   response.cookies.set(
@@ -63,11 +59,9 @@ function attachBackendSessionCookies(
       secure: backendAccessCookie.secure,
       sameSite: backendAccessCookie.sameSite,
       path: backendAccessCookie.path,
-      maxAge: authResult.backendAccessToken
-        ? backendAccessCookie.maxAge
-        : 0,
+      maxAge: authResult.backendAccessToken ? backendAccessCookie.maxAge : 0,
       priority: backendAccessCookie.priority,
-    }
+    },
   );
 
   const backendRefreshCookie = getBackendRefreshCookieOptions();
@@ -79,11 +73,9 @@ function attachBackendSessionCookies(
       secure: backendRefreshCookie.secure,
       sameSite: backendRefreshCookie.sameSite,
       path: backendRefreshCookie.path,
-      maxAge: authResult.backendRefreshToken
-        ? backendRefreshCookie.maxAge
-        : 0,
+      maxAge: authResult.backendRefreshToken ? backendRefreshCookie.maxAge : 0,
       priority: backendRefreshCookie.priority,
-    }
+    },
   );
 }
 
@@ -99,7 +91,7 @@ export async function POST(request: NextRequest) {
     if (!hasValidCsrfToken(request)) {
       return createJsonErrorResponse(
         "Request tidak valid. Silakan muat ulang halaman login.",
-        403
+        403,
       );
     }
 
@@ -113,7 +105,7 @@ export async function POST(request: NextRequest) {
     if (!validation.success) {
       return createValidationErrorResponse(
         "Data login tidak valid.",
-        validation.errors
+        validation.errors,
       );
     }
 
@@ -121,39 +113,31 @@ export async function POST(request: NextRequest) {
     if (!checkRateLimit(ipAddress, MAX_LOGIN_ATTEMPTS, LOGIN_WINDOW_MS)) {
       return createJsonErrorResponse(
         "Terlalu banyak percobaan. Silakan coba lagi nanti.",
-        429
+        429,
       );
     }
 
     const credentials = validation.data!;
 
-    // --- Authentication (local env → external backend fallback) ---
-    const localResult = authenticateAgainstLocalAdminEnv(credentials);
-    if (localResult.type === "invalid") {
-      return createJsonErrorResponse(localResult.error, localResult.status);
-    }
-
+    // --- Authentication through central SSO ---
     let authResult: ExternalAuthResult;
-    if (localResult.type === "success") {
-      authResult = localResult.result;
-    } else {
-      try {
-        authResult = await authenticateAgainstExternalBackendDedup(
-          credentials,
-          request.nextUrl.origin
-        );
-      } catch {
-        return createJsonErrorResponse(
-          "Layanan autentikasi sedang tidak tersedia.",
-          502
-        );
-      }
+
+    try {
+      authResult = await authenticateAgainstCentralSso({
+        email: credentials.email,
+        password: credentials.password,
+      });
+    } catch {
+      return createJsonErrorResponse(
+        "Layanan autentikasi sedang tidak tersedia.",
+        502,
+      );
     }
 
     if (!authResult.ok) {
       const duplicateKeyError =
         /duplicate key value violates unique constraint/i.test(
-          authResult.error
+          authResult.error,
         ) || /authentication_pkey/i.test(authResult.error);
 
       return createJsonErrorResponse(
@@ -161,7 +145,7 @@ export async function POST(request: NextRequest) {
           ? "Permintaan login sedang diproses di backend. Silakan tunggu beberapa detik lalu coba lagi."
           : authResult.error,
         duplicateKeyError ? 409 : authResult.status,
-        duplicateKeyError ? undefined : authResult.details
+        duplicateKeyError ? undefined : authResult.details,
       );
     }
 
@@ -181,7 +165,7 @@ export async function POST(request: NextRequest) {
         error instanceof Error
           ? error.message
           : "Akun tidak memiliki akses ke dashboard admin.",
-        403
+        403,
       );
     }
 
@@ -195,7 +179,7 @@ export async function POST(request: NextRequest) {
     try {
       await recordSuccessfulLogin(
         { id: authenticatedUser.id, name: authenticatedUser.name },
-        ipAddress
+        ipAddress,
       );
     } catch {
       // Audit tidak boleh menghalangi respons login yang berhasil.
@@ -238,7 +222,7 @@ export async function POST(request: NextRequest) {
   } catch {
     return createJsonErrorResponse(
       "Terjadi kesalahan pada server. Silakan coba lagi.",
-      500
+      500,
     );
   }
 }

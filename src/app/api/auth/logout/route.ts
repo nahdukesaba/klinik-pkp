@@ -6,47 +6,36 @@
 
 import { NextRequest } from "next/server";
 
-import {
-  buildBackendApiUrl,
-  createBackendHeaders,
-  getBackendApiBaseUrl,
-} from "@/lib/admin/backend-api";
 import { CSRF_COOKIE_NAME } from "@/lib/admin/security";
 import {
-  BACKEND_REFRESH_COOKIE_NAME,
+  BACKEND_ACCESS_COOKIE_NAME,
   getBackendAccessCookieOptions,
   getBackendRefreshCookieOptions,
   getAccessTokenCookieOptions,
   getRefreshTokenCookieOptions,
 } from "@/lib/auth";
 import { createJsonErrorResponse, createJsonResponse } from "@/lib/server/http";
+import { logoutSsoSession } from "@/lib/server/sso-auth";
 import {
   applySensitiveResponseHeaders,
   hasTrustedSameOrigin,
 } from "@/lib/server/web-security";
 
-async function resolveBackendRefreshToken(request: NextRequest) {
-  return request.cookies.get(BACKEND_REFRESH_COOKIE_NAME)?.value ?? null;
+async function resolveBackendAccessToken(request: NextRequest) {
+  return request.cookies.get(BACKEND_ACCESS_COOKIE_NAME)?.value ?? null;
 }
 
 async function terminateBackendSession(request: NextRequest) {
-  const backendRefreshToken = await resolveBackendRefreshToken(request);
-  if (!backendRefreshToken) {
+  const backendAccessToken = await resolveBackendAccessToken(request);
+
+  if (!backendAccessToken) {
     return;
   }
 
   try {
-    getBackendApiBaseUrl();
-    await fetch(buildBackendApiUrl("authentications"), {
-      method: "DELETE",
-      headers: createBackendHeaders({
-        Cookie: `refresh_token=${encodeURIComponent(backendRefreshToken)}`,
-      }),
-      cache: "no-store",
-      signal: AbortSignal.timeout(10_000),
-    });
+    await logoutSsoSession(backendAccessToken);
   } catch {
-    // Logout lokal tetap harus berhasil walau backend sedang tidak aktif.
+    // Logout lokal tetap harus berhasil walau SSO sedang tidak aktif.
   }
 }
 
@@ -59,7 +48,7 @@ export async function POST(request: NextRequest) {
 
   const response = applySensitiveResponseHeaders(
     createJsonResponse({ success: true }),
-    { clearSiteData: true }
+    { clearSiteData: true },
   );
   const accessTokenCookieOptions = getAccessTokenCookieOptions();
   const refreshTokenCookieOptions = getRefreshTokenCookieOptions();

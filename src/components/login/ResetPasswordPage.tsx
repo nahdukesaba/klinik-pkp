@@ -39,8 +39,8 @@ export default function ResetPasswordPage() {
     <AuthPageShell
       backHref="/login"
       backLabel="Kembali ke Login"
-      title="Reset Password"
-      subtitle="Buat password baru untuk akun Anda"
+      title="Reset Password Akun Balai"
+      subtitle="Buat password baru untuk Akun Balai Anda"
     >
       {recoveryState === "checking" && (
         <div className="flex flex-col items-center gap-3 py-6 text-center">
@@ -93,11 +93,11 @@ export default function ResetPasswordPage() {
 
           <div className="space-y-1.5">
             <p className="text-sm font-medium text-foreground">
-              Password Berhasil Diperbarui
+              Password Akun Balai Berhasil Diperbarui
             </p>
 
             <p className="text-xs leading-relaxed text-muted-foreground">
-              Gunakan password baru Anda untuk masuk ke Klinik PKP.
+              Gunakan password baru ini pada aplikasi Balai yang telah terhubung dengan sistem autentikasi terpusat.
             </p>
           </div>
 

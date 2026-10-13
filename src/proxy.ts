@@ -102,7 +102,6 @@ const ALLOWED_API_PATHS = [
   "/api/ext/bank-desain",
   "/api/ext/kumuh",
   "/api/ext/bsps",
-  "/api/ext/forgot-password",
   "/api/ext/authentications",
   "/api/ext/regions",
   "/api/ext/districts",

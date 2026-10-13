@@ -370,3 +370,91 @@ export async function getKlinikContext(
     role: payload.role,
   };
 }
+
+export async function requestPasswordRecoveryWithSso(params: {
+  email: string;
+  application: "klinik_pkp";
+}): Promise<void> {
+  let response: Response;
+
+  try {
+    response = await fetch(`${getSsoBaseUrl()}/api/v1/auth/forgot-password`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        email: params.email,
+        application: params.application,
+      }),
+      cache: "no-store",
+      signal: AbortSignal.timeout(15_000),
+    });
+  } catch (error) {
+    if (error instanceof SsoAuthError) {
+      throw error;
+    }
+
+    throw new SsoAuthError(
+      "Layanan reset password sedang tidak tersedia.",
+      502,
+      "sso_unavailable",
+    );
+  }
+
+  const payload = await readJsonResponse(response);
+
+  if (!response.ok) {
+    throwSsoResponseError(
+      payload,
+      response.status,
+      "Permintaan reset password gagal diproses.",
+    );
+  }
+}
+
+export async function resetPasswordWithSso(params: {
+  accessToken: string;
+  password: string;
+}): Promise<void> {
+  let response: Response;
+
+  try {
+    response = await fetch(`${getSsoBaseUrl()}/api/v1/auth/reset-password`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${params.accessToken}`,
+      },
+      body: JSON.stringify({
+        password: params.password,
+      }),
+      cache: "no-store",
+      signal: AbortSignal.timeout(15_000),
+    });
+  } catch (error) {
+    if (error instanceof SsoAuthError) {
+      throw error;
+    }
+
+    throw new SsoAuthError(
+      "Layanan reset password sedang tidak tersedia.",
+      502,
+      "sso_unavailable",
+    );
+  }
+
+  if (response.ok) {
+    return;
+  }
+
+  const payload = await readJsonResponse(response);
+
+  throwSsoResponseError(
+    payload,
+    response.status,
+    "Reset password gagal diproses.",
+  );
+}

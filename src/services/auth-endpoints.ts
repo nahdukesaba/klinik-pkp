@@ -3,5 +3,6 @@ export const AUTH_ENDPOINTS = {
   login: "/api/auth/login",
   logout: "/api/auth/logout",
   refresh: "/api/auth/refresh",
-  forgotPassword: "/api/ext/forgot-password",
+  forgotPassword: "/api/auth/forgot-password",
+  resetPassword: "/api/auth/reset-password",
 } as const;

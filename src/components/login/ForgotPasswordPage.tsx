@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-import { CheckCircle2, Mail, Send, User } from "lucide-react";
+import { CheckCircle2, Mail, Send } from "lucide-react";
 
 import { AuthPageShell } from "@/components/login/AuthPageShell";
 import { Button } from "@/components/ui/button";
@@ -16,12 +16,9 @@ export default function ForgotPasswordPage() {
     isSubmitted,
     canSubmit,
     email,
-    nip,
     formErrors,
     setEmail,
-    setNip,
     handleSubmit,
-    sanitizeNip,
   } = useForgotPasswordPage();
 
   return (
@@ -29,7 +26,7 @@ export default function ForgotPasswordPage() {
       backHref="/login"
       backLabel="Kembali ke Login"
       title="Lupa Password"
-      subtitle="Masukkan email dan NIP yang terdaftar untuk meminta reset password"
+      subtitle="Masukkan email yang terdaftar untuk menerima instruksi reset password"
     >
       {isSubmitted ? (
         <div className="space-y-3 py-2 text-center">
@@ -38,15 +35,18 @@ export default function ForgotPasswordPage() {
               <CheckCircle2 className="h-6 w-6 text-emerald-500" />
             </div>
           </div>
+
           <div className="space-y-1">
             <p className="text-sm font-medium text-foreground">
               Permintaan Diterima
             </p>
+
             <p className="text-xs leading-relaxed text-muted-foreground">
-              Jika email dan NIP cocok dengan data akun yang terdaftar,
-              instruksi reset password akan dikirim ke email Anda.
+              Jika email terdaftar, instruksi reset password akan dikirim ke
+              email Anda.
             </p>
           </div>
+
           <Link
             href="/login"
             className="mt-2 inline-flex items-center gap-1.5 text-sm text-primary transition-colors hover:underline"
@@ -63,8 +63,10 @@ export default function ForgotPasswordPage() {
             >
               Email
             </Label>
+
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+
               <Input
                 id="forgot-email"
                 type="email"
@@ -79,51 +81,16 @@ export default function ForgotPasswordPage() {
                 maxLength={255}
               />
             </div>
+
             {formErrors.email && (
               <p className="text-xs text-red-500">{formErrors.email}</p>
             )}
           </div>
 
-          <div className="space-y-1">
-            <Label
-              htmlFor="forgot-nip"
-              className="text-sm font-medium text-foreground"
-            >
-              NIP
-            </Label>
-            <div className="relative">
-              <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                id="forgot-nip"
-                type="text"
-                placeholder="Nomor Induk Pegawai"
-                value={nip}
-                onChange={(event) =>
-                  setNip(sanitizeNip(event.target.value).slice(0, 18))
-                }
-                className={`h-10 border-border bg-background/50 pl-10 transition-colors focus:border-primary ${
-                  formErrors.nip ? "border-red-500" : ""
-                }`}
-                required
-                autoComplete="off"
-                maxLength={18}
-                inputMode="numeric"
-                pattern="[0-9]{18}"
-              />
-            </div>
-            {formErrors.nip ? (
-              <p className="text-xs text-red-500">{formErrors.nip}</p>
-            ) : (
-              <p className="text-[11px] text-muted-foreground">
-                NIP harus 18 digit.
-              </p>
-            )}
-          </div>
-
           <div className="rounded-lg border border-border bg-muted/50 px-3 py-2.5">
             <p className="text-[11px] leading-relaxed text-muted-foreground">
-              Gunakan email dan NIP yang terdaftar. Demi keamanan, sistem hanya
-              menampilkan status verifikasi secara umum.
+              Jika email terdaftar pada sistem, tautan reset password akan
+              dikirim ke alamat email tersebut.
             </p>
           </div>
 
@@ -137,7 +104,7 @@ export default function ForgotPasswordPage() {
             ) : (
               <>
                 <Send className="mr-2 h-4 w-4" />
-                Kirim Permintaan
+                Kirim Instruksi
               </>
             )}
           </Button>

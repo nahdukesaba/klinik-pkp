@@ -30,13 +30,21 @@ export const forgotPasswordSchema = z.object({
     .email("Format email tidak valid")
     .max(255, "Email terlalu panjang")
     .transform(sanitizeEmail),
-
-  nip: z
-    .string()
-    .min(1, "NIP wajib diisi")
-    .transform(sanitizeNip)
-    .refine((val: string) => /^\d{18}$/.test(val), "NIP harus 18 digit"),
 });
+
+export const resetPasswordSchema = z
+  .object({
+    password: z
+      .string()
+      .min(8, "Password minimal 8 karakter")
+      .max(128, "Password terlalu panjang"),
+
+    confirmPassword: z.string().min(1, "Konfirmasi password wajib diisi"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Konfirmasi password tidak sama.",
+    path: ["confirmPassword"],
+  });
 
 const phoneSchema = z
   .string()

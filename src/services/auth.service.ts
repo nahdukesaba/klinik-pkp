@@ -54,10 +54,7 @@ export async function refreshAdminSession(): Promise<RefreshSessionResult> {
   };
 }
 
-export async function submitForgotPasswordRequest(values: {
-  email: string;
-  nip: string;
-}) {
+export async function submitForgotPasswordRequest(values: { email: string }) {
   const response = await fetch(AUTH_ENDPOINTS.forgotPassword, {
     method: "POST",
     headers: {
@@ -81,4 +78,28 @@ export async function loginAdminSession(values: LoginAdminSessionValues) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(values),
   });
+}
+
+export async function submitResetPasswordRequest(values: {
+  accessToken: string;
+  password: string;
+  confirmPassword: string;
+}) {
+  const response = await fetch(AUTH_ENDPOINTS.resetPassword, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${values.accessToken}`,
+    },
+    body: JSON.stringify({
+      password: values.password,
+      confirmPassword: values.confirmPassword,
+    }),
+  });
+
+  return {
+    ok: response.ok,
+    status: response.status,
+    payload: await response.json().catch(() => null),
+  };
 }

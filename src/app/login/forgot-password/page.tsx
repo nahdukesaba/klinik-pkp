@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Lupa Password",
-  description: "Ajukan permintaan reset password ke administrator.",
+  description: "Kirim instruksi reset password melalui email terdaftar.",
 };
 
 export default function ForgotPasswordRoute() {

@@ -3,7 +3,7 @@
 import { useCallback, useState } from "react";
 
 import { useToast } from "@/hooks/use-toast";
-import { checkRateLimit, sanitizeNip } from "@/lib/security";
+import { checkRateLimit } from "@/lib/security";
 import { forgotPasswordSchema, validateForm } from "@/lib/validations";
 import { submitForgotPasswordRequest } from "@/services/auth.service";
 
@@ -26,37 +26,37 @@ function extractForgotPasswordFieldErrors(payload: unknown) {
   }
 
   const entries = Object.entries(candidate).filter(
-    ([, value]) => typeof value === "string"
+    ([, value]) => typeof value === "string",
   );
 
   return entries.length > 0
-    ? Object.fromEntries(entries) as Record<string, string>
+    ? (Object.fromEntries(entries) as Record<string, string>)
     : null;
 }
 
-function normalizeForgotPasswordErrorMessage(
-  status: number,
-  payload: unknown
-) {
+function normalizeForgotPasswordErrorMessage(status: number, payload: unknown) {
   const fieldErrors = extractForgotPasswordFieldErrors(payload);
-  if (fieldErrors?.email || fieldErrors?.nip) {
-    return "Data belum dapat diverifikasi. Periksa kembali email dan NIP yang terdaftar.";
+
+  if (fieldErrors?.email) {
+    return fieldErrors.email;
   }
 
   if (status === 429) {
-    return "Terlalu banyak percobaan. Tunggu beberapa menit lalu coba lagi.";
+    return "Terlalu banyak permintaan. Tunggu beberapa menit lalu coba lagi.";
   }
 
-  if (status === 400 || status === 404 || status === 422) {
-    return "Data belum dapat diverifikasi. Periksa kembali email dan NIP yang terdaftar.";
+  if (status === 400 || status === 422) {
+    return "Periksa kembali format email yang dimasukkan.";
   }
 
   if (payload && typeof payload === "object") {
     const backendMessage =
-      ("error" in payload && typeof payload.error === "string" && payload.error) ||
       ("message" in payload &&
         typeof payload.message === "string" &&
         payload.message) ||
+      ("error" in payload &&
+        typeof payload.error === "string" &&
+        payload.error) ||
       "";
 
     if (backendMessage) {
@@ -71,15 +71,15 @@ export function useForgotPasswordPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [email, setEmail] = useState("");
-  const [nip, setNip] = useState("");
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const { toast } = useToast();
-  const sanitizedNip = sanitizeNip(nip).slice(0, 18);
-  const canSubmit = !isLoading && email.trim() !== "" && sanitizedNip.length === 18;
+
+  const canSubmit = !isLoading && email.trim() !== "";
 
   const handleSubmit = useCallback(
     async (event: React.FormEvent) => {
       event.preventDefault();
+
       if (!canSubmit) {
         return;
       }
@@ -87,24 +87,30 @@ export function useForgotPasswordPage() {
       setFormErrors({});
 
       const rateCheck = checkRateLimit("forgot-password", 3, 5 * 60_000);
+
       if (!rateCheck.allowed) {
         const waitMinutes = Math.ceil(rateCheck.resetInMs / 60_000);
+
         toast({
           title: "Terlalu banyak permintaan",
           description: `Silakan tunggu ${waitMinutes} menit sebelum mencoba lagi.`,
           variant: "destructive",
         });
+
         return;
       }
 
-      const validation = validateForm(forgotPasswordSchema, { email, nip });
+      const validation = validateForm(forgotPasswordSchema, { email });
+
       if (!validation.success) {
         setFormErrors(validation.errors ?? {});
         return;
       }
+
       const validatedData = validation.data;
+
       if (!validatedData) {
-        setFormErrors({ email: "Data belum valid." });
+        setFormErrors({ email: "Email belum valid." });
         return;
       }
 
@@ -114,7 +120,10 @@ export function useForgotPasswordPage() {
         const result = await submitForgotPasswordRequest(validatedData);
 
         if (!result.ok) {
-          const backendFieldErrors = extractForgotPasswordFieldErrors(result.payload);
+          const backendFieldErrors = extractForgotPasswordFieldErrors(
+            result.payload,
+          );
+
           if (backendFieldErrors) {
             setFormErrors(backendFieldErrors);
           }
@@ -123,10 +132,11 @@ export function useForgotPasswordPage() {
             title: "Permintaan belum dapat diproses",
             description: normalizeForgotPasswordErrorMessage(
               result.status,
-              result.payload
+              result.payload,
             ),
             variant: "destructive",
           });
+
           return;
         }
 
@@ -141,7 +151,7 @@ export function useForgotPasswordPage() {
         setIsLoading(false);
       }
     },
-    [canSubmit, email, nip, toast]
+    [canSubmit, email, toast],
   );
 
   return {
@@ -149,11 +159,8 @@ export function useForgotPasswordPage() {
     isSubmitted,
     canSubmit,
     email,
-    nip,
     formErrors,
     setEmail,
-    setNip,
     handleSubmit,
-    sanitizeNip,
   };
 }

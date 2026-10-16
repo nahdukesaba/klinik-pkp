@@ -131,7 +131,7 @@ export const UPLOAD_CONSTRAINTS = {
 /**
  * Base URL untuk API request dari client-side.
  * Request melewati route handler /api/ext -> backend (same-origin, no CORS).
- * Konfigurasi backend URL: set API_URL di .env.local
+ * Konfigurasi backend URL: set API_URL di .env
  */
 export const API_BASE_URL = "/api/ext";
 

@@ -6,13 +6,13 @@ import { SignJWT, jwtVerify, type JWTPayload } from "jose";
 
 // --- Konfigurasi ---
 
-/** JWT Secret harus di-set di .env.local, minimal 32 karakter. */
+/** JWT Secret harus di-set di .env, minimal 32 karakter. */
 function getJwtSecret(): Uint8Array {
   const secret = process.env.JWT_SECRET;
   if (!secret) {
     throw new Error(
       "JWT_SECRET environment variable is not set. " +
-        "Please set it in .env.local with a minimum of 32 characters."
+        "Please set it in .env with a minimum of 32 characters."
     );
   }
   if (secret.length < 32) {

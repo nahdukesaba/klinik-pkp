@@ -42,7 +42,7 @@ function getFieldErrors(details: unknown) {
 export function useResetPasswordPage() {
   const { toast } = useToast();
 
-  const recoveryTokenRef = useRef<string | null>(null);
+  const recoveryTokenHashRef = useRef<string | null>(null);
   const hasParsedRecoveryFragmentRef = useRef(false);
 
   const [recoveryState, setRecoveryState] = useState<RecoveryState>("checking");
@@ -77,15 +77,15 @@ export function useResetPasswordPage() {
     const errorCode = params.get("error_code");
     const errorDescription = params.get("error_description");
     const recoveryType = params.get("type");
-    const accessToken = params.get("access_token")?.trim() ?? "";
+    const tokenHash = params.get("token_hash")?.trim() ?? "";
 
     let nextState: RecoveryState = "invalid";
     let nextError = "Tautan reset password tidak valid atau telah berakhir.";
 
     if (error || errorCode) {
       nextError = getRecoveryLinkErrorMessage(errorCode, errorDescription);
-    } else if (recoveryType === "recovery" && accessToken) {
-      recoveryTokenRef.current = accessToken;
+    } else if (recoveryType === "recovery" && tokenHash) {
+      recoveryTokenHashRef.current = tokenHash;
       nextState = "ready";
       nextError = "";
     }
@@ -127,10 +127,10 @@ export function useResetPasswordPage() {
       }
 
       const validatedData = validation.data;
-      const accessToken = recoveryTokenRef.current;
+      const tokenHash = recoveryTokenHashRef.current;
 
-      if (!validatedData || !accessToken) {
-        recoveryTokenRef.current = null;
+      if (!validatedData || !tokenHash) {
+        recoveryTokenHashRef.current = null;
         setRecoveryError(
           "Sesi reset password tidak valid atau telah berakhir.",
         );
@@ -142,7 +142,7 @@ export function useResetPasswordPage() {
 
       try {
         const result = await submitResetPasswordRequest({
-          accessToken,
+          tokenHash,
           password: validatedData.password,
           confirmPassword: validatedData.confirmPassword,
         });
@@ -164,7 +164,7 @@ export function useResetPasswordPage() {
             error.code === "invalid_recovery_token" ||
             result.status === 401
           ) {
-            recoveryTokenRef.current = null;
+            recoveryTokenHashRef.current = null;
             setRecoveryError(
               "Sesi reset password tidak valid atau telah berakhir. Silakan minta tautan reset yang baru.",
             );
@@ -181,7 +181,7 @@ export function useResetPasswordPage() {
           return;
         }
 
-        recoveryTokenRef.current = null;
+        recoveryTokenHashRef.current = null;
         setPassword("");
         setConfirmPassword("");
         setRecoveryState("success");

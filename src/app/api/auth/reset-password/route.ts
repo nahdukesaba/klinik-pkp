@@ -7,7 +7,6 @@ import {
   readJsonRequestBody,
 } from "@/lib/server/http";
 import {
-  logoutSsoSession,
   resetPasswordWithSso,
   SsoAuthError,
 } from "@/lib/server/sso-auth";
@@ -19,32 +18,22 @@ export async function POST(request: NextRequest) {
     return createJsonErrorResponse("Origin permintaan tidak diizinkan.", 403);
   }
 
-  const authorization = request.headers.get("authorization")?.trim() ?? "";
-
-  if (!authorization.toLowerCase().startsWith("bearer ")) {
-    return createJsonErrorResponse(
-      "Sesi reset password tidak valid atau telah berakhir.",
-      401,
-      undefined,
-      "invalid_recovery_token",
-    );
-  }
-
-  const accessToken = authorization.slice(7).trim();
-
-  if (!accessToken) {
-    return createJsonErrorResponse(
-      "Sesi reset password tidak valid atau telah berakhir.",
-      401,
-      undefined,
-      "invalid_recovery_token",
-    );
-  }
-
   const body = await readJsonRequestBody<Record<string, unknown>>(request);
 
   if (!body) {
     return createJsonErrorResponse("Request body tidak valid.", 400);
+  }
+
+  const tokenHash =
+    typeof body.tokenHash === "string" ? body.tokenHash.trim() : "";
+
+  if (!tokenHash) {
+    return createJsonErrorResponse(
+      "Sesi reset password tidak valid atau telah berakhir.",
+      401,
+      undefined,
+      "invalid_recovery_token",
+    );
   }
 
   const validation = validateForm(resetPasswordSchema, body);
@@ -58,16 +47,9 @@ export async function POST(request: NextRequest) {
 
   try {
     await resetPasswordWithSso({
-      accessToken,
+      tokenHash,
       password: validation.data!.password,
     });
-
-    try {
-      await logoutSsoSession(accessToken);
-    } catch {
-      // Password sudah berhasil diperbarui.
-      // Kegagalan revoke sesi recovery tidak boleh membatalkan hasil reset.
-    }
   } catch (error) {
     if (error instanceof SsoAuthError) {
       return createJsonErrorResponse(

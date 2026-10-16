@@ -415,7 +415,7 @@ export async function requestPasswordRecoveryWithSso(params: {
 }
 
 export async function resetPasswordWithSso(params: {
-  accessToken: string;
+  tokenHash: string;
   password: string;
 }): Promise<void> {
   let response: Response;
@@ -426,9 +426,9 @@ export async function resetPasswordWithSso(params: {
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
-        Authorization: `Bearer ${params.accessToken}`,
       },
       body: JSON.stringify({
+        tokenHash: params.tokenHash,
         password: params.password,
       }),
       cache: "no-store",

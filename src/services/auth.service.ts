@@ -81,7 +81,7 @@ export async function loginAdminSession(values: LoginAdminSessionValues) {
 }
 
 export async function submitResetPasswordRequest(values: {
-  accessToken: string;
+  tokenHash: string;
   password: string;
   confirmPassword: string;
 }) {
@@ -89,9 +89,9 @@ export async function submitResetPasswordRequest(values: {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${values.accessToken}`,
     },
     body: JSON.stringify({
+      tokenHash: values.tokenHash,
       password: values.password,
       confirmPassword: values.confirmPassword,
     }),

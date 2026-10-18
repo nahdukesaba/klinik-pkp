@@ -104,6 +104,7 @@ export async function loginWithSso(params: {
       body: JSON.stringify({
         email: params.email,
         password: params.password,
+        application: "klinik_pkp",
       }),
       cache: "no-store",
       signal: AbortSignal.timeout(15_000),

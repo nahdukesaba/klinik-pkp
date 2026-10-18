@@ -48,11 +48,11 @@ export function AdminAuthProvider({
   const activityWindowMs = inactivityTimeoutMs;
   const refreshBufferMs = 2 * 60 * 1000;
   const refreshCooldownMs = 60_000;
-  const lastActivityAtRef = useRef(Date.now());
+  const lastActivityAtRef = useRef(0);
   const lastRefreshAtRef = useRef(0);
   const refreshInFlightRef = useRef(false);
   const expiresAtRef = useRef(
-    user.accessTokenExpiresAt ?? Date.now() + sessionLifetimeMs
+    user.accessTokenExpiresAt ?? 0
   );
   const logoutPath = useMemo(() => "/login", []);
 
@@ -71,6 +71,15 @@ export function AdminAuthProvider({
       }
 
       const now = Date.now();
+
+      if (lastActivityAtRef.current === 0) {
+        lastActivityAtRef.current = now;
+      }
+
+      if (expiresAtRef.current === 0) {
+        expiresAtRef.current = now + sessionLifetimeMs;
+      }
+
       const remainingMs = expiresAtRef.current - now;
       const isVisible =
         typeof document === "undefined" ||
@@ -120,11 +129,13 @@ export function AdminAuthProvider({
 
   useEffect(() => {
     expiresAtRef.current =
-      user.accessTokenExpiresAt ?? Date.now() + sessionLifetimeMs;
+      user.accessTokenExpiresAt ?? 0;
   }, [sessionLifetimeMs, user.accessTokenExpiresAt]);
 
   useEffect(() => {
     let logoutInFlight = false;
+
+    lastActivityAtRef.current = Date.now();
 
     const markActivity = () => {
       lastActivityAtRef.current = Date.now();

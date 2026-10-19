@@ -97,6 +97,17 @@ export async function POST(request: NextRequest) {
   let refreshedBackendSession: Extract<ExternalAuthResult, { ok: true }> | null =
     null;
 
+  // Central SSO is the session authority. A local refresh cookie
+  // must not extend authentication without a central refresh token.
+  if (!backendRefreshToken) {
+    return clearSessionCookies(
+      createJsonErrorResponse(
+        "Sesi autentikasi pusat tidak tersedia. Silakan login kembali.",
+        401
+      )
+    );
+  }
+
   if (backendRefreshToken) {
     const refreshResult = await refreshExternalBackendSession({
       backendRefreshToken,

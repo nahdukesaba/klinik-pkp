@@ -1,5 +1,7 @@
 import "server-only";
 
+import { buildTrustedServiceUrl } from "@/lib/auth/browser-sso-contract";
+
 export interface SsoUser {
   id: string;
   email: string;
@@ -55,6 +57,10 @@ function getSsoBaseUrl() {
   }
 
   return configured.replace(/\/+$/, "");
+}
+
+export function getSsoPublicPageUrl(pathname: string) {
+  return buildTrustedServiceUrl(getSsoBaseUrl(), pathname);
 }
 
 async function readJsonResponse(response: Response) {

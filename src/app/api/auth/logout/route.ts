@@ -15,7 +15,7 @@ import {
   getRefreshTokenCookieOptions,
 } from "@/lib/auth";
 import { createJsonErrorResponse, createJsonResponse } from "@/lib/server/http";
-import { logoutSsoSession } from "@/lib/server/sso-auth";
+import { logoutKlinikSession } from "@/lib/server/klinik-browser-sso";
 import {
   applySensitiveResponseHeaders,
   hasTrustedSameOrigin,
@@ -29,13 +29,15 @@ async function terminateBackendSession(request: NextRequest) {
   const backendAccessToken = await resolveBackendAccessToken(request);
 
   if (!backendAccessToken) {
-    return;
+    return false;
   }
 
   try {
-    await logoutSsoSession(backendAccessToken);
+    const result = await logoutKlinikSession(backendAccessToken);
+    return result.centralLogoutRequired;
   } catch {
-    // Logout lokal tetap harus berhasil walau SSO sedang tidak aktif.
+    // Cookie lokal tetap dibersihkan saat backend logout tidak tersedia.
+    return false;
   }
 }
 
@@ -44,10 +46,13 @@ export async function POST(request: NextRequest) {
     return createJsonErrorResponse("Origin permintaan tidak diizinkan.", 403);
   }
 
-  await terminateBackendSession(request);
+  const centralLogoutRequired = await terminateBackendSession(request);
 
   const response = applySensitiveResponseHeaders(
-    createJsonResponse({ success: true }),
+    createJsonResponse({
+      success: true,
+      data: { centralLogoutRequired },
+    }),
     { clearSiteData: true },
   );
   const accessTokenCookieOptions = getAccessTokenCookieOptions();

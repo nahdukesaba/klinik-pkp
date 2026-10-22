@@ -1,7 +1,8 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef } from "react";
 
+import { resolveContextualLogoutDestination } from "@/lib/auth/browser-sso-contract";
 import {
   logoutAdminSession,
   refreshAdminSession,
@@ -54,15 +55,17 @@ export function AdminAuthProvider({
   const expiresAtRef = useRef(
     user.accessTokenExpiresAt ?? 0
   );
-  const logoutPath = useMemo(() => "/login", []);
-
   const logout = useCallback(async () => {
+    let centralLogoutRequired = false;
     try {
-      await logoutAdminSession();
+      const result = await logoutAdminSession();
+      centralLogoutRequired = result.centralLogoutRequired;
     } finally {
-      window.location.replace(logoutPath);
+      window.location.replace(
+        resolveContextualLogoutDestination(centralLogoutRequired),
+      );
     }
-  }, [logoutPath]);
+  }, []);
 
   const refreshSession = useCallback(
     async (options?: { force?: boolean }) => {

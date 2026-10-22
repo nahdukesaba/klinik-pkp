@@ -76,6 +76,9 @@ Catatan struktur:
 | `/admin/*` | Dashboard admin, dilindungi oleh auth guard dan session. |
 | `/api/ext/[...path]` | Proxy public same-origin ke backend Golang. |
 | `/api/auth/*` | Login, logout, refresh session, dan CSRF. |
+| `/api/auth/sso/start` | Redirect trusted menuju Browser SSO backend Klinik. |
+| `/auth/sso/callback` | Callback publik yang menukar code/state melalui BFF. |
+| `/api/auth/sso/logout` | Redirect trusted menuju bridge logout backend Klinik. |
 | `/api/admin/resources/[...path]` | BFF resource admin untuk list, detail, create, update, delete. |
 | `/api/admin/users` | List dan create Control Users. |
 | `/api/admin/users/[...path]` | Detail, update, dan delete Control Users. |
@@ -129,6 +132,7 @@ Manfaat utama `/api/ext`:
 | `JWT_SECRET` | Ya | Secret session frontend, minimal 32 karakter. Server-only. |
 | `AUTH_API_URL` | Tidak | Base URL auth backend jika berbeda dari `API_URL`. |
 | `AUTH_API_PATH` | Tidak | Path login backend jika kontrak auth berbeda dari default project. |
+| `SSO_BASE_URL` | Ya untuk auth | Base URL Central SSO, server-only; digunakan direct login dan recovery. |
 
 `.env.example` berisi template environment. Secret lokal dan production tidak
 masuk version control.
@@ -165,6 +169,41 @@ Admin page/component
 -> auth, CSRF, validasi ringan, audit
 -> backend Golang
 ```
+
+## Authentication Flow
+
+Direct login yang sudah ada tetap menggunakan alur berikut:
+
+```text
+Klinik UI -> Next.js BFF -> Central login
+-> Klinik authorization context -> HttpOnly BFF session -> dashboard admin
+```
+
+Browser SSO merupakan jalur tambahan:
+
+```text
+Klinik UI -> /api/auth/sso/start -> backend Klinik start
+-> Central authorize -> /auth/sso/callback
+-> Next.js BFF exchange -> backend Klinik exchange
+-> Central exchange + klinik_pkp membership -> HttpOnly BFF session
+```
+
+Callback hanya menerima `code`, `state`, dan status aman yang didefinisikan
+backend. Access token dan refresh token tetap berada di server-side HttpOnly
+cookie; role UI dibentuk dari role membership yang sudah divalidasi backend.
+Status pending, rejected, atau disabled tidak membuat session dashboard.
+
+Logout selalu dimulai melalui `/api/auth/logout`. BFF meneruskan access token
+secara server-to-server ke backend Klinik dan mengikuti hasil kontekstualnya:
+
+```text
+direct -> hapus session Klinik -> /login
+sso -> hapus session Klinik -> backend Klinik logout bridge -> Central logout
+```
+
+Recovery password diarahkan ke Central melalui route trusted
+`/api/auth/sso/forgot-password`; compatibility source lama tetap disimpan tetapi
+tidak lagi menjadi jalur utama dari halaman login.
 
 Service mengubah response backend ke bentuk frontend yang konsisten. Field
 frontend memakai camelCase; field backend tetap berada di payload builder,

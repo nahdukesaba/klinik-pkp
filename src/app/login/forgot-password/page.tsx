@@ -1,4 +1,6 @@
-import ForgotPasswordPage from "@/components/login/ForgotPasswordPage";
+import { redirect } from "next/navigation";
+
+import { CENTRAL_RECOVERY_PATH } from "@/lib/auth/browser-sso-contract";
 
 import type { Metadata } from "next";
 
@@ -8,5 +10,5 @@ export const metadata: Metadata = {
 };
 
 export default function ForgotPasswordRoute() {
-  return <ForgotPasswordPage />;
+  redirect(CENTRAL_RECOVERY_PATH);
 }

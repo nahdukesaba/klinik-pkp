@@ -1,7 +1,5 @@
 "use client";
 
-import Link from "next/link";
-
 import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 
 import { AuthPageShell } from "@/components/login/AuthPageShell";
@@ -9,6 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useLoginPage } from "@/hooks/auth/use-login-page";
+import {
+  BROWSER_SSO_START_PATH,
+  CENTRAL_RECOVERY_PATH,
+} from "@/lib/auth/browser-sso-contract";
 
 export default function LoginPage() {
   const {
@@ -99,12 +101,12 @@ export default function LoginPage() {
         </div>
 
         <div className="flex justify-end">
-          <Link
-            href="/login/forgot-password"
+          <a
+            href={CENTRAL_RECOVERY_PATH}
             className="text-xs text-primary transition-colors hover:underline"
           >
             Lupa password?
-          </Link>
+          </a>
         </div>
 
         <Button
@@ -113,6 +115,16 @@ export default function LoginPage() {
           disabled={isLoading}
         >
           {isLoading ? "Memproses..." : "Masuk"}
+        </Button>
+
+        <div className="flex items-center gap-3" aria-hidden="true">
+          <span className="h-px flex-1 bg-border" />
+          <span className="text-xs uppercase text-muted-foreground">atau</span>
+          <span className="h-px flex-1 bg-border" />
+        </div>
+
+        <Button asChild type="button" variant="outline" className="h-10 w-full">
+          <a href={BROWSER_SSO_START_PATH}>Masuk dengan Akun Balai</a>
         </Button>
       </form>
     </AuthPageShell>

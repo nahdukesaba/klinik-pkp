@@ -5,4 +5,6 @@ export const AUTH_ENDPOINTS = {
   refresh: "/api/auth/refresh",
   forgotPassword: "/api/auth/forgot-password",
   resetPassword: "/api/auth/reset-password",
+  ssoExchange: "/api/auth/sso/exchange",
+  ssoLogout: "/api/auth/sso/logout",
 } as const;

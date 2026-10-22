@@ -5,15 +5,8 @@ import {
   createSessionAdminUser,
   recordSuccessfulLogin,
 } from "@/lib/admin/service";
-import {
-  getBackendAccessCookieOptions,
-  getBackendRefreshCookieOptions,
-  createAccessToken,
-  createRefreshToken,
-  getAccessTokenCookieOptions,
-  getRefreshTokenCookieOptions,
-  type AuthUser,
-} from "@/lib/auth";
+import { type AuthUser } from "@/lib/auth";
+import { attachAuthenticatedSessionCookies } from "@/lib/server/auth-session";
 import {
   authenticateAgainstCentralSso,
   type ExternalAuthResult,
@@ -30,54 +23,6 @@ import { loginSchema, validateForm } from "@/lib/validations";
 
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOGIN_WINDOW_MS = 60_000;
-
-function attachBackendSessionCookies(
-  response: Response & {
-    cookies: {
-      set: (
-        name: string,
-        value: string,
-        options: {
-          httpOnly: boolean;
-          secure: boolean;
-          sameSite: "lax" | "strict";
-          path: string;
-          maxAge: number;
-          priority: "high";
-        },
-      ) => void;
-    };
-  },
-  authResult: Extract<ExternalAuthResult, { ok: true }>,
-) {
-  const backendAccessCookie = getBackendAccessCookieOptions();
-  response.cookies.set(
-    backendAccessCookie.name,
-    authResult.backendAccessToken ?? "",
-    {
-      httpOnly: backendAccessCookie.httpOnly,
-      secure: backendAccessCookie.secure,
-      sameSite: backendAccessCookie.sameSite,
-      path: backendAccessCookie.path,
-      maxAge: authResult.backendAccessToken ? backendAccessCookie.maxAge : 0,
-      priority: backendAccessCookie.priority,
-    },
-  );
-
-  const backendRefreshCookie = getBackendRefreshCookieOptions();
-  response.cookies.set(
-    backendRefreshCookie.name,
-    authResult.backendRefreshToken ?? "",
-    {
-      httpOnly: backendRefreshCookie.httpOnly,
-      secure: backendRefreshCookie.secure,
-      sameSite: backendRefreshCookie.sameSite,
-      path: backendRefreshCookie.path,
-      maxAge: authResult.backendRefreshToken ? backendRefreshCookie.maxAge : 0,
-      priority: backendRefreshCookie.priority,
-    },
-  );
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -169,12 +114,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // --- JWT token creation ---
-    const [accessToken, refreshToken] = await Promise.all([
-      createAccessToken(authenticatedUser),
-      createRefreshToken(authenticatedUser),
-    ]);
-
     // --- Audit (fire-and-forget) ---
     try {
       await recordSuccessfulLogin(
@@ -196,29 +135,10 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    const accessOpts = getAccessTokenCookieOptions();
-    response.cookies.set(accessOpts.name, accessToken, {
-      httpOnly: accessOpts.httpOnly,
-      secure: accessOpts.secure,
-      sameSite: accessOpts.sameSite,
-      path: accessOpts.path,
-      maxAge: accessOpts.maxAge,
-      priority: accessOpts.priority,
+    return attachAuthenticatedSessionCookies(response, authenticatedUser, {
+      accessToken: authResult.backendAccessToken,
+      refreshToken: authResult.backendRefreshToken,
     });
-
-    const refreshOpts = getRefreshTokenCookieOptions();
-    response.cookies.set(refreshOpts.name, refreshToken, {
-      httpOnly: refreshOpts.httpOnly,
-      secure: refreshOpts.secure,
-      sameSite: refreshOpts.sameSite,
-      path: refreshOpts.path,
-      maxAge: refreshOpts.maxAge,
-      priority: refreshOpts.priority,
-    });
-
-    attachBackendSessionCookies(response, authResult);
-
-    return response;
   } catch {
     return createJsonErrorResponse(
       "Terjadi kesalahan pada server. Silakan coba lagi.",

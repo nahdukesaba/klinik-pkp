@@ -365,7 +365,7 @@ export async function handleListUsers(request: NextRequest) {
     const sortBy = request.nextUrl.searchParams.get("sort_by");
     const sortOrder = request.nextUrl.searchParams.get("sort_order");
     const roleParam = request.nextUrl.searchParams.get("role");
-    const isActiveParam = request.nextUrl.searchParams.get("is_active");
+    const statusParam = request.nextUrl.searchParams.get("status");
     const sortDirection =
       sortOrder === "desc"
         ? "desc"
@@ -375,11 +375,9 @@ export async function handleListUsers(request: NextRequest) {
     const role = roleParam === "admin" || roleParam === "user"
       ? roleParam
       : undefined;
-    const isActive = isActiveParam === "true"
-      ? "active"
-      : isActiveParam === "false"
-        ? "inactive"
-        : undefined;
+    const status = ["pending", "approved", "rejected", "disabled"].includes(statusParam ?? "")
+      ? statusParam as "pending" | "approved" | "rejected" | "disabled"
+      : undefined;
     const users = await listUsersPage(
       auth.user.backendAccessToken,
       {
@@ -389,7 +387,7 @@ export async function handleListUsers(request: NextRequest) {
         sortBy,
         sortDirection,
         role,
-        isActive,
+        status,
       }
     );
 
@@ -457,7 +455,7 @@ export async function handleCreateUser(request: NextRequest) {
 
 export async function handleGetUser(
   request: NextRequest,
-  legacyLocalUserId: string,
+  appUserId: string,
 ) {
   const auth = await authorizeAdminRequest(request, { roles: ["admin"] });
   if (!auth.ok) {
@@ -466,7 +464,7 @@ export async function handleGetUser(
 
   try {
     const user = await getUserDetail(
-      legacyLocalUserId,
+      appUserId,
       auth.user.backendAccessToken
     );
 
@@ -481,7 +479,7 @@ export async function handleGetUser(
 
 export async function handleUpdateUser(
   request: NextRequest,
-  legacyLocalUserId: string,
+  appUserId: string,
 ) {
   const auth = await authorizeAdminRequest(request, {
     requireCsrf: true,
@@ -489,18 +487,6 @@ export async function handleUpdateUser(
   });
   if (!auth.ok) {
     return auth.response;
-  }
-
-  if (
-    !auth.user.legacyLocalUserId ||
-    legacyLocalUserId !== auth.user.legacyLocalUserId
-  ) {
-    return createJsonErrorResponse(
-      "Backend hanya mengizinkan pengguna memperbarui profil sendiri.",
-      403,
-      undefined,
-      "PROFILE_UPDATE_FORBIDDEN"
-    );
   }
 
   const body = await readJsonRequestBody<Record<string, unknown>>(request);
@@ -523,7 +509,7 @@ export async function handleUpdateUser(
 
   try {
     const result = await updateUser(
-      legacyLocalUserId,
+      appUserId,
       validatedData,
       auth.user.backendAccessToken
     );
@@ -531,7 +517,7 @@ export async function handleUpdateUser(
     await recordAudit(request, auth.user, {
       action: "UPDATE",
       module: "users",
-      details: `Memperbarui profil pengguna ${validatedData.name} pada Control Users.`,
+      details: `Memperbarui akses Klinik pengguna ${validatedData.fullName}.`,
     });
 
     markUsersAdminStateChanged();
@@ -547,7 +533,7 @@ export async function handleUpdateUser(
 
 export async function handleDeleteUser(
   request: NextRequest,
-  legacyLocalUserId: string,
+  appUserId: string,
 ) {
   const auth = await authorizeAdminRequest(request, {
     requireCsrf: true,
@@ -558,12 +544,12 @@ export async function handleDeleteUser(
   }
 
   try {
-    await deleteUser(legacyLocalUserId, auth.user.backendAccessToken);
+    await deleteUser(appUserId, auth.user.backendAccessToken);
 
     await recordAudit(request, auth.user, {
       action: "DELETE",
       module: "users",
-      details: `Menghapus pengguna local directory ${legacyLocalUserId} dari Control Users.`,
+      details: `Menonaktifkan akses Klinik untuk app user ${appUserId}.`,
     });
 
     markUsersAdminStateChanged();

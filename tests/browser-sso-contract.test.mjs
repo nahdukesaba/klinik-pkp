@@ -214,7 +214,7 @@ test("ambiguous id and non-approved membership cannot create auth session", () =
   );
 });
 
-test("legacy admin directory route ID is isolated from canonical identity", () => {
+test("admin directory routes use canonical appUserId", () => {
   const directoryIdentity = adaptAdminDirectoryIdentity({
     id: "33333333-3333-4333-8333-333333333333",
     appUserId: "11111111-1111-4111-8111-111111111111",
@@ -222,12 +222,43 @@ test("legacy admin directory route ID is isolated from canonical identity", () =
   assert.ok(directoryIdentity);
   assert.equal(
     getAdminDirectoryRouteId(directoryIdentity),
-    "33333333-3333-4333-8333-333333333333",
+    "11111111-1111-4111-8111-111111111111",
   );
-  assert.notEqual(
-    getAdminDirectoryRouteId(directoryIdentity),
-    directoryIdentity.appUserId,
+  assert.equal(getAdminDirectoryRouteId(directoryIdentity), directoryIdentity.appUserId);
+  assert.equal(adaptAdminDirectoryIdentity({ id: "legacy-only" }), null);
+});
+
+test("admin CRUD has no legacy local ID or local password dependency", () => {
+  const files = [
+    "src/lib/admin/user-contract.ts",
+    "src/lib/admin/users.ts",
+    "src/services/admin-users.service.ts",
+    "src/hooks/admin/use-admin-users-page.tsx",
+    "src/components/admin/pages/AdminUsersPage.tsx",
+    "src/app/api/admin/users/[...path]/route.ts",
+  ];
+  for (const file of files) {
+    const source = readFileSync(join(process.cwd(), file), "utf8");
+    assert.equal(source.includes("legacyLocalUserId"), false, file);
+  }
+  const provisioningSource = readFileSync(
+    join(process.cwd(), "src/lib/admin/users.ts"),
+    "utf8",
   );
+  assert.equal(/password\s*:/.test(provisioningSource), false);
+});
+
+test("admin UI renders canonical membership states and disable semantics", () => {
+  const hook = readFileSync(
+    join(process.cwd(), "src/hooks/admin/use-admin-users-page.tsx"),
+    "utf8",
+  );
+  for (const status of ["pending", "approved", "rejected", "disabled"]) {
+    assert.equal(hook.includes(`"${status}"`), true, status);
+  }
+  assert.match(hook, /Nonaktifkan akses Klinik/);
+  assert.match(hook, /appUserId/);
+  assert.doesNotMatch(hook, /isActive/);
 });
 
 function listClientSourceFiles(directory) {

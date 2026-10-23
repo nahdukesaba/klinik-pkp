@@ -1,16 +1,20 @@
 export type UserRole = "admin" | "user";
+export type MembershipStatus = "pending" | "approved" | "rejected" | "disabled";
 
 import type { AdminDirectoryIdentity } from "@/lib/admin/user-contract";
 
 export interface AdminDirectoryUser extends AdminDirectoryIdentity {
-  name: string;
+  authUserId?: string | null;
+  fullName: string;
   email: string;
-  nip?: string;
-  phone: string;
+  phone?: string | null;
+  nip?: string | null;
+  nik?: string | null;
+  alamat?: string | null;
+  gelarDepan?: string | null;
+  gelarBelakang?: string | null;
   role: UserRole;
-  isActive: boolean;
-  isEditable?: boolean;
-  canDelete?: boolean;
+  status: MembershipStatus;
   createdAt?: string;
   updatedAt?: string;
 }

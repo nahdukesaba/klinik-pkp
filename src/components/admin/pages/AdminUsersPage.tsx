@@ -37,13 +37,13 @@ function formatTimestamp(value?: string) {
 
 const userColumns: Column<AdminDirectoryUser>[] = [
   {
-    key: "name",
+    key: "fullName",
     label: "Pengguna",
     sortable: true,
-    sortField: "name",
+    sortField: "full_name",
     render: (item) => (
       <div className="max-w-[260px]">
-        <p className="font-medium text-foreground break-words">{item.name}</p>
+        <p className="font-medium text-foreground break-words">{item.fullName}</p>
         <p className="mt-0.5 text-xs text-muted-foreground break-all">
           {item.email}
         </p>
@@ -69,13 +69,11 @@ const userColumns: Column<AdminDirectoryUser>[] = [
     className: "text-center",
   },
   {
-    key: "isActive",
+    key: "status",
     label: "Status",
     sortable: true,
-    sortField: "is_active",
-    render: (item) => (
-      <StatusBadge status={item.isActive ? "active" : "inactive"} />
-    ),
+    sortField: "status",
+    render: (item) => <StatusBadge status={item.status} />,
   },
   {
     key: "updatedAt",
@@ -139,7 +137,7 @@ function AuditEntryList({ entries }: { entries: AuditEntry[] }) {
 export default function AdminUsersPage() {
   const {
     canManage,
-    currentLegacyLocalUserId,
+    currentAppUserId,
     searchKeyword,
     roleFilter,
     setRoleFilter,
@@ -226,12 +224,14 @@ export default function AdminUsersPage() {
             value: statusFilter,
             options: [
               { value: "all", label: "Semua Status" },
-              { value: "active", label: "Aktif" },
-              { value: "inactive", label: "Nonaktif" },
+              { value: "pending", label: "Menunggu" },
+              { value: "approved", label: "Disetujui" },
+              { value: "rejected", label: "Ditolak" },
+              { value: "disabled", label: "Dinonaktifkan" },
             ],
             onChange: (value) =>
               setStatusFilter(
-                value === "active" || value === "inactive" ? value : "all"
+                value === "pending" || value === "approved" || value === "rejected" || value === "disabled" ? value : "all"
               ),
           },
         ]}
@@ -244,18 +244,14 @@ export default function AdminUsersPage() {
       <AdminDataTable<AdminDirectoryUser>
         columns={userColumns}
         data={filteredUsers}
-        keyField="legacyLocalUserId"
+        keyField="appUserId"
         actions={[
           editAction(openEditDialog, {
-            isVisible: (item) =>
-              Boolean(
-                currentLegacyLocalUserId &&
-                  item.legacyLocalUserId === currentLegacyLocalUserId &&
-                  item.isEditable !== false,
-              ),
+            isVisible: () => true,
           }),
           deleteAction(handleDelete, {
-            isVisible: (item) => item.canDelete !== false,
+            label: "Nonaktifkan akses Klinik",
+            isVisible: (item) => item.appUserId !== currentAppUserId && item.status !== "disabled",
           }),
         ]}
         isLoading={usersQuery.isLoading}
@@ -271,8 +267,8 @@ export default function AdminUsersPage() {
         title={editingUser ? "Edit User" : "Tambah User"}
         description={
           editingUser
-            ? "Perbarui nama dan nomor telepon pengguna. Email, NIP, role, status, dan password tidak dikirim saat update."
-            : "Lengkapi identitas, role, status akun, dan password pengguna."
+            ? "Perbarui profil pegawai, role, dan status membership Klinik. Email login tetap read-only."
+            : "Buat atau gunakan kembali identitas Central, lalu tetapkan akses Klinik. Supabase menangani undangan dan password."
         }
         fields={formFields}
         initialValues={initialValues}

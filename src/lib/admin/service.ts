@@ -187,8 +187,8 @@ async function readDashboardOverview(options?: {
     usersLoaded: usersPage.items.length,
     adminUsersLoaded: usersPage.items.filter((item) => item.role === "admin")
       .length,
-    activeUsersLoaded: usersPage.items.filter((item) => item.isActive).length,
-    inactiveUsersLoaded: usersPage.items.filter((item) => !item.isActive).length,
+    activeUsersLoaded: usersPage.items.filter((item) => item.status === "approved").length,
+    inactiveUsersLoaded: usersPage.items.filter((item) => item.status !== "approved").length,
     totalRecordedActivities: auditEntries.length,
   };
 

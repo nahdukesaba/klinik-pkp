@@ -1,17 +1,8 @@
 import "server-only";
 
-import {
-  extractApiCollectionItems,
-  extractApiPaginationMeta,
-  type ApiResponse,
-} from "@/lib/api-client";
+import { extractApiCollectionItems, extractApiPaginationMeta, type ApiResponse } from "@/lib/api-client";
 import { sanitizeEmail, sanitizeInput, sanitizeNip } from "@/lib/security";
-import type {
-  AdminDirectoryUser,
-  AdminPaginatedUsers,
-  AdminPaginationMeta,
-  UserRole,
-} from "@/types/admin";
+import type { AdminDirectoryUser, AdminPaginatedUsers, AdminPaginationMeta, MembershipStatus, UserRole } from "@/types/admin";
 import type { SortDirection } from "@/types/api";
 
 import { BackendApiError, fetchBackendJson } from "./backend-api";
@@ -19,337 +10,111 @@ import { normalizeDisplayName } from "./service";
 import { adaptAdminDirectoryIdentity } from "./user-contract";
 
 interface BackendUserRecord {
-  id: string;
-  appUserId?: string | null;
-  name: string;
+  appUserId: string;
+  authUserId?: string | null;
+  fullName: string;
   email: string;
-  nip?: string | null;
   phone?: string | null;
+  nip?: string | null;
+  nik?: string | null;
+  alamat?: string | null;
+  gelarDepan?: string | null;
+  gelarBelakang?: string | null;
   role: string;
-  is_active: boolean;
-  is_editable?: boolean | null;
-  can_edit?: boolean | null;
-  can_delete?: boolean | null;
-  created_at?: string | null;
-  updated_at?: string | null;
+  status: string;
+  createdAt?: string | null;
+  updatedAt?: string | null;
 }
 
 export interface AdminUserMutationInput {
-  name: string;
+  fullName: string;
   email: string;
-  nip: string;
-  password?: string;
   phone?: string;
+  nip?: string;
+  nik?: string;
+  alamat?: string;
+  gelarDepan?: string;
+  gelarBelakang?: string;
   role: UserRole;
-  isActive: boolean;
+  status: MembershipStatus;
 }
-
-export interface AdminUserUpdateInput {
-  name: string;
-  phone?: string;
-}
+export type AdminUserUpdateInput = Omit<AdminUserMutationInput, "email">;
 
 export const ADMIN_USERS_PAGE_LIMIT = 50;
-const USER_SORT_FIELDS = new Set([
-  "name",
-  "email",
-  "role",
-  "is_active",
-  "created_at",
-  "updated_at",
-]);
+const USER_SORT_FIELDS = new Set(["full_name", "email", "role", "status", "created_at", "updated_at"]);
+const MEMBERSHIP_STATUSES = new Set<MembershipStatus>(["pending", "approved", "rejected", "disabled"]);
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
+function isRecord(value: unknown): value is Record<string, unknown> { return typeof value === "object" && value !== null; }
+function normalizePhone(value?: string | null) { return sanitizeInput(value ?? "").replace(/[^\d+\-\s()]/g, "").trim(); }
+function nullable(value?: string | null) { const result = sanitizeInput(value ?? "").trim(); return result || null; }
+function normalizeRole(value: string): UserRole { return value.trim().toLowerCase() === "admin" ? "admin" : "user"; }
+function normalizeStatus(value: string): MembershipStatus {
+  const status = value.trim().toLowerCase() as MembershipStatus;
+  if (!MEMBERSHIP_STATUSES.has(status)) throw new BackendApiError("Status membership pengguna tidak valid.", 502);
+  return status;
 }
-
-function normalizePhone(value: string | null | undefined) {
-  return sanitizeInput(value ?? "").replace(/[^\d+\-\s()]/g, "").trim();
-}
-
-function normalizeDirectoryRole(role: string): UserRole {
-  return role.trim().toLowerCase() === "admin" ? "admin" : "user";
-}
-
-function normalizePositiveInteger(value: number | undefined, fallback: number) {
-  if (value === undefined || !Number.isFinite(value)) {
-    return fallback;
-  }
-
-  return Math.max(1, Math.trunc(value));
-}
-
-function normalizeUsersPage(page?: number) {
-  return normalizePositiveInteger(page, 1);
-}
-
-function normalizeUsersLimit(limit?: number) {
-  return Math.min(
-    ADMIN_USERS_PAGE_LIMIT,
-    normalizePositiveInteger(limit, ADMIN_USERS_PAGE_LIMIT)
-  );
-}
-
-function normalizeUsersKeyword(keyword?: string) {
-  const normalizedKeyword = sanitizeInput(keyword ?? "").trim();
-  return normalizedKeyword.length > 0 ? normalizedKeyword : undefined;
-}
-
-function normalizeUsersSortField(sortBy?: string | null) {
-  const normalizedSortField = sanitizeInput(sortBy ?? "").trim();
-  return USER_SORT_FIELDS.has(normalizedSortField)
-    ? normalizedSortField
-    : undefined;
-}
-
-function normalizeUsersSortDirection(
-  sortDirection?: SortDirection
-): SortDirection | undefined {
-  if (sortDirection === "desc" || sortDirection === "asc") {
-    return sortDirection;
-  }
-
-  return undefined;
-}
+function positive(value: number | undefined, fallback: number) { return value !== undefined && Number.isFinite(value) ? Math.max(1, Math.trunc(value)) : fallback; }
+function page(value?: number) { return positive(value, 1); }
+function limit(value?: number) { return Math.min(ADMIN_USERS_PAGE_LIMIT, positive(value, ADMIN_USERS_PAGE_LIMIT)); }
 
 function toDirectoryUser(user: BackendUserRecord): AdminDirectoryUser {
   const identity = adaptAdminDirectoryIdentity(user);
-  if (!identity) {
-    throw new BackendApiError("Identitas directory pengguna tidak valid.", 502);
-  }
-  const isEditable =
-    typeof user.is_editable === "boolean"
-      ? user.is_editable
-      : typeof user.can_edit === "boolean"
-        ? user.can_edit
-        : undefined;
-  const canDelete =
-    typeof user.can_delete === "boolean" ? user.can_delete : undefined;
-
+  if (!identity) throw new BackendApiError("Identitas canonical pengguna tidak valid.", 502);
   return {
     ...identity,
-    name: normalizeDisplayName(user.name),
+    authUserId: nullable(user.authUserId),
+    fullName: normalizeDisplayName(user.fullName),
     email: sanitizeEmail(user.email),
-    nip: user.nip ? sanitizeNip(user.nip) : undefined,
-    phone: normalizePhone(user.phone),
-    role: normalizeDirectoryRole(user.role),
-    isActive: Boolean(user.is_active),
-    isEditable,
-    canDelete,
-    createdAt: typeof user.created_at === "string" ? user.created_at : undefined,
-    updatedAt: typeof user.updated_at === "string" ? user.updated_at : undefined,
+    phone: nullable(normalizePhone(user.phone)),
+    nip: user.nip ? sanitizeNip(user.nip) : null,
+    nik: nullable(user.nik), alamat: nullable(user.alamat),
+    gelarDepan: nullable(user.gelarDepan), gelarBelakang: nullable(user.gelarBelakang),
+    role: normalizeRole(user.role), status: normalizeStatus(user.status),
+    createdAt: typeof user.createdAt === "string" ? user.createdAt : undefined,
+    updatedAt: typeof user.updatedAt === "string" ? user.updatedAt : undefined,
   };
 }
 
-function buildUsersPaginationMeta(
-  fallbackCount: number,
-  meta: ReturnType<typeof extractApiPaginationMeta>
-): AdminPaginationMeta {
-  const limit = normalizeUsersLimit(meta.limit);
-  const totalRecords = Math.max(0, meta.totalRecords ?? fallbackCount);
-  const totalPages = Math.max(1, Math.ceil(totalRecords / limit));
-  const page = Math.min(normalizeUsersPage(meta.page), totalPages);
-
-  return {
-    totalRecords,
-    page,
-    limit,
-    totalPages,
-    hasNextPage: page < totalPages,
-    hasPreviousPage: page > 1,
-  };
+function paginationMeta(count: number, meta: ReturnType<typeof extractApiPaginationMeta>): AdminPaginationMeta {
+  const pageLimit = limit(meta.limit); const totalRecords = Math.max(0, meta.totalRecords ?? count);
+  const totalPages = Math.max(1, Math.ceil(totalRecords / pageLimit)); const currentPage = Math.min(page(meta.page), totalPages);
+  return { totalRecords, page: currentPage, limit: pageLimit, totalPages, hasNextPage: currentPage < totalPages, hasPreviousPage: currentPage > 1 };
 }
 
-function buildUsersEndpoint(options?: {
-  page?: number;
-  limit?: number;
-  keyword?: string;
-  sortBy?: string | null;
-  sortDirection?: SortDirection;
-  role?: UserRole;
-  isActive?: "active" | "inactive";
-}) {
-  const params = new URLSearchParams();
-  const normalizedPage = normalizeUsersPage(options?.page);
-  const normalizedLimit = normalizeUsersLimit(options?.limit);
-  const normalizedKeyword = normalizeUsersKeyword(options?.keyword);
-  const normalizedSortBy = normalizeUsersSortField(options?.sortBy);
-  const normalizedSortDirection = normalizeUsersSortDirection(
-    options?.sortDirection
-  );
-
-  params.set("page", String(normalizedPage));
-  params.set("limit", String(normalizedLimit));
-
-  if (normalizedKeyword) {
-    params.set("keyword", normalizedKeyword);
-  }
-
-  if (normalizedSortBy) {
-    params.set("sort_by", normalizedSortBy);
-
-    if (normalizedSortDirection) {
-      params.set("sort_order", normalizedSortDirection);
-    }
-  }
-
-  if (options?.role) {
-    params.set("role", options.role);
-  }
-
-  if (options?.isActive) {
-    params.set("is_active", String(options.isActive === "active"));
-  }
-
+function endpoint(options?: { page?: number; limit?: number; keyword?: string; sortBy?: string | null; sortDirection?: SortDirection; role?: UserRole; status?: MembershipStatus }) {
+  const params = new URLSearchParams({ page: String(page(options?.page)), limit: String(limit(options?.limit)) });
+  const keyword = sanitizeInput(options?.keyword ?? "").trim(); if (keyword) params.set("keyword", keyword);
+  const sortBy = sanitizeInput(options?.sortBy ?? "").trim(); if (USER_SORT_FIELDS.has(sortBy)) { params.set("sort_by", sortBy); if (options?.sortDirection) params.set("sort_order", options.sortDirection); }
+  if (options?.role) params.set("role", options.role); if (options?.status) params.set("status", options.status);
   return `users?${params.toString()}`;
 }
 
-function createAuthorizedHeaders(backendAccessToken: string, headers?: HeadersInit) {
-  return {
-    Authorization: `Bearer ${backendAccessToken}`,
-    ...headers,
-  };
-}
+function requireToken(token?: string) { if (!token) throw new BackendApiError("Sesi admin tidak tersedia. Silakan login ulang.", 503); return token; }
+function headers(token: string, extra?: HeadersInit) { return { Authorization: `Bearer ${token}`, ...extra }; }
 
-function requireBackendAccessToken(backendAccessToken?: string) {
-  if (!backendAccessToken) {
-    throw new BackendApiError(
-      "Sesi admin tidak tersedia. Silakan login ulang.",
-      503
-    );
-  }
-
-  return backendAccessToken;
-}
-
-export async function listUsersPage(
-  backendAccessToken?: string,
-  options?: {
-    page?: number;
-    limit?: number;
-    keyword?: string;
-    sortBy?: string | null;
-    sortDirection?: SortDirection;
-    role?: UserRole;
-    isActive?: "active" | "inactive";
-  }
-): Promise<AdminPaginatedUsers> {
-  const accessToken = requireBackendAccessToken(backendAccessToken);
-
-  const payload = await fetchBackendJson<ApiResponse<unknown>>(
-    buildUsersEndpoint(options),
-    {
-      headers: createAuthorizedHeaders(accessToken),
-      timeoutMs: 20_000,
-    }
-  );
+export async function listUsersPage(backendAccessToken?: string, options?: { page?: number; limit?: number; keyword?: string; sortBy?: string | null; sortDirection?: SortDirection; role?: UserRole; status?: MembershipStatus }): Promise<AdminPaginatedUsers> {
+  const payload = await fetchBackendJson<ApiResponse<unknown>>(endpoint(options), { headers: headers(requireToken(backendAccessToken)), timeoutMs: 20_000 });
   const items = extractApiCollectionItems<BackendUserRecord>(payload.data);
-
-  if (!payload.success || !items) {
-    throw new BackendApiError(
-      payload.message || "Format data pengguna dari backend tidak valid.",
-      502,
-      payload.details
-    );
-  }
-
-  return {
-    items: items.map(toDirectoryUser),
-    meta: buildUsersPaginationMeta(items.length, extractApiPaginationMeta(payload.data)),
-  };
+  if (!payload.success || !items) throw new BackendApiError(payload.message || "Format data pengguna dari backend tidak valid.", 502, payload.details);
+  return { items: items.map(toDirectoryUser), meta: paginationMeta(items.length, extractApiPaginationMeta(payload.data)) };
 }
 
-export async function getUserDetail(
-  legacyLocalUserId: string,
-  backendAccessToken?: string
-) {
-  const accessToken = requireBackendAccessToken(backendAccessToken);
-
-  const payload = await fetchBackendJson<ApiResponse<unknown>>(
-    `users/${legacyLocalUserId}`,
-    {
-      headers: createAuthorizedHeaders(accessToken),
-      timeoutMs: 15_000,
-    },
-  );
-
-  if (!payload.success || !isRecord(payload.data)) {
-    throw new BackendApiError(
-      payload.message || "Format detail pengguna dari backend tidak valid.",
-      502,
-      payload.details
-    );
-  }
-
+export async function getUserDetail(appUserId: string, backendAccessToken?: string) {
+  const payload = await fetchBackendJson<ApiResponse<unknown>>(`users/${appUserId}`, { headers: headers(requireToken(backendAccessToken)), timeoutMs: 15_000 });
+  if (!payload.success || !isRecord(payload.data)) throw new BackendApiError(payload.message || "Format detail pengguna dari backend tidak valid.", 502, payload.details);
   return toDirectoryUser(payload.data as unknown as BackendUserRecord);
 }
 
-function buildUserMutationPayload(input: AdminUserMutationInput) {
-  const payload: Record<string, unknown> = {
-    name: normalizeDisplayName(input.name),
-    email: sanitizeEmail(input.email),
-    nip: sanitizeNip(input.nip),
-    phone: normalizePhone(input.phone),
-    role: input.role,
-    is_active: input.isActive,
-  };
-
-  if (input.password && input.password.trim() !== "") {
-    payload.password = input.password;
-  }
-
-  return payload;
+function mutation(input: AdminUserMutationInput | AdminUserUpdateInput) {
+  return { fullName: normalizeDisplayName(input.fullName), ...( "email" in input ? { email: sanitizeEmail(input.email) } : {}), phone: normalizePhone(input.phone), nip: sanitizeNip(input.nip ?? ""), nik: nullable(input.nik) ?? "", alamat: nullable(input.alamat) ?? "", gelarDepan: nullable(input.gelarDepan) ?? "", gelarBelakang: nullable(input.gelarBelakang) ?? "", role: input.role, status: input.status };
 }
 
-function buildUserProfileUpdatePayload(input: AdminUserUpdateInput) {
-  return {
-    name: normalizeDisplayName(input.name),
-    phone: normalizePhone(input.phone),
-  };
+export async function createUser(input: AdminUserMutationInput, backendAccessToken?: string) {
+  return fetchBackendJson<ApiResponse<unknown>>("users", { method: "POST", headers: headers(requireToken(backendAccessToken), { "Content-Type": "application/json" }), body: JSON.stringify(mutation(input)), timeoutMs: 20_000 });
 }
-
-export async function createUser(
-  input: AdminUserMutationInput,
-  backendAccessToken?: string
-) {
-  const accessToken = requireBackendAccessToken(backendAccessToken);
-
-  return fetchBackendJson<ApiResponse<unknown>>("users", {
-    method: "POST",
-    headers: createAuthorizedHeaders(accessToken, {
-      "Content-Type": "application/json",
-    }),
-    body: JSON.stringify(buildUserMutationPayload(input)),
-    timeoutMs: 20_000,
-  });
+export async function updateUser(appUserId: string, input: AdminUserUpdateInput, backendAccessToken?: string) {
+  return fetchBackendJson<ApiResponse<unknown>>(`users/${appUserId}`, { method: "PUT", headers: headers(requireToken(backendAccessToken), { "Content-Type": "application/json" }), body: JSON.stringify(mutation(input)), timeoutMs: 20_000 });
 }
-
-export async function updateUser(
-  legacyLocalUserId: string,
-  input: AdminUserUpdateInput,
-  backendAccessToken?: string
-) {
-  const accessToken = requireBackendAccessToken(backendAccessToken);
-
-  return fetchBackendJson<ApiResponse<unknown>>(`users/${legacyLocalUserId}`, {
-    method: "PUT",
-    headers: createAuthorizedHeaders(accessToken, {
-      "Content-Type": "application/json",
-    }),
-    body: JSON.stringify(buildUserProfileUpdatePayload(input)),
-    timeoutMs: 20_000,
-  });
-}
-
-export async function deleteUser(
-  legacyLocalUserId: string,
-  backendAccessToken?: string
-) {
-  const accessToken = requireBackendAccessToken(backendAccessToken);
-
-  return fetchBackendJson<ApiResponse<unknown>>(`users/${legacyLocalUserId}`, {
-    method: "DELETE",
-    headers: createAuthorizedHeaders(accessToken),
-    timeoutMs: 20_000,
-  });
+export async function deleteUser(appUserId: string, backendAccessToken?: string) {
+  return fetchBackendJson<ApiResponse<unknown>>(`users/${appUserId}`, { method: "DELETE", headers: headers(requireToken(backendAccessToken)), timeoutMs: 20_000 });
 }

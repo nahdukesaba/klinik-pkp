@@ -69,12 +69,12 @@ async function AdminOverviewDetails({
           {overview.usersPreview.length > 0 ? (
             overview.usersPreview.map((item) => (
               <div
-                key={item.legacyLocalUserId}
+                key={item.appUserId}
                 className="flex flex-col gap-3 rounded-2xl border border-border/70 bg-background/70 p-4 sm:flex-row sm:items-start sm:justify-between"
               >
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-foreground break-words">
-                    {item.name}
+                    {item.fullName}
                   </p>
                   <p className="text-xs text-muted-foreground break-all">
                     {item.email}
@@ -87,12 +87,12 @@ async function AdminOverviewDetails({
                   </span>
                   <span
                     className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-                      item.isActive
+                      item.status === "approved"
                         ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                         : "bg-slate-500/10 text-slate-600 dark:text-slate-400"
                     }`}
                   >
-                    {item.isActive ? "Aktif" : "Nonaktif"}
+                    {item.status}
                   </span>
                 </div>
               </div>

@@ -1,6 +1,5 @@
 export interface AdminDirectoryIdentity {
-  legacyLocalUserId: string;
-  appUserId: string | null;
+  appUserId: string;
 }
 
 export function adaptAdminDirectoryIdentity(value: unknown) {
@@ -8,23 +7,19 @@ export function adaptAdminDirectoryIdentity(value: unknown) {
     return null;
   }
   const record = value as Record<string, unknown>;
-  const legacyLocalUserId =
-    typeof record.id === "string" && record.id.trim()
-      ? record.id.trim()
+  const appUserId =
+    typeof record.appUserId === "string" && record.appUserId.trim()
+      ? record.appUserId.trim()
       : null;
-  if (!legacyLocalUserId) {
+  if (!appUserId) {
     return null;
   }
 
   return {
-    legacyLocalUserId,
-    appUserId:
-      typeof record.appUserId === "string" && record.appUserId.trim()
-        ? record.appUserId.trim()
-        : null,
+    appUserId,
   } satisfies AdminDirectoryIdentity;
 }
 
 export function getAdminDirectoryRouteId(user: AdminDirectoryIdentity) {
-  return user.legacyLocalUserId;
+  return user.appUserId;
 }

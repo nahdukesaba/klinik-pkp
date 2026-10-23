@@ -16,6 +16,9 @@ const statusVariants: Record<string, string> = {
   rencana: "bg-blue-500/15 text-blue-600 dark:text-blue-400",
   mendatang: "bg-blue-500/15 text-blue-600 dark:text-blue-400",
   pending: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
+  approved: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
+  rejected: "bg-rose-500/15 text-rose-600 dark:text-rose-400",
+  disabled: "bg-gray-500/15 text-gray-600 dark:text-gray-400",
 };
 
 const statusLabels: Record<string, string> = {
@@ -29,7 +32,10 @@ const statusLabels: Record<string, string> = {
   proses: "Dalam Proses",
   rencana: "Rencana",
   mendatang: "Mendatang",
-  pending: "Pending Dokumentasi",
+  pending: "Menunggu",
+  approved: "Disetujui",
+  rejected: "Ditolak",
+  disabled: "Dinonaktifkan",
 };
 
 const roleVariants: Record<string, string> = {
@@ -51,11 +57,11 @@ export function StatusBadge({ status }: { status: string }) {
       <span
         className={cn(
           "mr-1.5 h-1.5 w-1.5 rounded-full",
-          status === "active" || status === "published" || status === "selesai"
+          status === "active" || status === "approved" || status === "published" || status === "selesai"
             ? "bg-emerald-500"
-            : status === "inactive" || status === "archived"
+            : status === "inactive" || status === "disabled" || status === "archived"
               ? "bg-gray-400"
-              : status === "suspended"
+              : status === "suspended" || status === "rejected"
                 ? "bg-rose-500"
                 : status === "draft" || status === "proses" || status === "pending"
                   ? "bg-amber-500"
@@ -96,7 +102,8 @@ export function editAction<T>(
 
 export function deleteAction<T>(
   onClick: (item: T) => void,
-  options: Pick<TableAction<T>, "isVisible" | "isDisabled" | "disabledReason"> = {}
+  options: Pick<TableAction<T>, "isVisible" | "isDisabled" | "disabledReason"> &
+    Partial<Pick<TableAction<T>, "label" | "icon" | "variant">> = {}
 ): TableAction<T> {
   return {
     label: "Hapus",

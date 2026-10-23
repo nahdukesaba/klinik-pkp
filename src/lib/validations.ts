@@ -62,36 +62,34 @@ const adminUserNameSchema = z
   .transform((value) => sanitizeInput(value).replace(/\s+/g, " ").trim());
 
 const adminUserBaseSchema = z.object({
-  name: adminUserNameSchema,
+  fullName: adminUserNameSchema,
+  nip: z
+    .string()
+    .transform(sanitizeNip)
+    .refine((val) => val === "" || /^\d{18}$/.test(val), "NIP harus tepat 18 digit"),
+  phone: phoneSchema.optional().default(""),
+  nik: z.string().max(32, "NIK terlalu panjang").transform(sanitizeInput).optional().default(""),
+  alamat: z.string().max(500, "Alamat terlalu panjang").transform(sanitizeInput).optional().default(""),
+  gelarDepan: z.string().max(50, "Gelar depan terlalu panjang").transform(sanitizeInput).optional().default(""),
+  gelarBelakang: z.string().max(50, "Gelar belakang terlalu panjang").transform(sanitizeInput).optional().default(""),
+  role: z.enum(["admin", "user"], {
+    error: "Role tidak valid.",
+  }),
+  status: z.enum(["pending", "approved", "rejected", "disabled"], {
+    error: "Status membership tidak valid.",
+  }),
+});
+
+export const adminUserCreateSchema = adminUserBaseSchema.extend({
   email: z
     .string()
     .min(1, "Email wajib diisi")
     .email("Format email tidak valid")
     .max(255, "Email terlalu panjang")
     .transform(sanitizeEmail),
-  nip: z
-    .string()
-    .min(1, "NIP wajib diisi")
-    .transform(sanitizeNip)
-    .refine((val) => /^\d{18}$/.test(val), "NIP harus tepat 18 digit"),
-  phone: phoneSchema.optional().default(""),
-  role: z.enum(["admin", "user"], {
-    error: "Role tidak valid.",
-  }),
-  isActive: z.boolean(),
 });
 
-export const adminUserCreateSchema = adminUserBaseSchema.extend({
-  password: z
-    .string()
-    .min(8, "Password minimal 8 karakter")
-    .max(128, "Password terlalu panjang"),
-});
-
-export const adminUserUpdateSchema = z.object({
-  name: adminUserNameSchema,
-  phone: phoneSchema.optional().default(""),
-});
+export const adminUserUpdateSchema = adminUserBaseSchema;
 
 export const adminFaqMutationSchema = z.object({
   question: z

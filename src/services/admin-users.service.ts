@@ -6,6 +6,7 @@ import type {
   AdminDirectoryUser,
   AdminPaginationMeta,
   AuditEntry,
+  MembershipStatus,
   UserRole,
 } from "@/types/admin";
 import type { ApiListQueryControls } from "@/types/api";
@@ -14,16 +15,19 @@ const ADMIN_USERS_ENDPOINT = "/api/admin/users";
 const ADMIN_AUDIT_ENDPOINT = "/api/admin/audit";
 
 export interface ControlUserPayload {
-  name: string;
+  fullName: string;
   phone: string;
+  nip: string;
+  nik: string;
+  alamat: string;
+  gelarDepan: string;
+  gelarBelakang: string;
+  role: UserRole;
+  status: MembershipStatus;
 }
 
 export interface ControlUserCreatePayload extends ControlUserPayload {
   email: string;
-  nip: string;
-  role: UserRole;
-  isActive: boolean;
-  password: string;
 }
 
 export interface AdminUsersPageResponse {
@@ -35,7 +39,7 @@ export async function fetchAdminUsersPage(
   params: ApiListQueryControls & {
     limit: number;
     role?: UserRole;
-    isActive?: "active" | "inactive";
+    status?: MembershipStatus;
   }
 ) {
   return adminFetch<AdminUsersPageResponse>(
@@ -46,8 +50,7 @@ export async function fetchAdminUsersPage(
       sort_by: params.sortBy,
       sort_order: params.sortBy ? params.sortDirection : undefined,
       role: params.role,
-      is_active:
-        params.isActive == null ? undefined : params.isActive === "active",
+      status: params.status,
     })
   );
 }
@@ -60,9 +63,9 @@ export async function fetchAdminAuditEntries(params: { limit: number }) {
   return response.data;
 }
 
-export async function fetchAdminUserDetail(legacyLocalUserId: string) {
+export async function fetchAdminUserDetail(appUserId: string) {
   const response = await adminFetch<{ data: AdminDirectoryUser }>(
-    `${ADMIN_USERS_ENDPOINT}/${legacyLocalUserId}`
+    `${ADMIN_USERS_ENDPOINT}/${appUserId}`
   );
 
   return response.data;
@@ -79,10 +82,10 @@ export async function createAdminUser(payload: ControlUserCreatePayload) {
 }
 
 export async function updateAdminUser(
-  legacyLocalUserId: string,
+  appUserId: string,
   payload: ControlUserPayload,
 ) {
-  return adminFetch(`${ADMIN_USERS_ENDPOINT}/${legacyLocalUserId}`, {
+  return adminFetch(`${ADMIN_USERS_ENDPOINT}/${appUserId}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -91,8 +94,8 @@ export async function updateAdminUser(
   });
 }
 
-export async function deleteAdminUser(legacyLocalUserId: string) {
-  return adminFetch(`${ADMIN_USERS_ENDPOINT}/${legacyLocalUserId}`, {
+export async function deleteAdminUser(appUserId: string) {
+  return adminFetch(`${ADMIN_USERS_ENDPOINT}/${appUserId}`, {
     method: "DELETE",
   });
 }

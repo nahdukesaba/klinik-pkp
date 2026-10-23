@@ -17,7 +17,8 @@ export interface LoginAdminSessionResponse {
   success: boolean;
   data?: {
     user?: {
-      name?: string;
+      appUserId?: string;
+      fullName?: string;
     };
   };
 }
@@ -49,10 +50,12 @@ export async function exchangeBrowserSsoSession(
       status: "authenticated" | "pending";
       redirectTo: string;
       user?: {
-        id: string;
-        name: string;
+        appUserId: string;
+        fullName: string;
         email: string;
         role: "admin" | "user";
+        status: "approved";
+        loginSource: "direct" | "sso";
       };
     };
   }>(

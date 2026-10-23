@@ -455,7 +455,10 @@ export async function handleCreateUser(request: NextRequest) {
   }
 }
 
-export async function handleGetUser(request: NextRequest, id: string) {
+export async function handleGetUser(
+  request: NextRequest,
+  legacyLocalUserId: string,
+) {
   const auth = await authorizeAdminRequest(request, { roles: ["admin"] });
   if (!auth.ok) {
     return auth.response;
@@ -463,7 +466,7 @@ export async function handleGetUser(request: NextRequest, id: string) {
 
   try {
     const user = await getUserDetail(
-      id,
+      legacyLocalUserId,
       auth.user.backendAccessToken
     );
 
@@ -476,7 +479,10 @@ export async function handleGetUser(request: NextRequest, id: string) {
   }
 }
 
-export async function handleUpdateUser(request: NextRequest, id: string) {
+export async function handleUpdateUser(
+  request: NextRequest,
+  legacyLocalUserId: string,
+) {
   const auth = await authorizeAdminRequest(request, {
     requireCsrf: true,
     roles: ["admin"],
@@ -485,7 +491,10 @@ export async function handleUpdateUser(request: NextRequest, id: string) {
     return auth.response;
   }
 
-  if (id !== auth.user.id) {
+  if (
+    !auth.user.legacyLocalUserId ||
+    legacyLocalUserId !== auth.user.legacyLocalUserId
+  ) {
     return createJsonErrorResponse(
       "Backend hanya mengizinkan pengguna memperbarui profil sendiri.",
       403,
@@ -514,7 +523,7 @@ export async function handleUpdateUser(request: NextRequest, id: string) {
 
   try {
     const result = await updateUser(
-      "me",
+      legacyLocalUserId,
       validatedData,
       auth.user.backendAccessToken
     );
@@ -536,7 +545,10 @@ export async function handleUpdateUser(request: NextRequest, id: string) {
   }
 }
 
-export async function handleDeleteUser(request: NextRequest, id: string) {
+export async function handleDeleteUser(
+  request: NextRequest,
+  legacyLocalUserId: string,
+) {
   const auth = await authorizeAdminRequest(request, {
     requireCsrf: true,
     roles: ["admin"],
@@ -546,12 +558,12 @@ export async function handleDeleteUser(request: NextRequest, id: string) {
   }
 
   try {
-    await deleteUser(id, auth.user.backendAccessToken);
+    await deleteUser(legacyLocalUserId, auth.user.backendAccessToken);
 
     await recordAudit(request, auth.user, {
       action: "DELETE",
       module: "users",
-      details: `Menghapus pengguna dengan id ${id} dari Control Users.`,
+      details: `Menghapus pengguna local directory ${legacyLocalUserId} dari Control Users.`,
     });
 
     markUsersAdminStateChanged();

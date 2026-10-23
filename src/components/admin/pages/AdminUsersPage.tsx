@@ -139,7 +139,7 @@ function AuditEntryList({ entries }: { entries: AuditEntry[] }) {
 export default function AdminUsersPage() {
   const {
     canManage,
-    currentUserId,
+    currentLegacyLocalUserId,
     searchKeyword,
     roleFilter,
     setRoleFilter,
@@ -244,10 +244,15 @@ export default function AdminUsersPage() {
       <AdminDataTable<AdminDirectoryUser>
         columns={userColumns}
         data={filteredUsers}
+        keyField="legacyLocalUserId"
         actions={[
           editAction(openEditDialog, {
             isVisible: (item) =>
-              item.id === currentUserId && item.isEditable !== false,
+              Boolean(
+                currentLegacyLocalUserId &&
+                  item.legacyLocalUserId === currentLegacyLocalUserId &&
+                  item.isEditable !== false,
+              ),
           }),
           deleteAction(handleDelete, {
             isVisible: (item) => item.canDelete !== false,

@@ -14,6 +14,7 @@ import {
   readBrowserSsoCallback,
   resolveAccessOutcomePath,
 } from "@/lib/auth/browser-sso-contract";
+import { toPublicAuthenticatedUser } from "@/lib/auth/session-contract";
 import { attachAuthenticatedSessionCookies } from "@/lib/server/auth-session";
 import {
   createJsonErrorResponse,
@@ -102,14 +103,7 @@ export async function POST(request: NextRequest) {
 
     let authenticatedUser: AuthUser;
     try {
-      const sessionUser = createSessionAdminUser(exchange.user);
-      authenticatedUser = {
-        id: sessionUser.id,
-        name: sessionUser.name,
-        email: sessionUser.email,
-        nip: sessionUser.nip,
-        role: sessionUser.role,
-      };
+      authenticatedUser = createSessionAdminUser(exchange.user);
     } catch {
       return createJsonErrorResponse(
         "Akun tidak memiliki akses ke dashboard admin Klinik PKP.",
@@ -121,7 +115,10 @@ export async function POST(request: NextRequest) {
 
     try {
       await recordSuccessfulLogin(
-        { id: authenticatedUser.id, name: authenticatedUser.name },
+        {
+          appUserId: authenticatedUser.appUserId,
+          fullName: authenticatedUser.fullName,
+        },
         getRequestIpAddress(request),
       );
     } catch {
@@ -133,12 +130,7 @@ export async function POST(request: NextRequest) {
       data: {
         status: "authenticated",
         redirectTo: "/admin",
-        user: {
-          id: authenticatedUser.id,
-          name: authenticatedUser.name,
-          email: authenticatedUser.email,
-          role: authenticatedUser.role,
-        },
+        user: toPublicAuthenticatedUser(authenticatedUser),
       },
     });
     return attachAuthenticatedSessionCookies(response, authenticatedUser, {

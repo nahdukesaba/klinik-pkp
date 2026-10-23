@@ -182,12 +182,12 @@ export function AdminTopbar({
             >
               <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
                 <span className="text-xs font-bold text-primary">
-                  {user?.name?.charAt(0).toUpperCase() ?? "A"}
+                  {user?.fullName?.charAt(0).toUpperCase() ?? "A"}
                 </span>
               </div>
               <div className="hidden md:block text-left">
                 <p className="text-xs font-semibold text-foreground leading-tight">
-                  {user?.name ?? "Admin"}
+                  {user?.fullName ?? "Admin"}
                 </p>
                 <p className="text-[10px] text-muted-foreground leading-tight">
                   {user?.email ?? "admin@bp3kp.go.id"}
@@ -204,7 +204,7 @@ export function AdminTopbar({
           >
             <div className="border-b border-border px-4 py-3">
               <p className="text-sm font-semibold text-foreground">
-                {user?.name ?? "Admin"}
+                {user?.fullName ?? "Admin"}
               </p>
               <p className="break-all text-xs text-muted-foreground">
                 {user?.email ?? "admin@bp3kp.go.id"}

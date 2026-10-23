@@ -17,11 +17,15 @@ export default async function AdminLayout({
   return (
     <AdminAuthProvider
       user={{
-        id: user.id,
-        name: user.name,
+        appUserId: user.appUserId,
+        fullName: user.fullName,
         email: user.email,
+        phone: user.phone,
         nip: user.nip,
         role: user.role,
+        status: user.status,
+        loginSource: user.loginSource,
+        legacyLocalUserId: user.legacyLocalUserId,
         accessTokenExpiresAt: user.accessTokenExpiresAt,
       }}
     >

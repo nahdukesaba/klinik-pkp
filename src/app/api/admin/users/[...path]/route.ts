@@ -20,40 +20,40 @@ function createInvalidUserPathResponse() {
   );
 }
 
-async function resolveUserId(context: RouteContext) {
+async function resolveLegacyLocalUserId(context: RouteContext) {
   const { path } = await context.params;
-  const [id, ...extraSegments] = path;
+  const [legacyLocalUserId, ...extraSegments] = path;
 
-  if (!id || extraSegments.length > 0) {
+  if (!legacyLocalUserId || extraSegments.length > 0) {
     return null;
   }
 
-  return id;
+  return legacyLocalUserId;
 }
 
 export async function GET(request: NextRequest, context: RouteContext) {
-  const id = await resolveUserId(context);
-  if (!id) {
+  const legacyLocalUserId = await resolveLegacyLocalUserId(context);
+  if (!legacyLocalUserId) {
     return createInvalidUserPathResponse();
   }
 
-  return handleGetUser(request, id);
+  return handleGetUser(request, legacyLocalUserId);
 }
 
 export async function PUT(request: NextRequest, context: RouteContext) {
-  const id = await resolveUserId(context);
-  if (!id) {
+  const legacyLocalUserId = await resolveLegacyLocalUserId(context);
+  if (!legacyLocalUserId) {
     return createInvalidUserPathResponse();
   }
 
-  return handleUpdateUser(request, id);
+  return handleUpdateUser(request, legacyLocalUserId);
 }
 
 export async function DELETE(request: NextRequest, context: RouteContext) {
-  const id = await resolveUserId(context);
-  if (!id) {
+  const legacyLocalUserId = await resolveLegacyLocalUserId(context);
+  if (!legacyLocalUserId) {
     return createInvalidUserPathResponse();
   }
 
-  return handleDeleteUser(request, id);
+  return handleDeleteUser(request, legacyLocalUserId);
 }

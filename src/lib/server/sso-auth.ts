@@ -3,7 +3,7 @@ import "server-only";
 import { buildTrustedServiceUrl } from "@/lib/auth/browser-sso-contract";
 
 export interface SsoUser {
-  id: string;
+  appUserId: string;
   email: string;
   fullName: string;
   phone?: string;
@@ -25,9 +25,14 @@ export interface SsoSession {
 }
 
 export interface KlinikContext {
-  id: string;
+  appUserId: string;
+  authUserId: string;
   email: string;
-  role: string;
+  fullName: string;
+  phone: string | null;
+  nip: string | null;
+  role: "admin" | "user";
+  status: "approved";
 }
 
 export class SsoAuthError extends Error {
@@ -182,7 +187,7 @@ export async function loginWithSso(params: {
     expiresIn: typeof payload.expiresIn === "number" ? payload.expiresIn : 0,
     expiresAt: typeof payload.expiresAt === "number" ? payload.expiresAt : 0,
     user: {
-      id: payload.user.id,
+      appUserId: payload.user.id,
       email: payload.user.email,
       fullName: payload.user.fullName,
       phone:
@@ -277,7 +282,7 @@ export async function refreshSsoSession(
     expiresIn: typeof payload.expiresIn === "number" ? payload.expiresIn : 0,
     expiresAt: typeof payload.expiresAt === "number" ? payload.expiresAt : 0,
     user: {
-      id: payload.user.id,
+      appUserId: payload.user.id,
       email: payload.user.email,
       fullName: payload.user.fullName,
       phone:
@@ -361,8 +366,13 @@ export async function getKlinikContext(
   if (
     !isRecord(payload) ||
     typeof payload.id !== "string" ||
+    typeof payload.appUserId !== "string" ||
+    payload.id !== payload.appUserId ||
+    typeof payload.authUserId !== "string" ||
     typeof payload.email !== "string" ||
-    typeof payload.role !== "string"
+    typeof payload.fullName !== "string" ||
+    (payload.role !== "admin" && payload.role !== "user") ||
+    payload.status !== "approved"
   ) {
     throw new SsoAuthError(
       "Respons konteks Klinik PKP tidak valid.",
@@ -372,9 +382,14 @@ export async function getKlinikContext(
   }
 
   return {
-    id: payload.id,
+    appUserId: payload.appUserId,
+    authUserId: payload.authUserId,
     email: payload.email,
+    fullName: payload.fullName,
+    phone: typeof payload.phone === "string" ? payload.phone : null,
+    nip: typeof payload.nip === "string" ? payload.nip : null,
     role: payload.role,
+    status: payload.status,
   };
 }
 

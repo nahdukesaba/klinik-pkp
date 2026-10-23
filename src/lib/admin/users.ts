@@ -16,9 +16,11 @@ import type { SortDirection } from "@/types/api";
 
 import { BackendApiError, fetchBackendJson } from "./backend-api";
 import { normalizeDisplayName } from "./service";
+import { adaptAdminDirectoryIdentity } from "./user-contract";
 
 interface BackendUserRecord {
   id: string;
+  appUserId?: string | null;
   name: string;
   email: string;
   nip?: string | null;
@@ -111,6 +113,10 @@ function normalizeUsersSortDirection(
 }
 
 function toDirectoryUser(user: BackendUserRecord): AdminDirectoryUser {
+  const identity = adaptAdminDirectoryIdentity(user);
+  if (!identity) {
+    throw new BackendApiError("Identitas directory pengguna tidak valid.", 502);
+  }
   const isEditable =
     typeof user.is_editable === "boolean"
       ? user.is_editable
@@ -121,7 +127,7 @@ function toDirectoryUser(user: BackendUserRecord): AdminDirectoryUser {
     typeof user.can_delete === "boolean" ? user.can_delete : undefined;
 
   return {
-    id: user.id,
+    ...identity,
     name: normalizeDisplayName(user.name),
     email: sanitizeEmail(user.email),
     nip: user.nip ? sanitizeNip(user.nip) : undefined,
@@ -254,15 +260,18 @@ export async function listUsersPage(
 }
 
 export async function getUserDetail(
-  id: string,
+  legacyLocalUserId: string,
   backendAccessToken?: string
 ) {
   const accessToken = requireBackendAccessToken(backendAccessToken);
 
-  const payload = await fetchBackendJson<ApiResponse<unknown>>(`users/${id}`, {
-    headers: createAuthorizedHeaders(accessToken),
-    timeoutMs: 15_000,
-  });
+  const payload = await fetchBackendJson<ApiResponse<unknown>>(
+    `users/${legacyLocalUserId}`,
+    {
+      headers: createAuthorizedHeaders(accessToken),
+      timeoutMs: 15_000,
+    },
+  );
 
   if (!payload.success || !isRecord(payload.data)) {
     throw new BackendApiError(
@@ -316,13 +325,13 @@ export async function createUser(
 }
 
 export async function updateUser(
-  id: string,
+  legacyLocalUserId: string,
   input: AdminUserUpdateInput,
   backendAccessToken?: string
 ) {
   const accessToken = requireBackendAccessToken(backendAccessToken);
 
-  return fetchBackendJson<ApiResponse<unknown>>(`users/${id}`, {
+  return fetchBackendJson<ApiResponse<unknown>>(`users/${legacyLocalUserId}`, {
     method: "PUT",
     headers: createAuthorizedHeaders(accessToken, {
       "Content-Type": "application/json",
@@ -333,12 +342,12 @@ export async function updateUser(
 }
 
 export async function deleteUser(
-  id: string,
+  legacyLocalUserId: string,
   backendAccessToken?: string
 ) {
   const accessToken = requireBackendAccessToken(backendAccessToken);
 
-  return fetchBackendJson<ApiResponse<unknown>>(`users/${id}`, {
+  return fetchBackendJson<ApiResponse<unknown>>(`users/${legacyLocalUserId}`, {
     method: "DELETE",
     headers: createAuthorizedHeaders(accessToken),
     timeoutMs: 20_000,

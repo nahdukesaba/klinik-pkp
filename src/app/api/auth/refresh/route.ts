@@ -2,7 +2,6 @@ import { NextRequest, type NextResponse } from "next/server";
 
 import { createSessionAdminUser } from "@/lib/admin/service";
 import {
-  BACKEND_ACCESS_COOKIE_NAME,
   BACKEND_REFRESH_COOKIE_NAME,
   getBackendAccessCookieOptions,
   getBackendRefreshCookieOptions,
@@ -92,60 +91,39 @@ export async function POST(request: NextRequest) {
   let authenticatedUser: AuthUser;
   const backendRefreshToken =
     request.cookies.get(BACKEND_REFRESH_COOKIE_NAME)?.value;
-  const backendAccessToken =
-    request.cookies.get(BACKEND_ACCESS_COOKIE_NAME)?.value;
-  let refreshedBackendSession: Extract<ExternalAuthResult, { ok: true }> | null =
-    null;
+  if (!backendRefreshToken) {
+    return clearSessionCookies(
+      createJsonErrorResponse(
+        "Sesi backend tidak tersedia. Silakan login ulang.",
+        401,
+      ),
+    );
+  }
 
-  if (backendRefreshToken) {
-    const refreshResult = await refreshExternalBackendSession({
+  const refreshResult: ExternalAuthResult =
+    await refreshExternalBackendSession({
       backendRefreshToken,
       origin: request.nextUrl.origin,
+      loginSource: refreshPayload.loginSource,
     });
 
-    if (!refreshResult.ok) {
-      return clearSessionCookies(
-        createJsonErrorResponse(refreshResult.error, refreshResult.status)
-      );
-    }
+  if (!refreshResult.ok) {
+    return clearSessionCookies(
+      createJsonErrorResponse(refreshResult.error, refreshResult.status),
+    );
+  }
 
-    refreshedBackendSession = refreshResult;
-
-    try {
-      const sessionUser = createSessionAdminUser(refreshResult.user);
-      authenticatedUser = {
-        id: sessionUser.id,
-        name: sessionUser.name,
-        email: sessionUser.email,
-        nip: sessionUser.nip,
-        role: sessionUser.role,
-      };
-    } catch (error) {
-      return clearSessionCookies(
-        createJsonErrorResponse(
-          error instanceof Error
-            ? error.message
-            : "Akun tidak memiliki akses ke dashboard admin.",
-          403
-        )
-      );
-    }
-  } else if (backendAccessToken) {
-    authenticatedUser = {
-      id: refreshPayload.userId,
-      name: refreshPayload.name,
-      email: refreshPayload.email,
-      nip: refreshPayload.nip,
-      role: refreshPayload.role,
-    };
-  } else {
-    authenticatedUser = {
-      id: refreshPayload.userId,
-      name: refreshPayload.name,
-      email: refreshPayload.email,
-      nip: refreshPayload.nip,
-      role: refreshPayload.role,
-    };
+  try {
+    authenticatedUser = createSessionAdminUser(refreshResult.user);
+  } catch (error) {
+    return clearSessionCookies(
+      createJsonErrorResponse(
+        error instanceof Error
+          ? error.message
+          : "Akun tidak memiliki akses ke dashboard admin.",
+        403,
+      ),
+    );
   }
 
   const [nextAccessToken, nextRefreshToken] = await Promise.all([
@@ -182,69 +160,31 @@ export async function POST(request: NextRequest) {
     priority: refreshCookieOptions.priority,
   });
 
-  if (backendRefreshToken && refreshedBackendSession) {
-    response.cookies.set(
-      backendAccessCookieOptions.name,
-      refreshedBackendSession.backendAccessToken,
-      {
-        httpOnly: backendAccessCookieOptions.httpOnly,
-        secure: backendAccessCookieOptions.secure,
-        sameSite: backendAccessCookieOptions.sameSite,
-        path: backendAccessCookieOptions.path,
-        maxAge: backendAccessCookieOptions.maxAge,
-        priority: backendAccessCookieOptions.priority,
-      }
-    );
-
-    response.cookies.set(
-      backendRefreshCookieOptions.name,
-      refreshedBackendSession.backendRefreshToken ?? backendRefreshToken,
-      {
-        httpOnly: backendRefreshCookieOptions.httpOnly,
-        secure: backendRefreshCookieOptions.secure,
-        sameSite: backendRefreshCookieOptions.sameSite,
-        path: backendRefreshCookieOptions.path,
-        maxAge: backendRefreshCookieOptions.maxAge,
-        priority: backendRefreshCookieOptions.priority,
-      }
-    );
-  } else if (backendAccessToken) {
-    response.cookies.set(backendAccessCookieOptions.name, backendAccessToken, {
+  response.cookies.set(
+    backendAccessCookieOptions.name,
+    refreshResult.backendAccessToken,
+    {
       httpOnly: backendAccessCookieOptions.httpOnly,
       secure: backendAccessCookieOptions.secure,
       sameSite: backendAccessCookieOptions.sameSite,
       path: backendAccessCookieOptions.path,
       maxAge: backendAccessCookieOptions.maxAge,
       priority: backendAccessCookieOptions.priority,
-    });
+    },
+  );
 
-    response.cookies.set(backendRefreshCookieOptions.name, "", {
+  response.cookies.set(
+    backendRefreshCookieOptions.name,
+    refreshResult.backendRefreshToken ?? backendRefreshToken,
+    {
       httpOnly: backendRefreshCookieOptions.httpOnly,
       secure: backendRefreshCookieOptions.secure,
       sameSite: backendRefreshCookieOptions.sameSite,
       path: backendRefreshCookieOptions.path,
-      maxAge: 0,
+      maxAge: backendRefreshCookieOptions.maxAge,
       priority: backendRefreshCookieOptions.priority,
-    });
-  } else {
-    response.cookies.set(backendAccessCookieOptions.name, "", {
-      httpOnly: backendAccessCookieOptions.httpOnly,
-      secure: backendAccessCookieOptions.secure,
-      sameSite: backendAccessCookieOptions.sameSite,
-      path: backendAccessCookieOptions.path,
-      maxAge: 0,
-      priority: backendAccessCookieOptions.priority,
-    });
-
-    response.cookies.set(backendRefreshCookieOptions.name, "", {
-      httpOnly: backendRefreshCookieOptions.httpOnly,
-      secure: backendRefreshCookieOptions.secure,
-      sameSite: backendRefreshCookieOptions.sameSite,
-      path: backendRefreshCookieOptions.path,
-      maxAge: 0,
-      priority: backendRefreshCookieOptions.priority,
-    });
-  }
+    },
+  );
 
   return response;
 }

@@ -3,18 +3,14 @@
 import { createContext, useCallback, useContext, useEffect, useRef } from "react";
 
 import { resolveContextualLogoutDestination } from "@/lib/auth/browser-sso-contract";
+import type { PublicAuthenticatedUser } from "@/lib/auth/session-contract";
 import {
   logoutAdminSession,
   refreshAdminSession,
 } from "@/services/auth.service";
-import type { UserRole } from "@/types/admin";
 
-export interface AdminAuthUser {
-  id: string;
-  name: string;
-  email: string;
-  nip: string;
-  role: UserRole;
+export interface AdminAuthUser extends PublicAuthenticatedUser {
+  legacyLocalUserId: string | null;
   accessTokenExpiresAt?: number;
 }
 
@@ -116,7 +112,7 @@ export function AdminAuthProvider({
           return true;
         }
 
-        if (refreshResult.status === 401) {
+        if (refreshResult.status === 401 || refreshResult.status === 403) {
           await logout();
         }
 

@@ -291,7 +291,7 @@ export function useAdminUsersPage() {
       setFormErrors({});
 
       try {
-        const detail = await fetchAdminUserDetail(item.id);
+        const detail = await fetchAdminUserDetail(item.legacyLocalUserId);
 
         setEditingUser(detail);
         setFormOpen(true);
@@ -319,7 +319,7 @@ export function useAdminUsersPage() {
       try {
         if (editingUser) {
           const payload = buildControlUsersPayload(values);
-          await updateAdminUser(editingUser.id, payload);
+          await updateAdminUser(editingUser.legacyLocalUserId, payload);
         } else {
           const payload = buildControlUsersPayload(values, {
             allowPassword: true,
@@ -373,7 +373,7 @@ export function useAdminUsersPage() {
         currentPage > 1 && pageUsers.length === 1;
 
       try {
-        await deleteAdminUser(item.id);
+        await deleteAdminUser(item.legacyLocalUserId);
 
         if (shouldMoveToPreviousPage) {
           setPage(Math.max(1, currentPage - 1));
@@ -416,7 +416,7 @@ export function useAdminUsersPage() {
 
   return {
     canManage,
-    currentUserId: user.id,
+    currentLegacyLocalUserId: user.legacyLocalUserId,
     searchKeyword: listQuery.searchInput,
     roleFilter,
     setRoleFilter,

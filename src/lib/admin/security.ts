@@ -10,6 +10,7 @@ import {
   getTokenExpiryTimestampMs,
   verifyToken,
 } from "@/lib/auth";
+import type { AuthenticatedUser } from "@/lib/auth/session-contract";
 import { createJsonErrorResponse } from "@/lib/server/http";
 import { hasTrustedSameOrigin } from "@/lib/server/web-security";
 import type { UserRole } from "@/types/admin";
@@ -23,12 +24,7 @@ import {
 
 export const CSRF_COOKIE_NAME = "klinik-pkp-csrf";
 
-export interface AdminSessionUser {
-  id: string;
-  name: string;
-  email: string;
-  nip: string;
-  role: UserRole;
+export interface AdminSessionUser extends AuthenticatedUser {
   accessTokenExpiresAt?: number;
   backendAccessToken?: string;
   backendRefreshToken?: string;
@@ -42,11 +38,16 @@ export {
 };
 
 function mapPayloadToSessionUser(payload: {
-  userId: string;
-  name: string;
+  appUserId: string;
+  authUserId: string | null;
+  fullName: string;
   email: string;
-  nip: string;
+  phone: string | null;
+  nip: string | null;
   role: string;
+  status: "approved";
+  loginSource: "direct" | "sso";
+  legacyLocalUserId: string | null;
   exp?: number;
 }, tokens?: {
   backendAccessToken?: string;
@@ -57,11 +58,16 @@ function mapPayloadToSessionUser(payload: {
   }
 
   return {
-    id: payload.userId,
-    name: payload.name,
+    appUserId: payload.appUserId,
+    authUserId: payload.authUserId,
+    fullName: payload.fullName,
     email: payload.email,
+    phone: payload.phone,
     nip: payload.nip,
     role: payload.role,
+    status: payload.status,
+    loginSource: payload.loginSource,
+    legacyLocalUserId: payload.legacyLocalUserId,
     accessTokenExpiresAt: getTokenExpiryTimestampMs(payload),
     backendAccessToken: tokens?.backendAccessToken,
     backendRefreshToken: tokens?.backendRefreshToken,

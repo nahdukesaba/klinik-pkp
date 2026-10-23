@@ -7,6 +7,11 @@ import {
   getBackendApiBaseUrl,
 } from "@/lib/admin/backend-api";
 import type { ApiResponse } from "@/lib/api-client";
+import {
+  requireAuthenticatedUser,
+  type AuthenticatedUser,
+  type LoginSource,
+} from "@/lib/auth/session-contract";
 import { sanitizeEmail, sanitizeNip } from "@/lib/security";
 import {
   getKlinikContext,
@@ -19,13 +24,7 @@ import {
 // Tipe bersama
 // ---------------------------------------------------------------------------
 
-export interface AuthenticatedBackendUser {
-  id?: string;
-  email: string;
-  nip: string;
-  name: string;
-  role: string;
-}
+export type AuthenticatedBackendUser = AuthenticatedUser;
 
 export type ExternalAuthResult =
   | {
@@ -171,16 +170,48 @@ async function fetchAuthenticatedBackendUser(
 
   const data = payload.data as Record<string, unknown>;
 
-  return {
-    id: typeof data.id === "string" ? data.id : undefined,
+  return requireAuthenticatedUser({
+    appUserId: data.appUserId,
+    authUserId: data.authUserId,
     email: typeof data.email === "string" ? sanitizeEmail(data.email) : "",
-    nip: typeof data.nip === "string" ? sanitizeNip(data.nip) : "",
-    name:
+    nip: typeof data.nip === "string" ? sanitizeNip(data.nip) : null,
+    phone: data.phone,
+    fullName:
       typeof data.name === "string" && data.name.trim() !== ""
         ? data.name.trim()
         : "Admin PKP",
-    role: typeof data.role === "string" ? data.role : "user",
-  };
+    role: data.role,
+    status: data.status,
+    loginSource: "direct",
+    legacyLocalUserId: null,
+  });
+}
+
+function buildCanonicalUser(
+  session: Awaited<ReturnType<typeof loginWithSso>>,
+  klinikContext: Awaited<ReturnType<typeof getKlinikContext>>,
+  loginSource: LoginSource,
+) {
+  if (session.user.appUserId !== klinikContext.appUserId) {
+    throw new SsoAuthError(
+      "Identitas sesi SSO tidak konsisten.",
+      403,
+      "canonical_identity_mismatch",
+    );
+  }
+
+  return requireAuthenticatedUser({
+    appUserId: klinikContext.appUserId,
+    authUserId: klinikContext.authUserId,
+    fullName: klinikContext.fullName,
+    email: sanitizeEmail(klinikContext.email),
+    phone: klinikContext.phone,
+    nip: klinikContext.nip ? sanitizeNip(klinikContext.nip) : null,
+    role: klinikContext.role,
+    status: klinikContext.status,
+    loginSource,
+    legacyLocalUserId: null,
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -201,13 +232,7 @@ export async function authenticateAgainstCentralSso(input: {
 
     return {
       ok: true,
-      user: {
-        id: klinikContext.id,
-        email: sanitizeEmail(session.user.email),
-        nip: sanitizeNip(session.user.pegawai?.nip ?? ""),
-        name: session.user.fullName || "Admin PKP",
-        role: klinikContext.role,
-      },
+      user: buildCanonicalUser(session, klinikContext, "direct"),
       backendAccessToken: session.accessToken,
       backendRefreshToken: session.refreshToken,
     };
@@ -245,8 +270,6 @@ export function authenticateAgainstLocalAdminEnv(input: {
   const adminEmail = sanitizeEmail(process.env.ADMIN_EMAIL ?? "");
   const adminNip = sanitizeNip(process.env.ADMIN_NIP ?? "");
   const adminPassword = process.env.ADMIN_PASSWORD ?? "";
-  const adminName =
-    process.env.ADMIN_NAME?.trim() || "Administrator Klinik PKP";
 
   if (!adminEmail || !adminNip || !adminPassword) {
     return { type: "skip" };
@@ -269,18 +292,9 @@ export function authenticateAgainstLocalAdminEnv(input: {
   }
 
   return {
-    type: "success",
-    result: {
-      ok: true,
-      user: {
-        id: "local-admin",
-        email: adminEmail,
-        nip: adminNip,
-        name: adminName,
-        role: "admin",
-      },
-      backendAccessToken: "",
-    },
+    type: "invalid",
+    status: 503,
+    error: "Sesi canonical hanya dapat dibuat melalui Central SSO.",
   };
 }
 
@@ -387,11 +401,9 @@ async function authenticateAgainstExternalBackend(
 
     return {
       ok: true,
-      user: {
-        id:
-          typeof backendUser.id === "string"
-            ? backendUser.id
-            : payload?.data?.id,
+      user: requireAuthenticatedUser({
+        appUserId: backendUser.appUserId,
+        authUserId: backendUser.authUserId,
         email:
           typeof backendUser.email === "string"
             ? sanitizeEmail(backendUser.email)
@@ -399,15 +411,22 @@ async function authenticateAgainstExternalBackend(
         nip:
           typeof backendUser.nip === "string"
             ? sanitizeNip(backendUser.nip)
-            : input.nip,
-        name:
-          typeof backendUser.name === "string"
-            ? backendUser.name
+            : sanitizeNip(input.nip),
+        phone: backendUser.phone,
+        fullName:
+          typeof backendUser.fullName === "string"
+            ? backendUser.fullName
             : typeof backendUser.full_name === "string"
               ? backendUser.full_name
               : "Admin PKP",
-        role: typeof backendUser.role === "string" ? backendUser.role : "user",
-      },
+        role: backendUser.role,
+        status: backendUser.status,
+        loginSource: "direct",
+        legacyLocalUserId:
+          typeof backendUser.legacyLocalUserId === "string"
+            ? backendUser.legacyLocalUserId
+            : null,
+      }),
       backendAccessToken,
       backendRefreshToken: refreshToken,
     };
@@ -445,6 +464,7 @@ export async function authenticateAgainstExternalBackendDedup(
 export async function refreshExternalBackendSession(params: {
   backendRefreshToken: string;
   origin: string;
+  loginSource: LoginSource;
 }): Promise<ExternalAuthResult> {
   void params.origin;
 
@@ -454,13 +474,7 @@ export async function refreshExternalBackendSession(params: {
 
     return {
       ok: true,
-      user: {
-        id: klinikContext.id,
-        email: sanitizeEmail(session.user.email),
-        nip: sanitizeNip(session.user.pegawai?.nip ?? ""),
-        name: session.user.fullName || "Admin PKP",
-        role: klinikContext.role,
-      },
+      user: buildCanonicalUser(session, klinikContext, params.loginSource),
       backendAccessToken: session.accessToken,
       backendRefreshToken: session.refreshToken,
     };

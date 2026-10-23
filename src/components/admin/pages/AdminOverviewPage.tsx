@@ -69,7 +69,7 @@ async function AdminOverviewDetails({
           {overview.usersPreview.length > 0 ? (
             overview.usersPreview.map((item) => (
               <div
-                key={item.id}
+                key={item.legacyLocalUserId}
                 className="flex flex-col gap-3 rounded-2xl border border-border/70 bg-background/70 p-4 sm:flex-row sm:items-start sm:justify-between"
               >
                 <div className="min-w-0">

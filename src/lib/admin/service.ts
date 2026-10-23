@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { AuthenticatedUser } from "@/lib/auth/session-contract";
 import { sanitizeEmail, sanitizeInput, sanitizeNip } from "@/lib/security";
 import type {
   AuditEntry,
@@ -92,24 +93,23 @@ function toRecentActivity(entry: AuditEntry): RecentActivity {
   };
 }
 
-export function createSessionAdminUser(user: {
-  id?: string;
-  email: string;
-  nip: string;
-  name: string;
-  role: string;
-}) {
+export function createSessionAdminUser(user: AuthenticatedUser) {
   const normalizedRole = normalizeAdminRole(user.role);
-  if (normalizedRole !== "admin") {
+  if (normalizedRole !== "admin" || user.status !== "approved") {
     throw new Error("Akun tidak memiliki akses ke dashboard admin.");
   }
 
   return {
-    id: user.id ?? createId("usr"),
-    name: normalizeDisplayName(user.name),
+    appUserId: user.appUserId,
+    authUserId: user.authUserId,
+    fullName: normalizeDisplayName(user.fullName),
     email: sanitizeEmail(user.email),
-    nip: sanitizeNip(user.nip),
+    phone: user.phone ? sanitizeInput(user.phone) : null,
+    nip: user.nip ? sanitizeNip(user.nip) : null,
     role: normalizedRole,
+    status: user.status,
+    loginSource: user.loginSource,
+    legacyLocalUserId: user.legacyLocalUserId,
   } satisfies AdminSessionUser;
 }
 
@@ -117,13 +117,13 @@ export async function createAuditEntry(params: {
   action: string;
   module: string;
   details: string;
-  actor: Pick<AdminSessionUser, "id" | "name">;
+  actor: Pick<AdminSessionUser, "appUserId" | "fullName">;
   ipAddress: string;
 }) {
   const entry: AuditEntry = {
     id: createId("audit"),
-    userId: params.actor.id,
-    userName: params.actor.name,
+    userId: params.actor.appUserId,
+    userName: params.actor.fullName,
     action: params.action.toUpperCase(),
     module: params.module,
     details: sanitizeInput(params.details),
@@ -139,7 +139,7 @@ export async function createAuditEntry(params: {
 }
 
 export async function recordSuccessfulLogin(
-  user: Pick<AdminSessionUser, "id" | "name">,
+  user: Pick<AdminSessionUser, "appUserId" | "fullName">,
   ipAddress: string
 ) {
   await createAuditEntry({

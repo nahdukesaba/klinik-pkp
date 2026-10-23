@@ -4,6 +4,15 @@ import "server-only";
 
 import { SignJWT, jwtVerify, type JWTPayload } from "jose";
 
+import {
+  parseAuthenticatedUser,
+  type AuthenticatedUser,
+  type AuthRole,
+  type LoginSource,
+} from "@/lib/auth/session-contract";
+
+export type { AuthenticatedUser, AuthRole, LoginSource };
+
 // --- Konfigurasi ---
 
 /** JWT Secret harus di-set di .env, minimal 32 karakter. */
@@ -36,22 +45,19 @@ export const BACKEND_REFRESH_COOKIE_NAME = "klinik-pkp-backend-refresh";
 
 // --- Tipe Token ---
 
-export type AuthRole = "admin" | "user";
-
-export interface AuthUser {
-  id: string;
-  email: string;
-  nip: string;
-  role: AuthRole;
-  name: string;
-}
+export type AuthUser = AuthenticatedUser;
 
 export interface TokenPayload extends JWTPayload {
-  userId: string;
+  appUserId: string;
+  authUserId: string | null;
   email: string;
-  nip: string;
+  fullName: string;
+  phone: string | null;
+  nip: string | null;
   role: AuthRole;
-  name: string;
+  status: "approved";
+  loginSource: LoginSource;
+  legacyLocalUserId: string | null;
   type: "access" | "refresh";
 }
 
@@ -68,11 +74,16 @@ function buildTokenPayload(
   type: TokenPayload["type"]
 ): TokenPayload {
   return {
-    userId: user.id,
+    appUserId: user.appUserId,
+    authUserId: user.authUserId,
     email: user.email,
+    fullName: user.fullName,
+    phone: user.phone,
     nip: user.nip,
     role: user.role,
-    name: user.name,
+    status: user.status,
+    loginSource: user.loginSource,
+    legacyLocalUserId: user.legacyLocalUserId,
     type,
   };
 }
@@ -113,7 +124,19 @@ export async function verifyToken(token: string): Promise<TokenPayload | null> {
       audience: "klinik-pkp-web",
     });
 
-    return payload as TokenPayload;
+    if (payload.type !== "access" && payload.type !== "refresh") {
+      return null;
+    }
+    const user = parseAuthenticatedUser(payload);
+    if (!user) {
+      return null;
+    }
+
+    return {
+      ...payload,
+      ...user,
+      type: payload.type,
+    } as TokenPayload;
   } catch {
     // Token invalid, expired, atau tampered
     return null;

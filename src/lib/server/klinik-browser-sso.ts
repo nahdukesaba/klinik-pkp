@@ -4,15 +4,13 @@ import {
   buildBrowserSsoExchangePayload,
   type BrowserSsoCallback,
 } from "@/lib/auth/browser-sso-contract";
+import {
+  requireAuthenticatedUser,
+  type AuthenticatedUser,
+} from "@/lib/auth/session-contract";
 import { buildConfiguredBackendApiUrl } from "@/lib/server/backend-config";
 
-export interface KlinikBrowserSsoUser {
-  id: string;
-  name: string;
-  email: string;
-  nip: string;
-  role: "admin" | "user";
-}
+export type KlinikBrowserSsoUser = AuthenticatedUser;
 
 export type KlinikBrowserSsoExchange =
   | { status: "pending" }
@@ -109,9 +107,12 @@ export async function exchangeKlinikBrowserSso(
     typeof data.refreshToken !== "string" ||
     !isRecord(data.user) ||
     typeof data.user.id !== "string" ||
+    typeof data.user.appUserId !== "string" ||
+    data.user.id !== data.user.appUserId ||
     typeof data.user.name !== "string" ||
     typeof data.user.email !== "string" ||
-    (data.user.role !== "admin" && data.user.role !== "user")
+    (data.user.role !== "admin" && data.user.role !== "user") ||
+    data.user.status !== "approved"
   ) {
     throw new KlinikBrowserSsoError(
       "Respons autentikasi Klinik PKP tidak valid.",
@@ -124,13 +125,18 @@ export async function exchangeKlinikBrowserSso(
     status: "authenticated",
     accessToken: data.accessToken,
     refreshToken: data.refreshToken,
-    user: {
-      id: data.user.id,
-      name: data.user.name,
+    user: requireAuthenticatedUser({
+      appUserId: data.user.appUserId,
+      authUserId: data.user.authUserId,
+      fullName: data.user.name,
       email: data.user.email,
-      nip: typeof data.user.nip === "string" ? data.user.nip : "",
+      phone: data.user.phone,
+      nip: data.user.nip,
       role: data.user.role,
-    },
+      status: data.user.status,
+      loginSource: "sso",
+      legacyLocalUserId: data.user.legacyLocalUserId,
+    }),
   };
 }
 

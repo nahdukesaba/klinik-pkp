@@ -60,9 +60,9 @@ export async function fetchAdminAuditEntries(params: { limit: number }) {
   return response.data;
 }
 
-export async function fetchAdminUserDetail(id: string) {
+export async function fetchAdminUserDetail(legacyLocalUserId: string) {
   const response = await adminFetch<{ data: AdminDirectoryUser }>(
-    `${ADMIN_USERS_ENDPOINT}/${id}`
+    `${ADMIN_USERS_ENDPOINT}/${legacyLocalUserId}`
   );
 
   return response.data;
@@ -78,8 +78,11 @@ export async function createAdminUser(payload: ControlUserCreatePayload) {
   });
 }
 
-export async function updateAdminUser(id: string, payload: ControlUserPayload) {
-  return adminFetch(`${ADMIN_USERS_ENDPOINT}/${id}`, {
+export async function updateAdminUser(
+  legacyLocalUserId: string,
+  payload: ControlUserPayload,
+) {
+  return adminFetch(`${ADMIN_USERS_ENDPOINT}/${legacyLocalUserId}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -88,8 +91,8 @@ export async function updateAdminUser(id: string, payload: ControlUserPayload) {
   });
 }
 
-export async function deleteAdminUser(id: string) {
-  return adminFetch(`${ADMIN_USERS_ENDPOINT}/${id}`, {
+export async function deleteAdminUser(legacyLocalUserId: string) {
+  return adminFetch(`${ADMIN_USERS_ENDPOINT}/${legacyLocalUserId}`, {
     method: "DELETE",
   });
 }

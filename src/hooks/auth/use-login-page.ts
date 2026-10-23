@@ -76,7 +76,7 @@ export function useLoginPage() {
 
         toast({
           title: "Login berhasil!",
-          description: `Selamat datang, ${data.data?.user?.name ?? "Admin"}.`,
+          description: `Selamat datang, ${data.data?.user?.fullName ?? "Admin"}.`,
         });
 
         if (document.activeElement instanceof HTMLElement) {

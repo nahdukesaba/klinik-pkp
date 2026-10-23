@@ -6,6 +6,7 @@ import {
   recordSuccessfulLogin,
 } from "@/lib/admin/service";
 import { type AuthUser } from "@/lib/auth";
+import { toPublicAuthenticatedUser } from "@/lib/auth/session-contract";
 import { attachAuthenticatedSessionCookies } from "@/lib/server/auth-session";
 import {
   authenticateAgainstCentralSso,
@@ -97,14 +98,7 @@ export async function POST(request: NextRequest) {
     // --- Session creation ---
     let authenticatedUser: AuthUser;
     try {
-      const sessionUser = createSessionAdminUser(authResult.user);
-      authenticatedUser = {
-        id: sessionUser.id,
-        name: sessionUser.name,
-        email: sessionUser.email,
-        nip: sessionUser.nip,
-        role: sessionUser.role,
-      };
+      authenticatedUser = createSessionAdminUser(authResult.user);
     } catch (error) {
       return createJsonErrorResponse(
         error instanceof Error
@@ -117,7 +111,10 @@ export async function POST(request: NextRequest) {
     // --- Audit (fire-and-forget) ---
     try {
       await recordSuccessfulLogin(
-        { id: authenticatedUser.id, name: authenticatedUser.name },
+        {
+          appUserId: authenticatedUser.appUserId,
+          fullName: authenticatedUser.fullName,
+        },
         ipAddress,
       );
     } catch {
@@ -127,12 +124,7 @@ export async function POST(request: NextRequest) {
     // --- Response with auth cookies ---
     const response = createJsonResponse({
       success: true,
-      user: {
-        id: authenticatedUser.id,
-        name: authenticatedUser.name,
-        email: authenticatedUser.email,
-        role: authenticatedUser.role,
-      },
+      user: toPublicAuthenticatedUser(authenticatedUser),
     });
 
     return attachAuthenticatedSessionCookies(response, authenticatedUser, {

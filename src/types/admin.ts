@@ -1,7 +1,8 @@
 export type UserRole = "admin" | "user";
 
-export interface AdminDirectoryUser {
-  id: string;
+import type { AdminDirectoryIdentity } from "@/lib/admin/user-contract";
+
+export interface AdminDirectoryUser extends AdminDirectoryIdentity {
   name: string;
   email: string;
   nip?: string;

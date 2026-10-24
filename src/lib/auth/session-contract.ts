@@ -78,6 +78,12 @@ export function requireAuthenticatedUser(value: unknown): AuthenticatedUser {
   return user;
 }
 
+export function createAuthenticatedSessionUser(
+  value: unknown,
+): AuthenticatedUser {
+  return requireAuthenticatedUser(value);
+}
+
 export function toPublicAuthenticatedUser(
   user: AuthenticatedUser,
 ): PublicAuthenticatedUser {

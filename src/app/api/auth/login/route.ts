@@ -1,12 +1,13 @@
 import { NextRequest } from "next/server";
 
 import { getRequestIpAddress, hasValidCsrfToken } from "@/lib/admin/security";
-import {
-  createSessionAdminUser,
-  recordSuccessfulLogin,
-} from "@/lib/admin/service";
+import { recordSuccessfulLogin } from "@/lib/admin/service";
 import { type AuthUser } from "@/lib/auth";
-import { toPublicAuthenticatedUser } from "@/lib/auth/session-contract";
+import { resolveAuthenticatedLandingPath } from "@/lib/auth/browser-sso-contract";
+import {
+  createAuthenticatedSessionUser,
+  toPublicAuthenticatedUser,
+} from "@/lib/auth/session-contract";
 import { attachAuthenticatedSessionCookies } from "@/lib/server/auth-session";
 import {
   authenticateAgainstCentralSso,
@@ -98,33 +99,36 @@ export async function POST(request: NextRequest) {
     // --- Session creation ---
     let authenticatedUser: AuthUser;
     try {
-      authenticatedUser = createSessionAdminUser(authResult.user);
+      authenticatedUser = createAuthenticatedSessionUser(authResult.user);
     } catch (error) {
       return createJsonErrorResponse(
         error instanceof Error
           ? error.message
-          : "Akun tidak memiliki akses ke dashboard admin.",
+          : "Sesi pengguna tidak valid.",
         403,
       );
     }
 
     // --- Audit (fire-and-forget) ---
-    try {
-      await recordSuccessfulLogin(
-        {
-          appUserId: authenticatedUser.appUserId,
-          fullName: authenticatedUser.fullName,
-        },
-        ipAddress,
-      );
-    } catch {
-      // Audit tidak boleh menghalangi respons login yang berhasil.
+    if (authenticatedUser.role === "admin") {
+      try {
+        await recordSuccessfulLogin(
+          {
+            appUserId: authenticatedUser.appUserId,
+            fullName: authenticatedUser.fullName,
+          },
+          ipAddress,
+        );
+      } catch {
+        // Audit tidak boleh menghalangi respons login yang berhasil.
+      }
     }
 
     // --- Response with auth cookies ---
     const response = createJsonResponse({
       success: true,
       user: toPublicAuthenticatedUser(authenticatedUser),
+      redirectTo: resolveAuthenticatedLandingPath(authenticatedUser.role),
     });
 
     return attachAuthenticatedSessionCookies(response, authenticatedUser, {

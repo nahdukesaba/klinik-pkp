@@ -16,6 +16,7 @@ export interface LoginAdminSessionValues {
 export interface LoginAdminSessionResponse {
   success: boolean;
   data?: {
+    redirectTo?: string;
     user?: {
       appUserId?: string;
       fullName?: string;

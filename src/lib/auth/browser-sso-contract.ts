@@ -2,12 +2,9 @@ export const BROWSER_SSO_START_PATH = "/api/auth/sso/start";
 export const BROWSER_SSO_EXCHANGE_PATH = "/api/auth/sso/exchange";
 export const BROWSER_SSO_LOGOUT_PATH = "/api/auth/sso/logout";
 export const CENTRAL_RECOVERY_PATH = "/api/auth/sso/forgot-password";
+export const NON_ADMIN_LANDING_PATH = "/";
 
-export type BrowserSsoStatus =
-  | "pending"
-  | "denied"
-  | "rejected"
-  | "disabled";
+export type BrowserSsoStatus = "pending" | "denied" | "rejected" | "disabled";
 
 export type BrowserSsoCallback = {
   code?: string;
@@ -63,7 +60,9 @@ export function buildTrustedServiceUrl(baseUrl: string, pathname: string) {
     throw new Error("Service URL must use HTTP or HTTPS.");
   }
   if (url.username || url.password || url.search || url.hash) {
-    throw new Error("Service base URL must not contain credentials or query data.");
+    throw new Error(
+      "Service base URL must not contain credentials or query data.",
+    );
   }
   if (!normalizedPathname || /[?#]/.test(normalizedPathname)) {
     throw new Error("Service pathname is invalid.");
@@ -90,17 +89,30 @@ export function resolveAccessOutcomePath(status: BrowserSsoStatus) {
   return "/auth/access/rejected";
 }
 
+export function resolveAuthenticatedLandingPath(role: "admin" | "user") {
+  return role === "admin" ? "/admin" : NON_ADMIN_LANDING_PATH;
+}
+
 export function browserSsoSessionDecision(
   status: "authenticated" | "pending",
   role?: string,
 ) {
   if (status === "pending") {
-    return { createSession: false, redirectTo: resolveAccessOutcomePath("pending") };
+    return {
+      createSession: false,
+      redirectTo: resolveAccessOutcomePath("pending"),
+    };
   }
-  if (role !== "admin") {
-    return { createSession: false, redirectTo: resolveAccessOutcomePath("rejected") };
+  if (role !== "admin" && role !== "user") {
+    return {
+      createSession: false,
+      redirectTo: resolveAccessOutcomePath("rejected"),
+    };
   }
-  return { createSession: true, redirectTo: "/admin" };
+  return {
+    createSession: true,
+    redirectTo: resolveAuthenticatedLandingPath(role),
+  };
 }
 
 export function readContextualLogoutRequired(payload: unknown) {
@@ -113,8 +125,8 @@ export function readContextualLogoutRequired(payload: unknown) {
   const data = payload.data;
   return Boolean(
     data &&
-      typeof data === "object" &&
-      "centralLogoutRequired" in data &&
-      data.centralLogoutRequired === true,
+    typeof data === "object" &&
+    "centralLogoutRequired" in data &&
+    data.centralLogoutRequired === true,
   );
 }

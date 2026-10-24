@@ -4,6 +4,10 @@ import { extname, join } from "node:path";
 import test from "node:test";
 
 import {
+  canAccessAdminRole,
+  isAdminPanelRole,
+} from "../src/lib/admin/roles.ts";
+import {
   adaptAdminDirectoryIdentity,
   getAdminDirectoryRouteId,
 } from "../src/lib/admin/user-contract.ts";
@@ -18,9 +22,11 @@ import {
   readBrowserSsoCallback,
   readContextualLogoutRequired,
   resolveAccessOutcomePath,
+  resolveAuthenticatedLandingPath,
   resolveContextualLogoutDestination,
 } from "../src/lib/auth/browser-sso-contract.ts";
 import {
+  createAuthenticatedSessionUser,
   hasSameCanonicalIdentity,
   requireAuthenticatedUser,
   toPublicAuthenticatedUser,
@@ -99,19 +105,26 @@ test("safe pending result does not create an app session", () => {
   });
 });
 
-test("only backend admin role can create the existing admin session", () => {
+test("Browser SSO creates sessions for approved admin and user roles", () => {
   assert.deepEqual(browserSsoSessionDecision("authenticated", "admin"), {
     createSession: true,
     redirectTo: "/admin",
   });
-  assert.equal(
-    browserSsoSessionDecision("authenticated", "user").createSession,
-    false,
-  );
+  assert.deepEqual(browserSsoSessionDecision("authenticated", "user"), {
+    createSession: true,
+    redirectTo: "/",
+  });
   assert.equal(
     browserSsoSessionDecision("authenticated", "administrator").createSession,
     false,
   );
+});
+
+test("role user is not mapped to a rejected Browser SSO outcome", () => {
+  const decision = browserSsoSessionDecision("authenticated", "user");
+
+  assert.equal(decision.createSession, true);
+  assert.notEqual(decision.redirectTo, resolveAccessOutcomePath("rejected"));
 });
 
 test("access outcome paths are finite and user friendly", () => {
@@ -154,7 +167,7 @@ test("Central recovery is reached through a trusted route", () => {
   );
 });
 
-function canonicalUser(loginSource) {
+function canonicalUser(loginSource, role = "admin") {
   return requireAuthenticatedUser({
     appUserId: "11111111-1111-4111-8111-111111111111",
     authUserId: "22222222-2222-4222-8222-222222222222",
@@ -162,12 +175,36 @@ function canonicalUser(loginSource) {
     email: "pegawai@example.com",
     phone: null,
     nip: "198001012010011001",
-    role: "admin",
+    role,
     status: "approved",
     loginSource,
     legacyLocalUserId: null,
   });
 }
+
+test("direct login creates canonical sessions with role-specific landings", () => {
+  const admin = createAuthenticatedSessionUser(canonicalUser("direct", "admin"));
+  const user = createAuthenticatedSessionUser(canonicalUser("direct", "user"));
+
+  assert.equal(admin.role, "admin");
+  assert.equal(resolveAuthenticatedLandingPath(admin.role), "/admin");
+  assert.equal(user.role, "user");
+  assert.equal(resolveAuthenticatedLandingPath(user.role), "/");
+});
+
+test("pending, rejected, and disabled memberships cannot create a session", () => {
+  for (const status of ["pending", "rejected", "disabled"]) {
+    assert.throws(
+      () =>
+        createAuthenticatedSessionUser({
+          ...canonicalUser("direct"),
+          status,
+        }),
+      /canonical/i,
+      status,
+    );
+  }
+});
 
 test("direct login and Browser SSO share one canonical appUserId contract", () => {
   const direct = canonicalUser("direct");
@@ -177,6 +214,78 @@ test("direct login and Browser SSO share one canonical appUserId contract", () =
   assert.equal(hasSameCanonicalIdentity(direct, browserSso), true);
   assert.equal(direct.legacyLocalUserId, null);
   assert.equal(browserSso.legacyLocalUserId, null);
+});
+
+test("direct and Browser SSO preserve the canonical session shape for users", () => {
+  const direct = canonicalUser("direct", "user");
+  const browserSso = canonicalUser("sso", "user");
+  const expectedKeys = [
+    "appUserId",
+    "authUserId",
+    "email",
+    "fullName",
+    "legacyLocalUserId",
+    "loginSource",
+    "nip",
+    "phone",
+    "role",
+    "status",
+  ];
+
+  assert.deepEqual(Object.keys(direct).sort(), expectedKeys);
+  assert.deepEqual(Object.keys(browserSso).sort(), expectedKeys);
+  assert.equal(direct.loginSource, "direct");
+  assert.equal(browserSso.loginSource, "sso");
+});
+
+test("admin authorization remains separate from authenticated user sessions", () => {
+  assert.equal(isAdminPanelRole("user"), false);
+  assert.equal(canAccessAdminRole("user", ["admin"]), false);
+  assert.equal(isAdminPanelRole("admin"), true);
+  assert.equal(canAccessAdminRole("admin", ["admin"]), true);
+});
+
+test("every admin resource handler keeps an explicit admin role check", () => {
+  const source = readFileSync(
+    join(process.cwd(), "src/lib/admin/route-handlers.ts"),
+    "utf8",
+  );
+  const authorizationCalls = source.match(/authorizeAdminRequest\(request/g) ?? [];
+  const adminRoleChecks = source.match(/roles:\s*\["admin"\]/g) ?? [];
+
+  assert.ok(authorizationCalls.length > 0);
+  assert.equal(adminRoleChecks.length, authorizationCalls.length);
+});
+
+test("direct login, refresh, and Browser SSO use the general session mapper", () => {
+  const directLogin = readFileSync(
+    join(process.cwd(), "src/app/api/auth/login/route.ts"),
+    "utf8",
+  );
+  const refresh = readFileSync(
+    join(process.cwd(), "src/app/api/auth/refresh/route.ts"),
+    "utf8",
+  );
+  const browserSso = readFileSync(
+    join(process.cwd(), "src/app/api/auth/sso/exchange/route.ts"),
+    "utf8",
+  );
+  const callback = readFileSync(
+    join(process.cwd(), "src/components/login/SsoCallbackPage.tsx"),
+    "utf8",
+  );
+
+  for (const [name, source] of [
+    ["direct login", directLogin],
+    ["refresh", refresh],
+    ["Browser SSO", browserSso],
+  ]) {
+    assert.match(source, /createAuthenticatedSessionUser/, name);
+    assert.doesNotMatch(source, /createSessionAdminUser/, name);
+  }
+  assert.match(directLogin, /resolveAuthenticatedLandingPath/);
+  assert.match(browserSso, /redirectTo: sessionDecision\.redirectTo/);
+  assert.match(callback, /location\.replace\(result\.redirectTo\)/);
 });
 
 test("session bootstrap exposes canonical fields without token material", () => {

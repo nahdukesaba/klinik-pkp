@@ -57,7 +57,7 @@ export default function SsoCallbackPage() {
           window.location.replace(resolveAccessOutcomePath("pending"));
           return;
         }
-        window.location.replace("/admin");
+        window.location.replace(result.redirectTo);
       })
       .catch((reason: unknown) => {
         const accessPath = accessFailurePath(reason);

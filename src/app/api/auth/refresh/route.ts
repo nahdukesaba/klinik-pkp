@@ -1,6 +1,5 @@
 import { NextRequest, type NextResponse } from "next/server";
 
-import { createSessionAdminUser } from "@/lib/admin/service";
 import {
   BACKEND_REFRESH_COOKIE_NAME,
   getBackendAccessCookieOptions,
@@ -14,6 +13,7 @@ import {
   verifyToken,
   type AuthUser,
 } from "@/lib/auth";
+import { createAuthenticatedSessionUser } from "@/lib/auth/session-contract";
 import {
   refreshExternalBackendSession,
   type ExternalAuthResult,
@@ -77,14 +77,14 @@ export async function POST(request: NextRequest) {
   const refreshToken = request.cookies.get(REFRESH_COOKIE_NAME)?.value;
   if (!refreshToken) {
     return clearSessionCookies(
-      createJsonErrorResponse("Sesi admin tidak valid atau telah berakhir.", 401)
+      createJsonErrorResponse("Sesi tidak valid atau telah berakhir.", 401)
     );
   }
 
   const refreshPayload = await verifyToken(refreshToken);
   if (!refreshPayload || refreshPayload.type !== "refresh") {
     return clearSessionCookies(
-      createJsonErrorResponse("Sesi admin tidak valid atau telah berakhir.", 401)
+      createJsonErrorResponse("Sesi tidak valid atau telah berakhir.", 401)
     );
   }
 
@@ -114,13 +114,13 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    authenticatedUser = createSessionAdminUser(refreshResult.user);
+    authenticatedUser = createAuthenticatedSessionUser(refreshResult.user);
   } catch (error) {
     return clearSessionCookies(
       createJsonErrorResponse(
         error instanceof Error
           ? error.message
-          : "Akun tidak memiliki akses ke dashboard admin.",
+          : "Sesi pengguna tidak valid.",
         403,
       ),
     );

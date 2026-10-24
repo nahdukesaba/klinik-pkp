@@ -4,17 +4,17 @@ import {
   getRequestIpAddress,
   hasValidCsrfToken,
 } from "@/lib/admin/security";
-import {
-  createSessionAdminUser,
-  recordSuccessfulLogin,
-} from "@/lib/admin/service";
+import { recordSuccessfulLogin } from "@/lib/admin/service";
 import type { AuthUser } from "@/lib/auth";
 import {
   browserSsoSessionDecision,
   readBrowserSsoCallback,
   resolveAccessOutcomePath,
 } from "@/lib/auth/browser-sso-contract";
-import { toPublicAuthenticatedUser } from "@/lib/auth/session-contract";
+import {
+  createAuthenticatedSessionUser,
+  toPublicAuthenticatedUser,
+} from "@/lib/auth/session-contract";
 import { attachAuthenticatedSessionCookies } from "@/lib/server/auth-session";
 import {
   createJsonErrorResponse,
@@ -103,33 +103,35 @@ export async function POST(request: NextRequest) {
 
     let authenticatedUser: AuthUser;
     try {
-      authenticatedUser = createSessionAdminUser(exchange.user);
+      authenticatedUser = createAuthenticatedSessionUser(exchange.user);
     } catch {
       return createJsonErrorResponse(
-        "Akun tidak memiliki akses ke dashboard admin Klinik PKP.",
+        "Sesi pengguna Klinik PKP tidak valid.",
         403,
         undefined,
-        "KLINIK_ADMIN_ACCESS_REQUIRED",
+        "INVALID_KLINIK_SESSION",
       );
     }
 
-    try {
-      await recordSuccessfulLogin(
-        {
-          appUserId: authenticatedUser.appUserId,
-          fullName: authenticatedUser.fullName,
-        },
-        getRequestIpAddress(request),
-      );
-    } catch {
-      // Audit tidak boleh menggagalkan sesi yang sudah divalidasi backend.
+    if (authenticatedUser.role === "admin") {
+      try {
+        await recordSuccessfulLogin(
+          {
+            appUserId: authenticatedUser.appUserId,
+            fullName: authenticatedUser.fullName,
+          },
+          getRequestIpAddress(request),
+        );
+      } catch {
+        // Audit tidak boleh menggagalkan sesi yang sudah divalidasi backend.
+      }
     }
 
     const response = createJsonResponse({
       success: true,
       data: {
         status: "authenticated",
-        redirectTo: "/admin",
+        redirectTo: sessionDecision.redirectTo,
         user: toPublicAuthenticatedUser(authenticatedUser),
       },
     });

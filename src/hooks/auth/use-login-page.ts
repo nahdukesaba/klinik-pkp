@@ -83,7 +83,12 @@ export function useLoginPage() {
           document.activeElement.blur();
         }
 
-        window.location.replace(redirectTarget);
+        const authenticatedLanding = data.data?.redirectTo ?? "/";
+        window.location.replace(
+          authenticatedLanding === "/admin"
+            ? redirectTarget
+            : authenticatedLanding,
+        );
       } catch (error) {
         toast({
           title: "Login gagal",

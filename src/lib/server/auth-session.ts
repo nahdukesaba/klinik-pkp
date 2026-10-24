@@ -1,16 +1,31 @@
 import "server-only";
 
+import { cookies } from "next/headers";
 import type { NextResponse } from "next/server";
 
 import {
+  AUTH_COOKIE_NAME,
   createAccessToken,
   createRefreshToken,
   getAccessTokenCookieOptions,
   getBackendAccessCookieOptions,
   getBackendRefreshCookieOptions,
   getRefreshTokenCookieOptions,
+  verifyToken,
   type AuthUser,
 } from "@/lib/auth";
+
+export async function getAuthenticatedSessionUserFromCookies(): Promise<AuthUser | null> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(AUTH_COOKIE_NAME)?.value;
+
+  if (!token) {
+    return null;
+  }
+
+  const payload = await verifyToken(token);
+  return payload?.type === "access" ? payload : null;
+}
 
 export async function attachAuthenticatedSessionCookies(
   response: NextResponse,

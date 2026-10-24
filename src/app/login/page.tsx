@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 
 import LoginPage from "@/components/login/LoginPage";
-import { getSessionUserFromCookies } from "@/lib/admin/security";
+import { resolveAuthenticatedLandingPath } from "@/lib/auth/browser-sso-contract";
+import { getAuthenticatedSessionUserFromCookies } from "@/lib/server/auth-session";
 
 import type { Metadata } from "next";
 
@@ -12,9 +13,9 @@ export const metadata: Metadata = {
 };
 
 export default async function LoginRoute() {
-  const user = await getSessionUserFromCookies();
+  const user = await getAuthenticatedSessionUserFromCookies();
   if (user) {
-    redirect("/admin");
+    redirect(resolveAuthenticatedLandingPath(user.role));
   }
 
   return <LoginPage />;

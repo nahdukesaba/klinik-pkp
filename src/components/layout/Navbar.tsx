@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { LogIn, Menu, X } from "lucide-react";
+import { LogIn, LogOut, Menu, X } from "lucide-react";
 
 import {
   isMenuItemActive,
@@ -17,7 +17,9 @@ import {
   MobileMenuItem,
 } from "@/components/layout/navbar-menu";
 import ThemeToggle from "@/components/shared/ThemeToggle";
+import { resolveContextualLogoutDestination } from "@/lib/auth/browser-sso-contract";
 import { HUBUNGI_KAMI_HREF } from "@/lib/constants";
+import { logoutAdminSession } from "@/services/auth.service";
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -32,6 +34,56 @@ interface NavbarContentProps {
 function NavbarContent({ pathname }: NavbarContentProps) {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function readSession() {
+      try {
+        const response = await fetch("/api/auth/session", {
+          credentials: "include",
+          cache: "no-store",
+        });
+        const payload = await response.json().catch(() => null);
+
+        if (!cancelled) {
+          setIsAuthenticated(
+            response.ok && payload?.data?.authenticated === true,
+          );
+        }
+      } catch {
+        if (!cancelled) {
+          setIsAuthenticated(false);
+        }
+      }
+    }
+
+    void readSession();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function handleLogout() {
+    if (isLoggingOut) {
+      return;
+    }
+
+    setIsLoggingOut(true);
+
+    try {
+      const { centralLogoutRequired } = await logoutAdminSession();
+
+      window.location.assign(
+        resolveContextualLogoutDestination(centralLogoutRequired),
+      );
+    } catch {
+      setIsLoggingOut(false);
+    }
+  }
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-card/95 backdrop-blur-lg">
@@ -82,13 +134,26 @@ function NavbarContent({ pathname }: NavbarContentProps) {
             >
               Hubungi Kami
             </Link>
-            <Link
-              href="/login"
-              className="ml-2 rounded-lg border border-border bg-secondary p-2.5 text-secondary-foreground transition-colors hover:bg-secondary/80"
-              title="Login"
-            >
-              <LogIn className="w-5 h-5" />
-            </Link>
+            {isAuthenticated ? (
+              <button
+                type="button"
+                onClick={() => void handleLogout()}
+                disabled={isLoggingOut}
+                className="ml-2 rounded-lg border border-border bg-secondary p-2.5 text-secondary-foreground transition-colors hover:bg-secondary/80 disabled:cursor-not-allowed disabled:opacity-60"
+                title="Keluar"
+                aria-label="Keluar"
+              >
+                <LogOut className="w-5 h-5" />
+              </button>
+            ) : (
+              <Link
+                href="/login"
+                className="ml-2 rounded-lg border border-border bg-secondary p-2.5 text-secondary-foreground transition-colors hover:bg-secondary/80"
+                title="Login"
+              >
+                <LogIn className="w-5 h-5" />
+              </Link>
+            )}
           </div>
 
           {/* Tombol Menu Mobile */}
@@ -134,14 +199,30 @@ function NavbarContent({ pathname }: NavbarContentProps) {
                 >
                   Hubungi Kami
                 </Link>
-                <Link
-                  href="/login"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center justify-center rounded-lg border border-border bg-secondary p-3 text-secondary-foreground transition-colors hover:bg-secondary/80"
-                  title="Login"
-                >
-                  <LogIn className="w-5 h-5" />
-                </Link>
+                {isAuthenticated ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      void handleLogout();
+                    }}
+                    disabled={isLoggingOut}
+                    className="flex items-center justify-center rounded-lg border border-border bg-secondary p-3 text-secondary-foreground transition-colors hover:bg-secondary/80 disabled:cursor-not-allowed disabled:opacity-60"
+                    title="Keluar"
+                    aria-label="Keluar"
+                  >
+                    <LogOut className="w-5 h-5" />
+                  </button>
+                ) : (
+                  <Link
+                    href="/login"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center justify-center rounded-lg border border-border bg-secondary p-3 text-secondary-foreground transition-colors hover:bg-secondary/80"
+                    title="Login"
+                  >
+                    <LogIn className="w-5 h-5" />
+                  </Link>
+                )}
               </div>
             </div>
           </div>

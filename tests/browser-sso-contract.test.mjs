@@ -288,6 +288,41 @@ test("direct login, refresh, and Browser SSO use the general session mapper", ()
   assert.match(callback, /location\.replace\(result\.redirectTo\)/);
 });
 
+test("public session endpoint exposes only authentication status", () => {
+  const source = readFileSync(
+    join(process.cwd(), "src/app/api/auth/session/route.ts"),
+    "utf8",
+  );
+
+  assert.match(source, /dynamic\s*=\s*["']force-dynamic["']/);
+  assert.match(source, /getAuthenticatedSessionUserFromCookies/);
+  assert.match(source, /authenticated:\s*Boolean\(user\)/);
+  assert.match(source, /["']Cache-Control["']\s*:\s*["']no-store["']/);
+  assert.doesNotMatch(
+    source,
+    /accessToken|refreshToken|backendAccess|authUserId/i,
+  );
+});
+
+test("public Navbar uses session status and contextual logout for every role", () => {
+  const source = readFileSync(
+    join(process.cwd(), "src/components/layout/Navbar.tsx"),
+    "utf8",
+  );
+
+  assert.match(source, /useEffect/);
+  assert.match(source, /useState/);
+  assert.match(source, /LogOut/);
+  assert.match(source, /fetch\(["']\/api\/auth\/session["']/);
+  assert.match(source, /credentials:\s*["']include["']/);
+  assert.match(source, /cache:\s*["']no-store["']/);
+  assert.match(source, /logoutAdminSession/);
+  assert.match(source, /resolveContextualLogoutDestination/);
+  assert.match(source, /isAuthenticated/);
+  assert.doesNotMatch(source, /role\s*===\s*["']admin["']/);
+  assert.doesNotMatch(source, /localStorage|sessionStorage/);
+});
+
 test("session bootstrap exposes canonical fields without token material", () => {
   const publicUser = toPublicAuthenticatedUser(canonicalUser("direct"));
 

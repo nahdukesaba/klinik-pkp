@@ -90,17 +90,17 @@ function endpoint(options?: { page?: number; limit?: number; keyword?: string; s
 }
 
 function requireToken(token?: string) { if (!token) throw new BackendApiError("Sesi admin tidak tersedia. Silakan login ulang.", 503); return token; }
-function headers(token: string, extra?: HeadersInit) { return { Authorization: `Bearer ${token}`, ...extra }; }
+function headers(token: string, sid?: string | null, extra?: HeadersInit) { return { Authorization: `Bearer ${token}`, ...(sid ? { "X-SSO-Session-ID": sid } : {}), ...extra }; }
 
-export async function listUsersPage(backendAccessToken?: string, options?: { page?: number; limit?: number; keyword?: string; sortBy?: string | null; sortDirection?: SortDirection; role?: UserRole; status?: MembershipStatus }): Promise<AdminPaginatedUsers> {
-  const payload = await fetchBackendJson<ApiResponse<unknown>>(endpoint(options), { headers: headers(requireToken(backendAccessToken)), timeoutMs: 20_000 });
+export async function listUsersPage(backendAccessToken?: string, ssoSessionId?: string | null, options?: { page?: number; limit?: number; keyword?: string; sortBy?: string | null; sortDirection?: SortDirection; role?: UserRole; status?: MembershipStatus }): Promise<AdminPaginatedUsers> {
+  const payload = await fetchBackendJson<ApiResponse<unknown>>(endpoint(options), { headers: headers(requireToken(backendAccessToken), ssoSessionId), timeoutMs: 20_000 });
   const items = extractApiCollectionItems<BackendUserRecord>(payload.data);
   if (!payload.success || !items) throw new BackendApiError(payload.message || "Format data pengguna dari backend tidak valid.", 502, payload.details);
   return { items: items.map(toDirectoryUser), meta: paginationMeta(items.length, extractApiPaginationMeta(payload.data)) };
 }
 
-export async function getUserDetail(appUserId: string, backendAccessToken?: string) {
-  const payload = await fetchBackendJson<ApiResponse<unknown>>(`users/${appUserId}`, { headers: headers(requireToken(backendAccessToken)), timeoutMs: 15_000 });
+export async function getUserDetail(appUserId: string, backendAccessToken?: string, ssoSessionId?: string | null) {
+  const payload = await fetchBackendJson<ApiResponse<unknown>>(`users/${appUserId}`, { headers: headers(requireToken(backendAccessToken), ssoSessionId), timeoutMs: 15_000 });
   if (!payload.success || !isRecord(payload.data)) throw new BackendApiError(payload.message || "Format detail pengguna dari backend tidak valid.", 502, payload.details);
   return toDirectoryUser(payload.data as unknown as BackendUserRecord);
 }
@@ -109,12 +109,12 @@ function mutation(input: AdminUserMutationInput | AdminUserUpdateInput) {
   return { fullName: normalizeDisplayName(input.fullName), ...( "email" in input ? { email: sanitizeEmail(input.email) } : {}), phone: normalizePhone(input.phone), nip: sanitizeNip(input.nip ?? ""), nik: nullable(input.nik) ?? "", alamat: nullable(input.alamat) ?? "", gelarDepan: nullable(input.gelarDepan) ?? "", gelarBelakang: nullable(input.gelarBelakang) ?? "", role: input.role, status: input.status };
 }
 
-export async function createUser(input: AdminUserMutationInput, backendAccessToken?: string) {
-  return fetchBackendJson<ApiResponse<unknown>>("users", { method: "POST", headers: headers(requireToken(backendAccessToken), { "Content-Type": "application/json" }), body: JSON.stringify(mutation(input)), timeoutMs: 20_000 });
+export async function createUser(input: AdminUserMutationInput, backendAccessToken?: string, ssoSessionId?: string | null) {
+  return fetchBackendJson<ApiResponse<unknown>>("users", { method: "POST", headers: headers(requireToken(backendAccessToken), ssoSessionId, { "Content-Type": "application/json" }), body: JSON.stringify(mutation(input)), timeoutMs: 20_000 });
 }
-export async function updateUser(appUserId: string, input: AdminUserUpdateInput, backendAccessToken?: string) {
-  return fetchBackendJson<ApiResponse<unknown>>(`users/${appUserId}`, { method: "PUT", headers: headers(requireToken(backendAccessToken), { "Content-Type": "application/json" }), body: JSON.stringify(mutation(input)), timeoutMs: 20_000 });
+export async function updateUser(appUserId: string, input: AdminUserUpdateInput, backendAccessToken?: string, ssoSessionId?: string | null) {
+  return fetchBackendJson<ApiResponse<unknown>>(`users/${appUserId}`, { method: "PUT", headers: headers(requireToken(backendAccessToken), ssoSessionId, { "Content-Type": "application/json" }), body: JSON.stringify(mutation(input)), timeoutMs: 20_000 });
 }
-export async function deleteUser(appUserId: string, backendAccessToken?: string) {
-  return fetchBackendJson<ApiResponse<unknown>>(`users/${appUserId}`, { method: "DELETE", headers: headers(requireToken(backendAccessToken)), timeoutMs: 20_000 });
+export async function deleteUser(appUserId: string, backendAccessToken?: string, ssoSessionId?: string | null) {
+  return fetchBackendJson<ApiResponse<unknown>>(`users/${appUserId}`, { method: "DELETE", headers: headers(requireToken(backendAccessToken), ssoSessionId), timeoutMs: 20_000 });
 }

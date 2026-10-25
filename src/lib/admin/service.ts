@@ -109,6 +109,7 @@ export function createSessionAdminUser(user: AuthenticatedUser) {
     role: normalizedRole,
     status: user.status,
     loginSource: user.loginSource,
+    ssoSessionId: user.ssoSessionId,
     legacyLocalUserId: user.legacyLocalUserId,
   } satisfies AdminSessionUser;
 }
@@ -162,11 +163,12 @@ export async function listAuditEntriesPage(page = 1, limit = 20) {
 async function readDashboardOverview(options?: {
   includeAudit?: boolean;
   backendAccessToken?: string;
+  ssoSessionId?: string | null;
 }) {
   const includeAudit = options?.includeAudit ?? true;
 
   const [usersPage, auditEntries] = await Promise.all([
-    listUsersPage(options?.backendAccessToken, {
+    listUsersPage(options?.backendAccessToken, options?.ssoSessionId, {
       page: 1,
     }).catch(() => ({
       items: [],

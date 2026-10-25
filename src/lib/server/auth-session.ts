@@ -14,6 +14,7 @@ import {
   verifyToken,
   type AuthUser,
 } from "@/lib/auth";
+import { isCentralSsoSessionActive } from "@/lib/server/central-sso-session";
 
 export async function getAuthenticatedSessionUserFromCookies(): Promise<AuthUser | null> {
   const cookieStore = await cookies();
@@ -24,7 +25,27 @@ export async function getAuthenticatedSessionUserFromCookies(): Promise<AuthUser
   }
 
   const payload = await verifyToken(token);
-  return payload?.type === "access" ? payload : null;
+  if (payload?.type !== "access") return null;
+  return (await isCentralSsoSessionActive(payload)) ? payload : null;
+}
+
+export function clearAuthenticatedSessionCookies(response: NextResponse) {
+  for (const options of [
+    getAccessTokenCookieOptions(),
+    getRefreshTokenCookieOptions(),
+    getBackendAccessCookieOptions(),
+    getBackendRefreshCookieOptions(),
+  ]) {
+    response.cookies.set(options.name, "", {
+      httpOnly: options.httpOnly,
+      secure: options.secure,
+      sameSite: options.sameSite,
+      path: options.path,
+      maxAge: 0,
+      priority: options.priority,
+    });
+  }
+  return response;
 }
 
 export async function attachAuthenticatedSessionCookies(

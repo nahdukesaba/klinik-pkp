@@ -11,6 +11,8 @@ import {
   verifyToken,
 } from "@/lib/auth";
 import type { AuthenticatedUser } from "@/lib/auth/session-contract";
+import { clearAuthenticatedSessionCookies } from "@/lib/server/auth-session";
+import { isCentralSsoSessionActive } from "@/lib/server/central-sso-session";
 import { createJsonErrorResponse } from "@/lib/server/http";
 import { hasTrustedSameOrigin } from "@/lib/server/web-security";
 import type { UserRole } from "@/types/admin";
@@ -47,6 +49,7 @@ function mapPayloadToSessionUser(payload: {
   role: string;
   status: "approved";
   loginSource: "direct" | "sso";
+  ssoSessionId: string | null;
   legacyLocalUserId: string | null;
   exp?: number;
 }, tokens?: {
@@ -67,6 +70,7 @@ function mapPayloadToSessionUser(payload: {
     role: payload.role,
     status: payload.status,
     loginSource: payload.loginSource,
+    ssoSessionId: payload.ssoSessionId,
     legacyLocalUserId: payload.legacyLocalUserId,
     accessTokenExpiresAt: getTokenExpiryTimestampMs(payload),
     backendAccessToken: tokens?.backendAccessToken,
@@ -86,6 +90,7 @@ export async function getSessionUserFromCookies() {
   if (!payload || payload.type !== "access") {
     return null;
   }
+  if (!(await isCentralSsoSessionActive(payload))) return null;
 
   return mapPayloadToSessionUser(payload, {
     backendAccessToken: cookieStore.get(BACKEND_ACCESS_COOKIE_NAME)?.value,
@@ -104,6 +109,7 @@ export async function getSessionUserFromRequest(request: NextRequest) {
   if (!payload || payload.type !== "access") {
     return null;
   }
+  if (!(await isCentralSsoSessionActive(payload))) return null;
 
   return mapPayloadToSessionUser(payload, {
     backendAccessToken: request.cookies.get(BACKEND_ACCESS_COOKIE_NAME)?.value,
@@ -175,10 +181,10 @@ export async function authorizeAdminRequest(
   if (!user) {
     return {
       ok: false,
-      response: createJsonErrorResponse(
+      response: clearAuthenticatedSessionCookies(createJsonErrorResponse(
         "Sesi admin tidak valid atau telah berakhir.",
         401
-      ),
+      )),
     };
   }
 

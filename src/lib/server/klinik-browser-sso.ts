@@ -18,6 +18,7 @@ export type KlinikBrowserSsoExchange =
       status: "authenticated";
       accessToken: string;
       refreshToken: string;
+      sid: string;
       user: KlinikBrowserSsoUser;
     };
 
@@ -105,6 +106,8 @@ export async function exchangeKlinikBrowserSso(
     data.status !== "authenticated" ||
     typeof data.accessToken !== "string" ||
     typeof data.refreshToken !== "string" ||
+    typeof data.sid !== "string" ||
+    !data.sid.trim() ||
     !isRecord(data.user) ||
     typeof data.user.id !== "string" ||
     typeof data.user.appUserId !== "string" ||
@@ -125,6 +128,7 @@ export async function exchangeKlinikBrowserSso(
     status: "authenticated",
     accessToken: data.accessToken,
     refreshToken: data.refreshToken,
+    sid: data.sid,
     user: requireAuthenticatedUser({
       appUserId: data.user.appUserId,
       authUserId: data.user.authUserId,
@@ -135,6 +139,7 @@ export async function exchangeKlinikBrowserSso(
       role: data.user.role,
       status: data.user.status,
       loginSource: "sso",
+      ssoSessionId: data.sid,
       legacyLocalUserId: data.user.legacyLocalUserId,
     }),
   };

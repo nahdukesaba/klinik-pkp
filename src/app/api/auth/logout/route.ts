@@ -9,10 +9,12 @@ import { NextRequest } from "next/server";
 import { CSRF_COOKIE_NAME } from "@/lib/admin/security";
 import {
   BACKEND_ACCESS_COOKIE_NAME,
+  AUTH_COOKIE_NAME,
   getBackendAccessCookieOptions,
   getBackendRefreshCookieOptions,
   getAccessTokenCookieOptions,
   getRefreshTokenCookieOptions,
+  verifyToken,
 } from "@/lib/auth";
 import { createJsonErrorResponse, createJsonResponse } from "@/lib/server/http";
 import { logoutKlinikSession } from "@/lib/server/klinik-browser-sso";
@@ -46,7 +48,13 @@ export async function POST(request: NextRequest) {
     return createJsonErrorResponse("Origin permintaan tidak diizinkan.", 403);
   }
 
-  const centralLogoutRequired = await terminateBackendSession(request);
+  const localToken = request.cookies.get(AUTH_COOKIE_NAME)?.value;
+  const localPayload = localToken ? await verifyToken(localToken) : null;
+  const signedSessionRequiresCentralLogout = localPayload?.loginSource === "sso";
+  const backendSessionRequiresCentralLogout =
+    await terminateBackendSession(request);
+  const centralLogoutRequired =
+    signedSessionRequiresCentralLogout || backendSessionRequiresCentralLogout;
 
   const response = applySensitiveResponseHeaders(
     createJsonResponse({

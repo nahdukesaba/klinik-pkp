@@ -178,6 +178,10 @@ function canonicalUser(loginSource, role = "admin") {
     role,
     status: "approved",
     loginSource,
+    ssoSessionId:
+      loginSource === "sso"
+        ? "11111111-1111-4111-8111-111111111111"
+        : null,
     legacyLocalUserId: null,
   });
 }
@@ -229,13 +233,19 @@ test("direct and Browser SSO preserve the canonical session shape for users", ()
     "nip",
     "phone",
     "role",
+    "ssoSessionId",
     "status",
   ];
 
   assert.deepEqual(Object.keys(direct).sort(), expectedKeys);
   assert.deepEqual(Object.keys(browserSso).sort(), expectedKeys);
   assert.equal(direct.loginSource, "direct");
+  assert.equal(direct.ssoSessionId, null);
   assert.equal(browserSso.loginSource, "sso");
+  assert.equal(
+    browserSso.ssoSessionId,
+    "11111111-1111-4111-8111-111111111111",
+  );
 });
 
 test("admin authorization remains separate from authenticated user sessions", () => {

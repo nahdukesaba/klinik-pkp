@@ -18,6 +18,7 @@ import {
   refreshExternalBackendSession,
   type ExternalAuthResult,
 } from "@/lib/server/auth-strategies";
+import { isCentralSsoSessionActive } from "@/lib/server/central-sso-session";
 import {
   createJsonErrorResponse,
   createJsonResponse,
@@ -87,6 +88,11 @@ export async function POST(request: NextRequest) {
       createJsonErrorResponse("Sesi tidak valid atau telah berakhir.", 401)
     );
   }
+  if (!(await isCentralSsoSessionActive(refreshPayload))) {
+    return clearSessionCookies(
+      createJsonErrorResponse("Sesi SSO telah berakhir. Silakan login ulang.", 401),
+    );
+  }
 
   let authenticatedUser: AuthUser;
   const backendRefreshToken =
@@ -114,7 +120,10 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    authenticatedUser = createAuthenticatedSessionUser(refreshResult.user);
+    authenticatedUser = createAuthenticatedSessionUser({
+      ...refreshResult.user,
+      ssoSessionId: refreshPayload.ssoSessionId,
+    });
   } catch (error) {
     return clearSessionCookies(
       createJsonErrorResponse(

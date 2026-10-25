@@ -11,12 +11,13 @@ export interface AuthenticatedUser {
   role: AuthRole;
   status: "approved";
   loginSource: LoginSource;
+  ssoSessionId: string | null;
   legacyLocalUserId: string | null;
 }
 
 export type PublicAuthenticatedUser = Omit<
   AuthenticatedUser,
-  "authUserId" | "legacyLocalUserId"
+  "authUserId" | "legacyLocalUserId" | "ssoSessionId"
 >;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -44,6 +45,7 @@ export function parseAuthenticatedUser(
   const role = value.role;
   const status = value.status;
   const loginSource = value.loginSource;
+  const ssoSessionId = optionalString(value.ssoSessionId);
 
   if (
     !appUserId ||
@@ -51,7 +53,9 @@ export function parseAuthenticatedUser(
     !email ||
     (role !== "admin" && role !== "user") ||
     status !== "approved" ||
-    (loginSource !== "direct" && loginSource !== "sso")
+    (loginSource !== "direct" && loginSource !== "sso") ||
+    (loginSource === "sso" && !ssoSessionId) ||
+    (loginSource === "direct" && ssoSessionId !== null)
   ) {
     return null;
   }
@@ -66,6 +70,7 @@ export function parseAuthenticatedUser(
     role,
     status,
     loginSource,
+    ssoSessionId,
     legacyLocalUserId: optionalString(value.legacyLocalUserId),
   };
 }

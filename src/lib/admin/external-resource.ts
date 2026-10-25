@@ -221,6 +221,7 @@ async function createIdempotentDeleteResult(params: {
   resource: ExternalAdminResource;
   id?: string;
   accessToken?: string;
+  ssoSessionId?: string | null;
   response: Response;
   payload: Record<string, unknown>;
 }) {
@@ -906,6 +907,7 @@ export async function proxyExternalAdminResource(params: {
   body?: ExternalAdminRequestBody;
   id?: string;
   accessToken?: string;
+  ssoSessionId?: string | null;
   searchParams?: URLSearchParams;
 }): Promise<ExternalAdminProxyResult> {
   try {
@@ -925,6 +927,9 @@ export async function proxyExternalAdminResource(params: {
   const headers = createBackendHeaders();
   if (params.accessToken && shouldForwardAuth(config)) {
     headers.set("Authorization", `Bearer ${params.accessToken}`);
+    if (params.ssoSessionId) {
+      headers.set("X-SSO-Session-ID", params.ssoSessionId);
+    }
   }
 
   const documentationValidation =

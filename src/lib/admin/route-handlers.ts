@@ -218,6 +218,7 @@ export async function handleExternalAdminResourceList(
     resource: validatedResource,
     method: "GET",
     accessToken: auth.user.backendAccessToken,
+    ssoSessionId: auth.user.ssoSessionId,
     searchParams: sanitizeAdminResourceSearchParams(request.nextUrl.searchParams),
   });
 
@@ -261,6 +262,7 @@ export async function handleExternalAdminResourceDetail(
     method: "GET",
     id: validatedId,
     accessToken: auth.user.backendAccessToken,
+    ssoSessionId: auth.user.ssoSessionId,
     searchParams: detailSearchParams,
   });
 
@@ -314,6 +316,7 @@ export async function handleExternalAdminResourceMutation(
     id: validatedId,
     body,
     accessToken: auth.user.backendAccessToken,
+    ssoSessionId: auth.user.ssoSessionId,
   }).catch(() => ({
     ok: false,
     status: 502,
@@ -380,6 +383,7 @@ export async function handleListUsers(request: NextRequest) {
       : undefined;
     const users = await listUsersPage(
       auth.user.backendAccessToken,
+      auth.user.ssoSessionId,
       {
         page,
         limit,
@@ -433,7 +437,8 @@ export async function handleCreateUser(request: NextRequest) {
   try {
     const result = await createUser(
       validatedData,
-      auth.user.backendAccessToken
+      auth.user.backendAccessToken,
+      auth.user.ssoSessionId,
     );
 
     await recordAudit(request, auth.user, {
@@ -465,7 +470,8 @@ export async function handleGetUser(
   try {
     const user = await getUserDetail(
       appUserId,
-      auth.user.backendAccessToken
+      auth.user.backendAccessToken,
+      auth.user.ssoSessionId,
     );
 
     return createJsonResponse({ data: user });
@@ -511,7 +517,8 @@ export async function handleUpdateUser(
     const result = await updateUser(
       appUserId,
       validatedData,
-      auth.user.backendAccessToken
+      auth.user.backendAccessToken,
+      auth.user.ssoSessionId,
     );
 
     await recordAudit(request, auth.user, {
@@ -544,7 +551,7 @@ export async function handleDeleteUser(
   }
 
   try {
-    await deleteUser(appUserId, auth.user.backendAccessToken);
+    await deleteUser(appUserId, auth.user.backendAccessToken, auth.user.ssoSessionId);
 
     await recordAudit(request, auth.user, {
       action: "DELETE",

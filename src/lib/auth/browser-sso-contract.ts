@@ -75,8 +75,22 @@ export function buildTrustedServiceUrl(baseUrl: string, pathname: string) {
 
 export function resolveContextualLogoutDestination(
   centralLogoutRequired: boolean,
+  returnTo?: string,
 ) {
-  return centralLogoutRequired ? BROWSER_SSO_LOGOUT_PATH : "/login";
+  if (!centralLogoutRequired) {
+    return "/login";
+  }
+  if (
+    returnTo &&
+    returnTo.startsWith("/") &&
+    !returnTo.startsWith("//") &&
+    !returnTo.startsWith("/\\") &&
+    !returnTo.includes("\\") &&
+    !returnTo.includes("#")
+  ) {
+    return `${BROWSER_SSO_LOGOUT_PATH}?cancel_return=${encodeURIComponent(returnTo)}`;
+  }
+  return BROWSER_SSO_LOGOUT_PATH;
 }
 
 export function resolveAccessOutcomePath(status: BrowserSsoStatus) {

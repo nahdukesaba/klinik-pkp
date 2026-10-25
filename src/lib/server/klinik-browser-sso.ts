@@ -65,8 +65,21 @@ export function getKlinikBrowserSsoStartUrl() {
   return buildConfiguredBackendApiUrl("auth/sso/start");
 }
 
-export function getKlinikBrowserSsoLogoutUrl() {
-  return buildConfiguredBackendApiUrl("auth/sso/logout");
+export function getKlinikBrowserSsoLogoutUrl(cancelReturn?: string) {
+  const base = buildConfiguredBackendApiUrl("auth/sso/logout");
+  if (
+    cancelReturn &&
+    cancelReturn.startsWith("/") &&
+    !cancelReturn.startsWith("//") &&
+    !cancelReturn.startsWith("/\\") &&
+    !cancelReturn.includes("\\") &&
+    !cancelReturn.includes("#")
+  ) {
+    const parsed = new URL(base);
+    parsed.searchParams.set("cancel_return", cancelReturn);
+    return parsed.toString();
+  }
+  return base;
 }
 
 export async function exchangeKlinikBrowserSso(

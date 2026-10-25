@@ -58,7 +58,12 @@ export function AdminAuthProvider({
       centralLogoutRequired = result.centralLogoutRequired;
     } finally {
       window.location.replace(
-        resolveContextualLogoutDestination(centralLogoutRequired),
+        resolveContextualLogoutDestination(
+          centralLogoutRequired,
+          typeof window !== "undefined"
+            ? window.location.pathname + window.location.search
+            : "",
+        ),
       );
     }
   }, []);

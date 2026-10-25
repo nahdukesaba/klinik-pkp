@@ -78,7 +78,12 @@ function NavbarContent({ pathname }: NavbarContentProps) {
       const { centralLogoutRequired } = await logoutAdminSession();
 
       window.location.assign(
-        resolveContextualLogoutDestination(centralLogoutRequired),
+        resolveContextualLogoutDestination(
+          centralLogoutRequired,
+          typeof window !== "undefined"
+            ? window.location.pathname + window.location.search
+            : "",
+        ),
       );
     } catch {
       setIsLoggingOut(false);

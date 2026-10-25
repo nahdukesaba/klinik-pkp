@@ -136,8 +136,17 @@ test("access outcome paths are finite and user friendly", () => {
 
 test("direct logout stays local and SSO logout uses trusted bridge", () => {
   assert.equal(resolveContextualLogoutDestination(false), "/login");
+  assert.equal(resolveContextualLogoutDestination(false, "/admin/users?page=2"), "/login");
   assert.equal(
     resolveContextualLogoutDestination(true),
+    "/api/auth/sso/logout",
+  );
+  assert.equal(
+    resolveContextualLogoutDestination(true, "/admin/users?page=2&status=active"),
+    "/api/auth/sso/logout?cancel_return=%2Fadmin%2Fusers%3Fpage%3D2%26status%3Dactive",
+  );
+  assert.equal(
+    resolveContextualLogoutDestination(true, "https://evil.example"),
     "/api/auth/sso/logout",
   );
 });

@@ -1,6 +1,8 @@
 /** @type {import('next').NextConfig} */
 
 const nextConfig = {
+  allowedDevOrigins: ['klinik-pkp.test'],
+
   // Hapus header X-Powered-By (information disclosure)
   poweredByHeader: false,
 

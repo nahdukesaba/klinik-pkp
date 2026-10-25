@@ -10,6 +10,7 @@ import { CSRF_COOKIE_NAME } from "@/lib/admin/security";
 import {
   BACKEND_ACCESS_COOKIE_NAME,
   AUTH_COOKIE_NAME,
+  REFRESH_COOKIE_NAME,
   getBackendAccessCookieOptions,
   getBackendRefreshCookieOptions,
   getAccessTokenCookieOptions,
@@ -49,8 +50,23 @@ export async function POST(request: NextRequest) {
   }
 
   const localToken = request.cookies.get(AUTH_COOKIE_NAME)?.value;
-  const localPayload = localToken ? await verifyToken(localToken) : null;
+  let localPayload = localToken ? await verifyToken(localToken) : null;
+  if (!localPayload || localPayload.type !== "access") {
+    const refreshToken = request.cookies.get(REFRESH_COOKIE_NAME)?.value;
+    const refreshPayload = refreshToken ? await verifyToken(refreshToken) : null;
+    localPayload = refreshPayload?.type === "refresh" ? refreshPayload : null;
+  }
   const signedSessionRequiresCentralLogout = localPayload?.loginSource === "sso";
+  if (signedSessionRequiresCentralLogout) {
+    // Central owns the decision. Keep every app cookie and backend credential
+    // usable for Cancel; after Confirm, normal SID validation rejects the session.
+    return applySensitiveResponseHeaders(
+      createJsonResponse({
+        success: true,
+        data: { centralLogoutRequired: true },
+      }),
+    );
+  }
   const backendSessionRequiresCentralLogout =
     await terminateBackendSession(request);
   const centralLogoutRequired =

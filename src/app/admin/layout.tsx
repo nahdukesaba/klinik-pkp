@@ -25,7 +25,6 @@ export default async function AdminLayout({
         role: user.role,
         status: user.status,
         loginSource: user.loginSource,
-        legacyLocalUserId: user.legacyLocalUserId,
         accessTokenExpiresAt: user.accessTokenExpiresAt,
       }}
     >

@@ -15,8 +15,8 @@ import {
 } from "@/lib/auth";
 import { createAuthenticatedSessionUser } from "@/lib/auth/session-contract";
 import {
-  refreshExternalBackendSession,
-  type ExternalAuthResult,
+  refreshCentralSession,
+  type CentralAuthResult,
 } from "@/lib/server/auth-strategies";
 import { isCentralSsoSessionActive } from "@/lib/server/central-sso-session";
 import {
@@ -106,10 +106,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const refreshResult: ExternalAuthResult =
-    await refreshExternalBackendSession({
+  const refreshResult: CentralAuthResult =
+    await refreshCentralSession({
       backendRefreshToken,
-      origin: request.nextUrl.origin,
       loginSource: refreshPayload.loginSource,
     });
 

@@ -153,7 +153,6 @@ export async function exchangeKlinikBrowserSso(
       status: data.user.status,
       loginSource: "sso",
       ssoSessionId: data.sid,
-      legacyLocalUserId: data.user.legacyLocalUserId,
     }),
   };
 }

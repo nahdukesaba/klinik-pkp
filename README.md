@@ -130,8 +130,6 @@ Manfaat utama `/api/ext`:
 | --- | --- | --- |
 | `API_URL` | Ya | Base URL backend Golang, contoh `https://domain/api/v1`. Server-only. |
 | `JWT_SECRET` | Ya | Secret session frontend, minimal 32 karakter. Server-only. |
-| `AUTH_API_URL` | Tidak | Base URL auth backend jika berbeda dari `API_URL`. |
-| `AUTH_API_PATH` | Tidak | Path login backend jika kontrak auth berbeda dari default project. |
 | `SSO_BASE_URL` | Ya untuk auth | Base URL Central SSO, server-only; digunakan direct login dan recovery. |
 
 `.env.example` berisi template environment. Secret lokal dan production tidak

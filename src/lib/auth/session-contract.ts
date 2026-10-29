@@ -12,12 +12,11 @@ export interface AuthenticatedUser {
   status: "approved";
   loginSource: LoginSource;
   ssoSessionId: string | null;
-  legacyLocalUserId: string | null;
 }
 
 export type PublicAuthenticatedUser = Omit<
   AuthenticatedUser,
-  "authUserId" | "legacyLocalUserId" | "ssoSessionId"
+  "authUserId" | "ssoSessionId"
 >;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -71,7 +70,6 @@ export function parseAuthenticatedUser(
     status,
     loginSource,
     ssoSessionId,
-    legacyLocalUserId: optionalString(value.legacyLocalUserId),
   };
 }
 

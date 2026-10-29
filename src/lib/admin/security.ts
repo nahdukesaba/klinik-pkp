@@ -50,7 +50,6 @@ function mapPayloadToSessionUser(payload: {
   status: "approved";
   loginSource: "direct" | "sso";
   ssoSessionId: string | null;
-  legacyLocalUserId: string | null;
   exp?: number;
 }, tokens?: {
   backendAccessToken?: string;
@@ -71,7 +70,6 @@ function mapPayloadToSessionUser(payload: {
     status: payload.status,
     loginSource: payload.loginSource,
     ssoSessionId: payload.ssoSessionId,
-    legacyLocalUserId: payload.legacyLocalUserId,
     accessTokenExpiresAt: getTokenExpiryTimestampMs(payload),
     backendAccessToken: tokens?.backendAccessToken,
     backendRefreshToken: tokens?.backendRefreshToken,

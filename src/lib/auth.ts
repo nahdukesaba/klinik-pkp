@@ -58,7 +58,6 @@ export interface TokenPayload extends JWTPayload {
   status: "approved";
   loginSource: LoginSource;
   ssoSessionId: string | null;
-  legacyLocalUserId: string | null;
   type: "access" | "refresh";
 }
 
@@ -85,7 +84,6 @@ function buildTokenPayload(
     status: user.status,
     loginSource: user.loginSource,
     ssoSessionId: user.ssoSessionId,
-    legacyLocalUserId: user.legacyLocalUserId,
     type,
   };
 }

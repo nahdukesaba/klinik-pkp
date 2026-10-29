@@ -10,7 +10,6 @@ import {
 } from "@/services/auth.service";
 
 export interface AdminAuthUser extends PublicAuthenticatedUser {
-  legacyLocalUserId: string | null;
   accessTokenExpiresAt?: number;
 }
 

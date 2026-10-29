@@ -1,7 +1,6 @@
 import "server-only";
 
-import type { AuthenticatedUser } from "@/lib/auth/session-contract";
-import { sanitizeEmail, sanitizeInput, sanitizeNip } from "@/lib/security";
+import { sanitizeInput } from "@/lib/security";
 import type {
   AuditEntry,
   DashboardStats,
@@ -13,11 +12,9 @@ import {
   createAdminReader,
   markAdminStatesChanged,
 } from "./cache";
-import {
-  normalizeAdminRole,
-  type AdminSessionUser,
-} from "./security";
 import { listUsersPage } from "./users";
+
+import type { AdminSessionUser } from "./security";
 
 const MAX_AUDIT_ENTRIES = 200;
 const auditEntries: AuditEntry[] = [];
@@ -91,27 +88,6 @@ function toRecentActivity(entry: AuditEntry): RecentActivity {
     user: entry.userName,
     timestamp: entry.timestamp,
   };
-}
-
-export function createSessionAdminUser(user: AuthenticatedUser) {
-  const normalizedRole = normalizeAdminRole(user.role);
-  if (normalizedRole !== "admin" || user.status !== "approved") {
-    throw new Error("Akun tidak memiliki akses ke dashboard admin.");
-  }
-
-  return {
-    appUserId: user.appUserId,
-    authUserId: user.authUserId,
-    fullName: normalizeDisplayName(user.fullName),
-    email: sanitizeEmail(user.email),
-    phone: user.phone ? sanitizeInput(user.phone) : null,
-    nip: user.nip ? sanitizeNip(user.nip) : null,
-    role: normalizedRole,
-    status: user.status,
-    loginSource: user.loginSource,
-    ssoSessionId: user.ssoSessionId,
-    legacyLocalUserId: user.legacyLocalUserId,
-  } satisfies AdminSessionUser;
 }
 
 export async function createAuditEntry(params: {

@@ -192,7 +192,6 @@ function canonicalUser(loginSource, role = "admin") {
       loginSource === "sso"
         ? "11111111-1111-4111-8111-111111111111"
         : null,
-    legacyLocalUserId: null,
   });
 }
 
@@ -226,8 +225,6 @@ test("direct login and Browser SSO share one canonical appUserId contract", () =
 
   assert.equal(direct.appUserId, browserSso.appUserId);
   assert.equal(hasSameCanonicalIdentity(direct, browserSso), true);
-  assert.equal(direct.legacyLocalUserId, null);
-  assert.equal(browserSso.legacyLocalUserId, null);
 });
 
 test("direct and Browser SSO preserve the canonical session shape for users", () => {
@@ -238,7 +235,6 @@ test("direct and Browser SSO preserve the canonical session shape for users", ()
     "authUserId",
     "email",
     "fullName",
-    "legacyLocalUserId",
     "loginSource",
     "nip",
     "phone",

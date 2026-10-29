@@ -11,7 +11,7 @@ import {
 import { attachAuthenticatedSessionCookies } from "@/lib/server/auth-session";
 import {
   authenticateAgainstCentralSso,
-  type ExternalAuthResult,
+  type CentralAuthResult,
 } from "@/lib/server/auth-strategies";
 import {
   createJsonResponse,
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
     const credentials = validation.data!;
 
     // --- Authentication through central SSO ---
-    let authResult: ExternalAuthResult;
+    let authResult: CentralAuthResult;
 
     try {
       authResult = await authenticateAgainstCentralSso({

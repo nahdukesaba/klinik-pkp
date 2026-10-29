@@ -199,9 +199,12 @@ direct -> hapus session Klinik -> /login
 sso -> hapus session Klinik -> backend Klinik logout bridge -> Central logout
 ```
 
-Recovery password diarahkan ke Central melalui route trusted
-`/api/auth/sso/forgot-password`; compatibility source lama tetap disimpan tetapi
-tidak lagi menjadi jalur utama dari halaman login.
+Recovery password dimulai dari halaman milik Klinik
+`/forgot-password`. Form tersebut memakai BFF Klinik untuk meneruskan
+permintaan secara server-to-server ke Central, sehingga authority password tetap
+berada di Central tanpa memindahkan pengguna ke halaman Central. Route trusted
+`/api/auth/sso/forgot-password` tetap tersedia untuk kompatibilitas link lama,
+tetapi bukan jalur utama dari halaman login.
 
 Service mengubah response backend ke bentuk frontend yang konsisten. Field
 frontend memakai camelCase; field backend tetap berada di payload builder,

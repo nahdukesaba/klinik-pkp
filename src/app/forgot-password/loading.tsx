@@ -1,4 +1,4 @@
-/** Loading state untuk /login/forgot-password. */
+/** Loading state untuk /forgot-password. */
 
 import { AuthCardSkeleton } from "@/components/shared";
 

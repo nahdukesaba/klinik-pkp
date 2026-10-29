@@ -25,8 +25,8 @@ export default function ForgotPasswordPage() {
     <AuthPageShell
       backHref="/login"
       backLabel="Kembali ke Login"
-      title="Lupa Password Akun Balai"
-      subtitle="Masukkan email Akun Balai yang memiliki akses ke Klinik PKP"
+      title="Lupa Password Klinik PKP"
+      subtitle="Masukkan email Akun Balai Anda yang terdaftar di Klinik PKP"
     >
       {isSubmitted ? (
         <div className="space-y-3 py-2 text-center">
@@ -42,8 +42,8 @@ export default function ForgotPasswordPage() {
             </p>
 
             <p className="text-xs leading-relaxed text-muted-foreground">
-              Jika email terdaftar dan memiliki akses ke Klinik PKP, instruksi reset Password Akun Balai akan dikirim ke
-              email Anda.
+              Jika email terdaftar dan memiliki akses ke Klinik PKP, instruksi
+              reset password akan dikirim ke email Anda.
             </p>
           </div>
 
@@ -89,8 +89,8 @@ export default function ForgotPasswordPage() {
 
           <div className="rounded-lg border border-border bg-muted/50 px-3 py-2.5">
             <p className="text-[11px] leading-relaxed text-muted-foreground">
-              Jika email terdaftar dan memiliki akses ke Klinik PKP, tautan reset Password Akun Balai akan
-              dikirim ke alamat email tersebut.
+              Jika email terdaftar dan memiliki akses ke Klinik PKP, tautan
+              reset password akan dikirim ke alamat email tersebut.
             </p>
           </div>
 

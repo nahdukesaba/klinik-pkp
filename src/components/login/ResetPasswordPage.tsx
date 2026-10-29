@@ -39,8 +39,8 @@ export default function ResetPasswordPage() {
     <AuthPageShell
       backHref="/login"
       backLabel="Kembali ke Login"
-      title="Reset Password Akun Balai"
-      subtitle="Buat password baru untuk Akun Balai Anda"
+      title="Reset Password Klinik PKP"
+      subtitle="Buat password baru untuk Akun Balai Anda melalui Klinik PKP"
     >
       {recoveryState === "checking" && (
         <div className="flex flex-col items-center gap-3 py-6 text-center">
@@ -71,7 +71,7 @@ export default function ResetPasswordPage() {
           </div>
 
           <Button asChild className="w-full">
-            <Link href="/login/forgot-password">Minta Tautan Reset Baru</Link>
+            <Link href="/forgot-password">Minta Tautan Reset Baru</Link>
           </Button>
 
           <Link

@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { useLoginPage } from "@/hooks/auth/use-login-page";
 import {
   BROWSER_SSO_START_PATH,
-  CENTRAL_RECOVERY_PATH,
+  KLINIK_PASSWORD_RECOVERY_PATH,
 } from "@/lib/auth/browser-sso-contract";
 
 export default function LoginPage() {
@@ -102,7 +102,7 @@ export default function LoginPage() {
 
         <div className="flex justify-end">
           <a
-            href={CENTRAL_RECOVERY_PATH}
+            href={KLINIK_PASSWORD_RECOVERY_PATH}
             className="text-xs text-primary transition-colors hover:underline"
           >
             Lupa password?

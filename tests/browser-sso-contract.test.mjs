@@ -17,6 +17,7 @@ import {
   BROWSER_SSO_LOGOUT_PATH,
   BROWSER_SSO_START_PATH,
   CENTRAL_RECOVERY_PATH,
+  KLINIK_PASSWORD_RECOVERY_PATH,
   browserSsoSessionDecision,
   buildBrowserSsoExchangePayload,
   buildTrustedServiceUrl,
@@ -169,12 +170,29 @@ test("logout trusts only nested BFF result, not browser override fields", () => 
   );
 });
 
-test("Central recovery is reached through a trusted route", () => {
+test("Klinik owns its recovery page and keeps the Central route for compatibility", () => {
+  assert.equal(KLINIK_PASSWORD_RECOVERY_PATH, "/forgot-password");
   assert.equal(CENTRAL_RECOVERY_PATH, "/api/auth/sso/forgot-password");
   assert.equal(
     buildTrustedServiceUrl("http://127.0.0.1:18082", "forgot-password"),
     "http://127.0.0.1:18082/forgot-password",
   );
+});
+
+test("Klinik forgot-password route renders the local recovery page", () => {
+  const routeSource = readFileSync(
+    join(
+      process.cwd(),
+      "src",
+      "app",
+      "forgot-password",
+      "page.tsx",
+    ),
+    "utf8",
+  );
+
+  assert.match(routeSource, /<ForgotPasswordPage\s*\/>/);
+  assert.doesNotMatch(routeSource, /redirect\s*\(/);
 });
 
 function canonicalUser(loginSource, role = "admin") {

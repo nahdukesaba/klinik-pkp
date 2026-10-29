@@ -3,6 +3,19 @@
 const nextConfig = {
   allowedDevOrigins: ['klinik-pkp.test'],
 
+  redirects: async () => [
+    {
+      source: '/login/forgot-password',
+      destination: '/forgot-password',
+      permanent: true,
+    },
+    {
+      source: '/login/reset-password',
+      destination: '/reset-password',
+      permanent: true,
+    },
+  ],
+
   // Hapus header X-Powered-By (information disclosure)
   poweredByHeader: false,
 

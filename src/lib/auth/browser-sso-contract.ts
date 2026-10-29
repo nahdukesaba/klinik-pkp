@@ -1,6 +1,8 @@
 export const BROWSER_SSO_START_PATH = "/api/auth/sso/start";
 export const BROWSER_SSO_EXCHANGE_PATH = "/api/auth/sso/exchange";
 export const BROWSER_SSO_LOGOUT_PATH = "/api/auth/sso/logout";
+export const KLINIK_PASSWORD_RECOVERY_PATH = "/forgot-password";
+// Compatibility route for old links that intentionally open Central's page.
 export const CENTRAL_RECOVERY_PATH = "/api/auth/sso/forgot-password";
 export const NON_ADMIN_LANDING_PATH = "/";
 

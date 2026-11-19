@@ -57,16 +57,6 @@ export async function POST(request: NextRequest) {
     localPayload = refreshPayload?.type === "refresh" ? refreshPayload : null;
   }
   const signedSessionRequiresCentralLogout = localPayload?.loginSource === "sso";
-  if (signedSessionRequiresCentralLogout) {
-    // Central owns the decision. Keep every app cookie and backend credential
-    // usable for Cancel; after Confirm, normal SID validation rejects the session.
-    return applySensitiveResponseHeaders(
-      createJsonResponse({
-        success: true,
-        data: { centralLogoutRequired: true },
-      }),
-    );
-  }
   const backendSessionRequiresCentralLogout =
     await terminateBackendSession(request);
   const centralLogoutRequired =

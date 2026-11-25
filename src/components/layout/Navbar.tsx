@@ -16,6 +16,7 @@ import {
   DesktopMenuItem,
   MobileMenuItem,
 } from "@/components/layout/navbar-menu";
+import { AppLauncher } from "@/components/shared/AppLauncher";
 import ThemeToggle from "@/components/shared/ThemeToggle";
 import { resolveContextualLogoutDestination } from "@/lib/auth/browser-sso-contract";
 import { HUBUNGI_KAMI_HREF } from "@/lib/constants";
@@ -140,16 +141,19 @@ function NavbarContent({ pathname }: NavbarContentProps) {
               Hubungi Kami
             </Link>
             {isAuthenticated ? (
-              <button
-                type="button"
-                onClick={() => void handleLogout()}
-                disabled={isLoggingOut}
-                className="ml-2 rounded-lg border border-border bg-secondary p-2.5 text-secondary-foreground transition-colors hover:bg-secondary/80 disabled:cursor-not-allowed disabled:opacity-60"
-                title="Keluar"
-                aria-label="Keluar"
-              >
-                <LogOut className="w-5 h-5" />
-              </button>
+              <>
+                <AppLauncher />
+                <button
+                  type="button"
+                  onClick={() => void handleLogout()}
+                  disabled={isLoggingOut}
+                  className="ml-1 rounded-lg border border-border bg-secondary p-2.5 text-secondary-foreground transition-colors hover:bg-secondary/80 disabled:cursor-not-allowed disabled:opacity-60"
+                  title="Keluar"
+                  aria-label="Keluar"
+                >
+                  <LogOut className="w-5 h-5" />
+                </button>
+              </>
             ) : (
               <Link
                 href="/login"
@@ -163,6 +167,7 @@ function NavbarContent({ pathname }: NavbarContentProps) {
 
           {/* Tombol Menu Mobile */}
           <div className="flex lg:hidden items-center gap-2">
+            {isAuthenticated && <AppLauncher />}
             <ThemeToggle />
             <button
               type="button"

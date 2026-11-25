@@ -13,6 +13,7 @@ import { usePathname } from "next/navigation";
 
 import { ChevronDown, ChevronLeft, ChevronRight, LogOut, Menu } from "lucide-react";
 
+import { AppLauncher } from "@/components/shared/AppLauncher";
 import ThemeToggle from "@/components/shared/ThemeToggle";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
@@ -164,6 +165,7 @@ export function AdminTopbar({
       <div className="flex items-center gap-2">
         {/* Theme Toggle */}
         <ThemeToggle />
+        {user && <AppLauncher />}
 
         {/* Divider */}
         <div className="w-px h-6 bg-border mx-1 hidden sm:block" />
